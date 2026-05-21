@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARMINTA — Live Agent Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080c10;
+    --surface:   #0d1117;
+    --border:    #1a2332;
+    --green:     #39ff14;
+    --green-dim: #1a7a08;
+    --cyan:      #00e5ff;
+    --amber:     #ffb300;
+    --red:       #ff3d3d;
+    --muted:     #3a4a5a;
+    --text:      #c8d8e8;
+    --dim:       #5a6a7a;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui:   'Exo 2', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* grid noise texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+  }
+
+  .wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 2.2rem;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(57,255,20,0.4);
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--dim);
+    font-weight: 200;
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .last-updated {
+    font-size: 0.72rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+  }
+
+  .status-pill {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-top: 6px;
+    font-family: var(--font-ui);
+    font-weight: 700;
+  }
+  .status-pill.active {
+    background: rgba(57,255,20,0.12);
+    color: var(--green);
+    border: 1px solid var(--green-dim);
+  }
+  .status-pill.offline {
+    background: rgba(255,61,61,0.12);
+    color: var(--red);
+    border: 1px solid rgba(255,61,61,0.3);
+  }
+
+  /* ── BIG STEP COUNTER ── */
+  .hero-metric {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 36px 20px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(57,255,20,0.03) 0%, transparent 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+  }
+
+  .hero-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .hero-number {
+    font-family: var(--font-ui);
+    font-size: clamp(3.5rem, 8vw, 6rem);
+    font-weight: 700;
+    color: var(--green);
+    text-shadow: 0 0 40px rgba(57,255,20,0.5);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { text-shadow: 0 0 40px rgba(57,255,20,0.5); }
+    50%       { text-shadow: 0 0 60px rgba(57,255,20,0.8), 0 0 100px rgba(57,255,20,0.3); }
+  }
+
+  .hero-sub {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    border: 1px solid var(--border);
+    padding: 20px;
+    background: var(--surface);
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover {
+    border-color: var(--muted);
+  }
+
+  .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .card-value {
+    font-family: var(--font-ui);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--cyan);
+    line-height: 1;
+  }
+
+  .card-value.amber { color: var(--amber); }
+  .card-value.green { color: var(--green); }
+  .card-value.red   { color: var(--red);   }
+
+  /* ── MODE DISPLAY ── */
+  .mode-card {
+    border: 1px solid var(--border);
+    padding: 24px;
+    background: var(--surface);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .mode-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .mode-value {
+    font-family: var(--font-ui);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .mode-OBSERVE    { color: var(--cyan); }
+  .mode-INVESTIGATE{ color: var(--amber); }
+  .mode-OPTIMIZE   { color: var(--green); text-shadow: 0 0 12px rgba(57,255,20,0.5); }
+  .mode-DREAM      { color: #b39ddb; }
+  .mode-SELF_ASSESS{ color: #ff80ab; }
+  .mode-unknown    { color: var(--dim); }
+
+  .mode-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── EMOTION BAR ── */
+  .emotion-section {
+    border: 1px solid var(--border);
+    padding: 24px;
+    background: var(--surface);
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .emotion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+  }
+
+  .emotion-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .emotion-name {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .emotion-name .val {
+    color: var(--text);
+  }
+
+  .emotion-bar-bg {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .emotion-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* emotion color map */
+  .eb-calm        { background: var(--cyan); }
+  .eb-curious     { background: var(--amber); }
+  .eb-focused     { background: var(--green); }
+  .eb-confident   { background: #69f0ae; }
+  .eb-stressed    { background: var(--red); }
+  .eb-frustrated  { background: #ff6e6e; }
+  .eb-bored       { background: var(--muted); }
+
+  .dominant-emotion {
+    font-family: var(--font-ui);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── SITUATION ── */
+  .sit-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    border: 1px solid;
+  }
+  .sit-idle        { color: var(--cyan);  border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.07); }
+  .sit-io_bound    { color: var(--amber); border-color: rgba(255,179,0,0.3); background: rgba(255,179,0,0.07); }
+  .sit-cpu_bound   { color: var(--red);   border-color: rgba(255,61,61,0.3); background: rgba(255,61,61,0.07); }
+  .sit-compile     { color: #b39ddb;      border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
+  .sit-browse      { color: var(--green); border-color: var(--green-dim); background: rgba(57,255,20,0.05); }
+  .sit-unknown     { color: var(--dim);   border-color: var(--border); background: transparent; }
+
+  /* ── REWARD ── */
+  .reward-pos { color: var(--green); }
+  .reward-neg { color: var(--red); }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  footer a:hover { color: var(--text); }
+
+  /* ── LOADING ── */
+  #loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--dim);
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    animation: blink 1.2s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  #dashboard { display: none; }
+
+  /* ── ERROR ── */
+  .error-banner {
+    border: 1px solid rgba(255,61,61,0.4);
+    background: rgba(255,61,61,0.06);
+    padding: 14px 20px;
+    font-size: 0.75rem;
+    color: var(--red);
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div id="loading">INITIALIZING TELEMETRY UPLINK...</div>
+  <div id="error-banner" style="display:none"></div>
+
+  <div id="dashboard">
+
+    <header>
+      <div class="logo">
+        ARMINTA
+        <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
+      </div>
+      <div class="header-right">
+        <div class="last-updated" id="last-updated">--</div>
+        <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
+      </div>
+    </header>
+
+    <div class="hero-metric">
+      <div class="hero-label">TOTAL EMPIRICAL STEPS</div>
+      <div class="hero-number" id="step-count">--</div>
+      <div class="hero-sub">every step is a real intervention on target hardware</div>
+    </div>
+
+    <div class="mode-card">
+      <div>
+        <div class="mode-label">Cognitive Mode</div>
+        <div class="mode-value" id="cog-mode">--</div>
+      </div>
+      <div class="mode-divider"></div>
+      <div>
+        <div class="mode-label">Situation</div>
+        <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
+      </div>
+      <div class="mode-divider"></div>
+      <div>
+        <div class="mode-label">Cumulative Reward</div>
+        <div class="card-value" id="total-reward" style="font-size:1.4rem">--</div>
+      </div>
+    </div>
+
+    <div class="emotion-section">
+      <div class="section-title">Emotional State</div>
+      <div class="dominant-emotion" id="dominant-emotion">--</div>
+      <div class="emotion-grid" id="emotion-grid"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">Episodes Logged</div>
+        <div class="card-value amber" id="episodes">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dreams</div>
+        <div class="card-value" id="dreams" style="color:#b39ddb">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Hypotheses</div>
+        <div class="card-value amber" id="hypotheses">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Causal Edges</div>
+        <div class="card-value green" id="causal-edges">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Interventions</div>
+        <div class="card-value" id="interventions">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Self-Modifications</div>
+        <div class="card-value" style="color:#ff80ab" id="self-mods">--</div>
+      </div>
+    </div>
+
+    <footer>
+      <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data refreshes every 5 minutes</span>
+      <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
+    </footer>
+
+  </div><!-- /dashboard -->
+</div><!-- /wrapper -->
+
+<script>
+const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
+const REFRESH_MS = 300000; // 5 minutes
+
+const EMOTION_COLORS = {
+  calm: 'eb-calm', curious: 'eb-curious', focused: 'eb-focused',
+  confident: 'eb-confident', stressed: 'eb-stressed',
+  frustrated: 'eb-frustrated', bored: 'eb-bored'
+};
+
+const SIT_CLASS = {
+  idle: 'sit-idle', io_bound: 'sit-io_bound', cpu_bound: 'sit-cpu_bound',
+  compile: 'sit-compile', browse: 'sit-browse'
+};
+
+function fmt(n) {
+  if (n === undefined || n === null || n === '') return '--';
+  return Number(n).toLocaleString();
+}
+
+function staleness(ts) {
+  if (!ts) return null;
+  const then = new Date(ts.replace(' ', 'T'));
+  const mins = (Date.now() - then) / 60000;
+  return mins;
+}
+
+async function fetchData() {
+  const res = await fetch(GIST_URL + '?_=' + Date.now());
+  if (!res.ok) throw new Error('fetch failed ' + res.status);
+  return res.json();
+}
+
+function render(d) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // staleness check
+  const mins = staleness(d.updated_ts);
+  const pill = document.getElementById('status-pill');
+  if (mins !== null && mins > 30) {
+    pill.textContent = 'AGENT OFFLINE';
+    pill.className = 'status-pill offline';
+  } else {
+    pill.textContent = 'AGENT ACTIVE';
+    pill.className = 'status-pill active';
+  }
+
+  document.getElementById('last-updated').textContent =
+    'DATA: ' + (d.updated_ts || d.updated || '--');
+
+  // hero step
+  document.getElementById('step-count').textContent =
+    d.step_count ? Number(d.step_count).toLocaleString() : '--';
+
+  // cognitive mode
+  const mode = (d.cognitive_mode || 'unknown').toUpperCase();
+  const modeEl = document.getElementById('cog-mode');
+  modeEl.textContent = mode;
+  modeEl.className = 'mode-value mode-' + mode;
+
+  // situation
+  const sit = d.situation || 'unknown';
+  const sitClass = SIT_CLASS[sit] || 'sit-unknown';
+  document.getElementById('situation-badge').innerHTML =
+    `<span class="sit-badge ${sitClass}">${sit.toUpperCase()}</span>`;
+
+  // reward
+  const rEl = document.getElementById('total-reward');
+  const rVal = d.total_reward !== undefined ? d.total_reward : null;
+  rEl.textContent = rVal !== null ? (rVal >= 0 ? '+' : '') + rVal.toFixed(1) : '--';
+  rEl.className = 'card-value ' + (rVal >= 0 ? 'reward-pos' : 'reward-neg');
+  rEl.style.fontSize = '1.4rem';
+
+  // emotion dominant
+  const domEl = document.getElementById('dominant-emotion');
+  const dom = d.emotion || '--';
+  domEl.textContent = dom.toUpperCase();
+  const domColor = {
+    calm:'#00e5ff', curious:'#ffb300', focused:'#39ff14',
+    confident:'#69f0ae', stressed:'#ff3d3d', frustrated:'#ff6e6e', bored:'#3a4a5a'
+  };
+  domEl.style.color = domColor[dom] || '#c8d8e8';
+
+  // emotion bars
+  const ev = d.emotion_vals || {};
+  const grid = document.getElementById('emotion-grid');
+  grid.innerHTML = '';
+  const order = ['calm','curious','focused','confident','stressed','frustrated','bored'];
+  order.forEach(name => {
+    const val = ev[name] !== undefined ? ev[name] : 0;
+    const pct = Math.min(100, (val / 5.0) * 100).toFixed(1);
+    const colorClass = EMOTION_COLORS[name] || 'eb-bored';
+    grid.innerHTML += `
+      <div class="emotion-item">
+        <div class="emotion-name">
+          <span>${name}</span>
+          <span class="val">${val.toFixed ? val.toFixed(2) : val}</span>
+        </div>
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill ${colorClass}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  });
+
+  // stat cards
+  document.getElementById('episodes').textContent    = fmt(d.episodes);
+  document.getElementById('dreams').textContent      = fmt(d.dream_count);
+  document.getElementById('hypotheses').textContent  = fmt(d.hypotheses);
+  document.getElementById('causal-edges').textContent= fmt(d.causal_edges);
+  document.getElementById('interventions').textContent= fmt(d.interventions);
+  document.getElementById('self-mods').textContent   = fmt(d.self_mods);
+}
+
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  const b = document.getElementById('error-banner');
+  b.style.display = 'block';
+  b.textContent = 'UPLINK ERROR: ' + msg;
+  // still show dashboard with stale data if it was shown before
+  if (document.getElementById('dashboard').style.display === 'block') return;
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+async function refresh() {
+  try {
+    const data = await fetchData();
+    render(data);
+    document.getElementById('error-banner').style.display = 'none';
+  } catch(e) {
+    showError(e.message);
+  }
+}
+
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
