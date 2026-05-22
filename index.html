@@ -129,6 +129,21 @@
     color: var(--red);
     border: 1px solid rgba(255,61,61,0.3);
   }
+  .status-pill.stale {
+    background: rgba(255,179,0,0.12);
+    color: var(--amber);
+    border: 1px solid rgba(255,179,0,0.3);
+  }
+
+  .last-seen {
+    font-size: 0.68rem;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+  .last-seen.recent  { color: var(--green); }
+  .last-seen.stale   { color: var(--amber); }
+  .last-seen.offline { color: var(--red);   }
 
   /* ── BIG STEP COUNTER ── */
   .hero-metric {
@@ -419,6 +434,7 @@
       </div>
       <div class="header-right">
         <div class="last-updated" id="last-updated">--</div>
+        <div class="last-seen" id="last-seen"></div>
         <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
       </div>
     </header>
@@ -524,15 +540,36 @@ function render(d) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  // staleness check
+  // staleness check — three states
   const mins = staleness(d.updated_ts);
   const pill = document.getElementById('status-pill');
-  if (mins !== null && mins > 30) {
-    pill.textContent = 'AGENT OFFLINE';
-    pill.className = 'status-pill offline';
+  const lastSeenEl = document.getElementById('last-seen');
+
+  if (mins !== null) {
+    // format last-seen string
+    let seenStr;
+    if (mins < 1)        seenStr = 'last seen just now';
+    else if (mins < 60)  seenStr = `last seen ${Math.floor(mins)}m ago`;
+    else                 seenStr = `last seen ${Math.floor(mins/60)}h ${Math.floor(mins%60)}m ago`;
+    lastSeenEl.textContent = seenStr;
+
+    if (mins <= 10) {
+      pill.textContent = 'AGENT ACTIVE';
+      pill.className = 'status-pill active';
+      lastSeenEl.className = 'last-seen recent';
+    } else if (mins <= 60) {
+      pill.textContent = 'SIGNAL WEAK';
+      pill.className = 'status-pill stale';
+      lastSeenEl.className = 'last-seen stale';
+    } else {
+      pill.textContent = 'AGENT OFFLINE';
+      pill.className = 'status-pill offline';
+      lastSeenEl.className = 'last-seen offline';
+    }
   } else {
     pill.textContent = 'AGENT ACTIVE';
     pill.className = 'status-pill active';
+    lastSeenEl.textContent = '';
   }
 
   document.getElementById('last-updated').textContent =
