@@ -496,7 +496,7 @@
     </div>
 
     <footer>
-      <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data refreshes every 5 minutes</span>
+      <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
       <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
     </footer>
 
@@ -505,7 +505,7 @@
 
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 300000; // 5 minutes
+const REFRESH_MS = 300000; // display refresh interval
 
 const EMOTION_COLORS = {
   calm: 'eb-calm', curious: 'eb-curious', focused: 'eb-focused',
@@ -553,7 +553,7 @@ function render(d) {
     else                 seenStr = `last seen ${Math.floor(mins/60)}h ${Math.floor(mins%60)}m ago`;
     lastSeenEl.textContent = seenStr;
 
-    if (mins <= 10) {
+    if (mins <= 20) {
       pill.textContent = 'AGENT ACTIVE';
       pill.className = 'status-pill active';
       lastSeenEl.className = 'last-seen recent';
