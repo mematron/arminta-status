@@ -956,15 +956,6 @@ async function fetchData() {
   return res.json();
 }
 
-async function refresh() {
-  try {
-    const data = await fetchData();
-    render(data);
-    document.getElementById('error-banner').style.display = 'none';
-  } catch(e) {
-    showError(e.message);
-  }
-}
 
 /* ── adaptive refresh loop ── */
 // Polls at 5 min while the agent is active or signal is weak.
