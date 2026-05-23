@@ -7,645 +7,943 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:        #080c10;
-    --surface:   #0d1117;
-    --border:    #1a2332;
-    --green:     #39ff14;
-    --green-dim: #1a7a08;
-    --cyan:      #00e5ff;
-    --amber:     #ffb300;
-    --red:       #ff3d3d;
-    --muted:     #3a4a5a;
-    --text:      #c8d8e8;
-    --dim:       #5a6a7a;
-    --font-mono: 'Share Tech Mono', monospace;
-    --font-ui:   'Exo 2', sans-serif;
-  }
+:root {
+  --bg:        #080c10;
+  --surface:   #0d1117;
+  --surface2:  #111820;
+  --border:    #1a2332;
+  --border2:   #243040;
+  --green:     #39ff14;
+  --green-dim: #1a7a08;
+  --green-bg:  rgba(57,255,20,0.05);
+  --cyan:      #00e5ff;
+  --cyan-dim:  rgba(0,229,255,0.15);
+  --amber:     #ffb300;
+  --amber-dim: rgba(255,179,0,0.12);
+  --red:       #ff3d3d;
+  --red-dim:   rgba(255,61,61,0.1);
+  --purple:    #b39ddb;
+  --pink:      #ff80ab;
+  --muted:     #3a4a5a;
+  --text:      #c8d8e8;
+  --dim:       #5a6a7a;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-ui:   'Exo 2', sans-serif;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-mono);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* scanline overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 1000;
-  }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
 
-  /* grid noise texture */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 999;
-    opacity: 0.4;
-  }
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.4;
+}
 
-  .wrapper {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-    position: relative;
-    z-index: 1;
-  }
+.wrapper {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+  position: relative;
+  z-index: 1;
+}
 
-  /* ── HEADER ── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 24px;
-    margin-bottom: 40px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
+/* ── HEADER ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  margin-bottom: 36px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-  .logo {
-    font-family: var(--font-ui);
-    font-weight: 700;
-    font-size: 2.2rem;
-    letter-spacing: 0.12em;
-    color: var(--green);
-    text-shadow: 0 0 20px rgba(57,255,20,0.4);
-    line-height: 1;
-  }
+.logo {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 2.2rem;
+  letter-spacing: 0.12em;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(57,255,20,0.4);
+  line-height: 1;
+}
+.logo span {
+  color: var(--dim);
+  font-weight: 200;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-top: 4px;
+}
 
-  .logo span {
-    color: var(--dim);
-    font-weight: 200;
-    font-size: 1rem;
-    letter-spacing: 0.2em;
-    display: block;
-    margin-top: 4px;
-  }
+.header-right { text-align: right; }
+.last-updated { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.1em; }
 
-  .header-right {
-    text-align: right;
-  }
+.status-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  padding: 3px 10px;
+  border-radius: 2px;
+  margin-top: 6px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+.status-pill.active  { background: rgba(57,255,20,0.12);  color: var(--green);  border: 1px solid var(--green-dim); }
+.status-pill.offline { background: rgba(255,61,61,0.12);  color: var(--red);    border: 1px solid rgba(255,61,61,0.3); }
+.status-pill.stale   { background: rgba(255,179,0,0.12);  color: var(--amber);  border: 1px solid rgba(255,179,0,0.3); }
 
-  .last-updated {
-    font-size: 0.72rem;
-    color: var(--dim);
-    letter-spacing: 0.1em;
-  }
+.last-seen { font-size: 0.68rem; color: var(--dim); letter-spacing: 0.08em; margin-top: 4px; }
+.last-seen.recent  { color: var(--green); }
+.last-seen.stale   { color: var(--amber); }
+.last-seen.offline { color: var(--red); }
 
-  .status-pill {
-    display: inline-block;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    padding: 3px 10px;
-    border-radius: 2px;
-    margin-top: 6px;
-    font-family: var(--font-ui);
-    font-weight: 700;
-  }
-  .status-pill.active {
-    background: rgba(57,255,20,0.12);
-    color: var(--green);
-    border: 1px solid var(--green-dim);
-  }
-  .status-pill.offline {
-    background: rgba(255,61,61,0.12);
-    color: var(--red);
-    border: 1px solid rgba(255,61,61,0.3);
-  }
-  .status-pill.stale {
-    background: rgba(255,179,0,0.12);
-    color: var(--amber);
-    border: 1px solid rgba(255,179,0,0.3);
-  }
+/* ── HERO ── */
+.hero-metric {
+  text-align: center;
+  margin-bottom: 36px;
+  padding: 32px 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(57,255,20,0.03) 0%, transparent 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero-metric::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+.hero-label { font-size: 0.7rem; letter-spacing: 0.3em; color: var(--dim); text-transform: uppercase; margin-bottom: 12px; }
+.hero-number {
+  font-family: var(--font-ui);
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(57,255,20,0.5);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  animation: pulse 4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { text-shadow: 0 0 40px rgba(57,255,20,0.5); }
+  50%      { text-shadow: 0 0 60px rgba(57,255,20,0.8), 0 0 100px rgba(57,255,20,0.3); }
+}
+.hero-sub { font-size: 0.75rem; color: var(--dim); margin-top: 10px; letter-spacing: 0.1em; }
 
-  .last-seen {
-    font-size: 0.68rem;
-    color: var(--dim);
-    letter-spacing: 0.08em;
-    margin-top: 4px;
-  }
-  .last-seen.recent  { color: var(--green); }
-  .last-seen.stale   { color: var(--amber); }
-  .last-seen.offline { color: var(--red);   }
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-left: 2px;
+  border-left: 2px solid var(--border2);
+  padding-left: 8px;
+}
 
-  /* ── BIG STEP COUNTER ── */
-  .hero-metric {
-    text-align: center;
-    margin-bottom: 48px;
-    padding: 36px 20px;
-    border: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(57,255,20,0.03) 0%, transparent 100%);
-    position: relative;
-    overflow: hidden;
-  }
+/* ── GENERIC CARD ── */
+.card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.3s;
+}
+.card:hover { border-color: var(--border2); }
+.card-pad { padding: 20px; }
 
-  .hero-metric::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--green), transparent);
-  }
+/* ── STAT GRID ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  border: 1px solid var(--border);
+  padding: 18px 16px;
+  background: var(--surface);
+}
+.stat-label { font-size: 0.6rem; letter-spacing: 0.25em; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; }
+.stat-value {
+  font-family: var(--font-ui);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--cyan);
+}
+.stat-value.amber  { color: var(--amber); }
+.stat-value.green  { color: var(--green); }
+.stat-value.red    { color: var(--red); }
+.stat-value.purple { color: var(--purple); }
+.stat-value.pink   { color: var(--pink); }
+.stat-sub { font-size: 0.62rem; color: var(--dim); margin-top: 5px; letter-spacing: 0.06em; }
 
-  .hero-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: var(--dim);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
+/* ── MODE ROW ── */
+.mode-row {
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  background: var(--surface);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.mode-block { display: flex; flex-direction: column; gap: 4px; }
+.mode-key   { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; }
+.mode-val   { font-family: var(--font-ui); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.08em; }
+.mode-OBSERVE     { color: var(--cyan); }
+.mode-INVESTIGATE { color: var(--amber); }
+.mode-OPTIMIZE    { color: var(--green); text-shadow: 0 0 10px rgba(57,255,20,0.5); }
+.mode-DREAM       { color: var(--purple); }
+.mode-SELF_ASSESS { color: var(--pink); }
+.mode-unknown     { color: var(--dim); }
+.mode-div { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+.reward-pos { color: var(--green); }
+.reward-neg { color: var(--red); }
 
-  .hero-number {
-    font-family: var(--font-ui);
-    font-size: clamp(3.5rem, 8vw, 6rem);
-    font-weight: 700;
-    color: var(--green);
-    text-shadow: 0 0 40px rgba(57,255,20,0.5);
-    letter-spacing: 0.04em;
-    line-height: 1;
-    animation: pulse 4s ease-in-out infinite;
-  }
+/* ── SITUATION BADGE ── */
+.sit-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  border: 1px solid;
+}
+.sit-idle     { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
+.sit-io_bound { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
+.sit-cpu_bound{ color: var(--red);    border-color: rgba(255,61,61,0.3);   background: rgba(255,61,61,0.07); }
+.sit-compile  { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
+.sit-browse   { color: var(--green);  border-color: var(--green-dim);      background: var(--green-bg); }
+.sit-streaming{ color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
+.sit-unknown  { color: var(--dim);    border-color: var(--border);         background: transparent; }
 
-  @keyframes pulse {
-    0%, 100% { text-shadow: 0 0 40px rgba(57,255,20,0.5); }
-    50%       { text-shadow: 0 0 60px rgba(57,255,20,0.8), 0 0 100px rgba(57,255,20,0.3); }
-  }
+/* ── EMOTION ── */
+.emotion-section { border: 1px solid var(--border); padding: 20px 24px; background: var(--surface); margin-bottom: 12px; }
+.dominant-emotion { font-family: var(--font-ui); font-size: 1.2rem; font-weight: 700; margin-bottom: 14px; letter-spacing: 0.08em; }
+.emotion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.emotion-item { display: flex; flex-direction: column; gap: 5px; }
+.emotion-name { font-size: 0.68rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
+.emotion-name .val { color: var(--text); }
+.emotion-bar-bg { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.emotion-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+.eb-calm      { background: var(--cyan); }
+.eb-curious   { background: var(--amber); }
+.eb-focused   { background: var(--green); }
+.eb-confident { background: #69f0ae; }
+.eb-stressed  { background: var(--red); }
+.eb-frustrated{ background: #ff6e6e; }
+.eb-bored     { background: var(--muted); }
 
-  .hero-sub {
-    font-size: 0.75rem;
-    color: var(--dim);
-    margin-top: 10px;
-    letter-spacing: 0.1em;
-  }
+/* ── TWO-COL LAYOUT ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media(max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
 
-  /* ── GRID ── */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
-  }
+/* ── CAUSAL EDGE BARS ── */
+.edge-list { display: flex; flex-direction: column; gap: 7px; }
+.edge-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
+.edge-label { width: 178px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.edge-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.edge-fill  { height: 100%; border-radius: 3px; }
+.edge-val   { width: 48px; text-align: right; font-size: 0.65rem; flex-shrink: 0; }
+.edge-n     { width: 32px; text-align: right; font-size: 0.6rem; color: var(--dim); flex-shrink: 0; }
 
-  .card {
-    border: 1px solid var(--border);
-    padding: 20px;
-    background: var(--surface);
-    position: relative;
-    transition: border-color 0.3s;
-  }
+/* ── ACTION REWARD BARS ── */
+.rew-list { display: flex; flex-direction: column; gap: 8px; }
+.rew-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
+.rew-label { width: 148px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.rew-mid { flex: 1; display: flex; align-items: center; position: relative; height: 5px; }
+.rew-axis { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border2); }
+.rew-bar { position: absolute; top: 0; height: 5px; border-radius: 3px; }
+.rew-val { width: 52px; text-align: right; font-size: 0.65rem; flex-shrink: 0; }
 
-  .card:hover {
-    border-color: var(--muted);
-  }
+/* ── OPEN QUESTIONS ── */
+.q-list { display: flex; flex-direction: column; gap: 8px; }
+.q-item { padding: 9px 12px; border-left: 2px solid; font-size: 0.72rem; background: rgba(255,255,255,0.02); }
+.q-text { color: var(--text); margin-bottom: 3px; line-height: 1.5; }
+.q-meta { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.05em; }
+.q-high  { border-color: var(--red); }
+.q-med   { border-color: var(--amber); }
+.q-low   { border-color: var(--muted); }
 
-  .card-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.25em;
-    color: var(--dim);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
+/* ── MOSAIC HYPOTHESES ── */
+.hyp-list { display: flex; flex-direction: column; gap: 8px; }
+.hyp-item { padding: 9px 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); font-size: 0.72rem; }
+.hyp-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.hyp-label { color: var(--text); font-weight: 400; }
+.hyp-corr { font-size: 0.65rem; }
+.hyp-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+.hyp-bar { height: 100%; border-radius: 2px; }
+.hyp-meta { font-size: 0.6rem; color: var(--dim); }
 
-  .card-value {
-    font-family: var(--font-ui);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--cyan);
-    line-height: 1;
-  }
+/* ── CMC Q-TABLE ── */
+.cmc-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
+.cmc-cell { border: 1px solid var(--border); padding: 10px 8px; text-align: center; background: var(--surface2); }
+.cmc-cell.best { border-color: rgba(0,229,255,0.4); background: rgba(0,229,255,0.05); }
+.cmc-mode { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
+.cmc-q { font-family: var(--font-ui); font-size: 1.05rem; font-weight: 700; }
 
-  .card-value.amber { color: var(--amber); }
-  .card-value.green { color: var(--green); }
-  .card-value.red   { color: var(--red);   }
+/* ── ADAPTIVE THRESHOLDS ── */
+.thresh-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; }
+.thresh-cell { border: 1px solid var(--border); padding: 12px 14px; background: var(--surface2); }
+.thresh-key { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
+.thresh-val { font-family: var(--font-ui); font-size: 1.2rem; font-weight: 700; color: var(--cyan); }
+.thresh-default { font-size: 0.6rem; color: var(--dim); margin-top: 3px; }
 
-  /* ── MODE DISPLAY ── */
-  .mode-card {
-    border: 1px solid var(--border);
-    padding: 24px;
-    background: var(--surface);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
+/* ── CHART WRAPPERS ── */
+.chart-wrap { position: relative; width: 100%; }
 
-  .mode-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.25em;
-    color: var(--dim);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
+/* ── KILL INEFFECTIVE ── */
+.ki-list { display: flex; flex-direction: column; gap: 6px; }
+.ki-item { padding: 7px 12px; border: 1px solid var(--border); background: rgba(255,61,61,0.04); font-size: 0.72rem; color: var(--red); letter-spacing: 0.05em; }
 
-  .mode-value {
-    font-family: var(--font-ui);
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-  }
+/* ── ADAPTIVE GOVERNOR ── */
+.gov-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.gov-cell { border: 1px solid var(--border); padding: 12px 16px; background: var(--surface); flex: 1; min-width: 120px; }
+.gov-key { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
+.gov-val { font-family: var(--font-ui); font-size: 1.15rem; font-weight: 700; }
 
-  .mode-OBSERVE    { color: var(--cyan); }
-  .mode-INVESTIGATE{ color: var(--amber); }
-  .mode-OPTIMIZE   { color: var(--green); text-shadow: 0 0 12px rgba(57,255,20,0.5); }
-  .mode-DREAM      { color: #b39ddb; }
-  .mode-SELF_ASSESS{ color: #ff80ab; }
-  .mode-unknown    { color: var(--dim); }
+/* ── LOG LINES ── */
+.log-wrap {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.log-line { font-size: 0.68rem; color: var(--dim); line-height: 1.7; letter-spacing: 0.03em; }
+.log-line.obs  { color: #4a8080; }
+.log-line.act  { color: var(--amber); }
+.log-line.cur  { color: var(--purple); }
+.log-line.err  { color: var(--red); }
+.log-line.gov  { color: var(--green); }
+.log-line.warn { color: var(--red); }
 
-  .mode-divider {
-    width: 1px;
-    height: 40px;
-    background: var(--border);
-    flex-shrink: 0;
-  }
+/* ── REWARD SPARKLINE ── */
+.spark-wrap { position: relative; width: 100%; }
 
-  /* ── EMOTION BAR ── */
-  .emotion-section {
-    border: 1px solid var(--border);
-    padding: 24px;
-    background: var(--surface);
-    margin-bottom: 16px;
-  }
+/* ── FOOTER ── */
+footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 0.65rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+footer a:hover { color: var(--text); }
 
-  .section-title {
-    font-size: 0.65rem;
-    letter-spacing: 0.25em;
-    color: var(--dim);
-    text-transform: uppercase;
-    margin-bottom: 18px;
-  }
+/* ── LOADING ── */
+#loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--dim);
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  animation: blink 1.2s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  .emotion-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
-  }
+#dashboard { display: none; }
 
-  .emotion-item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+.error-banner {
+  border: 1px solid rgba(255,61,61,0.4);
+  background: rgba(255,61,61,0.06);
+  padding: 14px 20px;
+  font-size: 0.75rem;
+  color: var(--red);
+  letter-spacing: 0.08em;
+  margin-bottom: 24px;
+}
 
-  .emotion-name {
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    text-transform: uppercase;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .emotion-name .val {
-    color: var(--text);
-  }
-
-  .emotion-bar-bg {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .emotion-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 1s ease;
-  }
-
-  /* emotion color map */
-  .eb-calm        { background: var(--cyan); }
-  .eb-curious     { background: var(--amber); }
-  .eb-focused     { background: var(--green); }
-  .eb-confident   { background: #69f0ae; }
-  .eb-stressed    { background: var(--red); }
-  .eb-frustrated  { background: #ff6e6e; }
-  .eb-bored       { background: var(--muted); }
-
-  .dominant-emotion {
-    font-family: var(--font-ui);
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-    letter-spacing: 0.08em;
-  }
-
-  /* ── SITUATION ── */
-  .sit-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 2px;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    font-family: var(--font-ui);
-    font-weight: 700;
-    border: 1px solid;
-  }
-  .sit-idle        { color: var(--cyan);  border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.07); }
-  .sit-io_bound    { color: var(--amber); border-color: rgba(255,179,0,0.3); background: rgba(255,179,0,0.07); }
-  .sit-cpu_bound   { color: var(--red);   border-color: rgba(255,61,61,0.3); background: rgba(255,61,61,0.07); }
-  .sit-compile     { color: #b39ddb;      border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
-  .sit-browse      { color: var(--green); border-color: var(--green-dim); background: rgba(57,255,20,0.05); }
-  .sit-unknown     { color: var(--dim);   border-color: var(--border); background: transparent; }
-
-  /* ── REWARD ── */
-  .reward-pos { color: var(--green); }
-  .reward-neg { color: var(--red); }
-
-  /* ── FOOTER ── */
-  footer {
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
-    font-size: 0.65rem;
-    color: var(--dim);
-    letter-spacing: 0.1em;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  footer a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  footer a:hover { color: var(--text); }
-
-  /* ── LOADING ── */
-  #loading {
-    text-align: center;
-    padding: 80px 20px;
-    color: var(--dim);
-    font-size: 0.85rem;
-    letter-spacing: 0.2em;
-    animation: blink 1.2s step-end infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
-
-  #dashboard { display: none; }
-
-  /* ── ERROR ── */
-  .error-banner {
-    border: 1px solid rgba(255,61,61,0.4);
-    background: rgba(255,61,61,0.06);
-    padding: 14px 20px;
-    font-size: 0.75rem;
-    color: var(--red);
-    letter-spacing: 0.08em;
-    margin-bottom: 24px;
-  }
+.mb12 { margin-bottom: 12px; }
+.mb28 { margin-bottom: 28px; }
 </style>
 </head>
 <body>
 <div class="wrapper">
 
-  <div id="loading">INITIALIZING TELEMETRY UPLINK...</div>
-  <div id="error-banner" style="display:none"></div>
+<div id="loading">INITIALIZING TELEMETRY UPLINK...</div>
+<div id="error-banner" style="display:none"></div>
 
-  <div id="dashboard">
+<div id="dashboard">
 
-    <header>
-      <div class="logo">
-        ARMINTA
-        <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
-      </div>
-      <div class="header-right">
-        <div class="last-updated" id="last-updated">--</div>
-        <div class="last-seen" id="last-seen"></div>
-        <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
-      </div>
-    </header>
-
-    <div class="hero-metric">
-      <div class="hero-label">TOTAL EMPIRICAL STEPS</div>
-      <div class="hero-number" id="step-count">--</div>
-      <div class="hero-sub">every step is a real intervention on target hardware</div>
+  <header>
+    <div class="logo">
+      ARMINTA
+      <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
+    <div class="header-right">
+      <div class="last-updated" id="last-updated">--</div>
+      <div class="last-seen" id="last-seen"></div>
+      <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
+    </div>
+  </header>
 
-    <div class="mode-card">
-      <div>
-        <div class="mode-label">Cognitive Mode</div>
-        <div class="mode-value" id="cog-mode">--</div>
-      </div>
-      <div class="mode-divider"></div>
-      <div>
-        <div class="mode-label">Situation</div>
-        <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
-      </div>
-      <div class="mode-divider"></div>
-      <div>
-        <div class="mode-label">Cumulative Reward</div>
-        <div class="card-value" id="total-reward" style="font-size:1.4rem">--</div>
+  <!-- HERO STEP -->
+  <div class="hero-metric">
+    <div class="hero-label">TOTAL EMPIRICAL STEPS</div>
+    <div class="hero-number" id="step-count">--</div>
+    <div class="hero-sub">every step is a real intervention on target hardware</div>
+  </div>
+
+  <!-- MODE / SITUATION / REWARD ROW -->
+  <div class="mode-row mb12">
+    <div class="mode-block">
+      <div class="mode-key">Cognitive Mode</div>
+      <div class="mode-val" id="cog-mode">--</div>
+    </div>
+    <div class="mode-div"></div>
+    <div class="mode-block">
+      <div class="mode-key">Situation</div>
+      <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
+    </div>
+    <div class="mode-div"></div>
+    <div class="mode-block">
+      <div class="mode-key">Cumulative Reward</div>
+      <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
+    </div>
+    <div class="mode-div"></div>
+    <div class="mode-block">
+      <div class="mode-key">Error Steps (200-step window)</div>
+      <div class="mode-val" id="error-steps" style="font-size:1.3rem; color:var(--dim)">--</div>
+    </div>
+  </div>
+
+  <!-- EMOTION -->
+  <div class="emotion-section mb12">
+    <div class="section-label">Emotional State</div>
+    <div class="dominant-emotion" id="dominant-emotion">--</div>
+    <div class="emotion-grid" id="emotion-grid"></div>
+  </div>
+
+  <!-- CORE STATS -->
+  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics</div>
+  <div class="stat-grid mb28">
+    <div class="stat-card">
+      <div class="stat-label">Causal Edges</div>
+      <div class="stat-value green" id="causal-edges">--</div>
+      <div class="stat-sub">interventional graph</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dreams</div>
+      <div class="stat-value purple" id="dreams">--</div>
+      <div class="stat-sub">offline simulations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hypotheses</div>
+      <div class="stat-value amber" id="hypotheses">--</div>
+      <div class="stat-sub">generated &amp; tested</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Interventions</div>
+      <div class="stat-value" id="interventions">--</div>
+      <div class="stat-sub">real OS actions taken</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Self-Modifications</div>
+      <div class="stat-value pink" id="self-mods">--</div>
+      <div class="stat-sub">autonomous rewrites</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mosaic Hypotheses</div>
+      <div class="stat-value amber" id="mosaic-hyp-count">--</div>
+      <div class="stat-sub">world correlations</div>
+    </div>
+  </div>
+
+  <!-- GOVERNOR -->
+  <div class="section-label mb12">Governor State</div>
+  <div class="gov-row mb28">
+    <div class="gov-cell">
+      <div class="gov-key">Saved Governor</div>
+      <div class="gov-val" id="gov-saved" style="color:var(--cyan)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Override</div>
+      <div class="gov-val" id="gov-override" style="color:var(--amber)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Idle Steps</div>
+      <div class="gov-val" id="gov-idle" style="color:var(--dim)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Bootstrap Phase</div>
+      <div class="gov-val" id="bootstrap" style="color:var(--green)">--</div>
+    </div>
+  </div>
+
+  <!-- ADAPTIVE THRESHOLDS -->
+  <div class="section-label mb12">Adaptive Thresholds</div>
+  <div class="thresh-grid mb28" id="thresh-grid">
+    <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
+    <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.25</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Kill</div><div class="thresh-val" id="thresh-dilu-kill">--</div><div class="thresh-default">default 0.50</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 3000 KB/s</div></div>
+  </div>
+
+  <!-- CAUSAL EDGES + REWARD CHART (2-col) -->
+  <div class="section-label mb12">Causal Graph — Top Interventional Edges</div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric rose · n = observations</div>
+      <div class="edge-list" id="edge-list">
+        <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
     </div>
-
-    <div class="emotion-section">
-      <div class="section-title">Emotional State</div>
-      <div class="dominant-emotion" id="dominant-emotion">--</div>
-      <div class="emotion-grid" id="emotion-grid"></div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="card-label">Episodes Logged</div>
-        <div class="card-value amber" id="episodes">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Dreams</div>
-        <div class="card-value" id="dreams" style="color:#b39ddb">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Hypotheses</div>
-        <div class="card-value amber" id="hypotheses">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Causal Edges</div>
-        <div class="card-value green" id="causal-edges">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Interventions</div>
-        <div class="card-value" id="interventions">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Self-Modifications</div>
-        <div class="card-value" style="color:#ff80ab" id="self-mods">--</div>
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">mean reward per action (last 30 executions) · centered axis</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="rewChart" role="img" aria-label="Action mean reward bar chart"></canvas>
       </div>
     </div>
+  </div>
 
-    <footer>
-      <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
-      <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
-    </footer>
+  <!-- REWARD HISTORY SPARKLINE -->
+  <div class="section-label mb12">Reward History (recent 150 steps)</div>
+  <div class="card card-pad mb28">
+    <div class="chart-wrap" style="height:120px;">
+      <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
+    </div>
+  </div>
 
-  </div><!-- /dashboard -->
+  <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
+  <div class="section-label mb12">Open Questions / Unresolved Anomalies</div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">reward reversals arminta cannot yet explain</div>
+      <div class="q-list" id="q-list">
+        <div style="color:var(--dim);font-size:0.7rem">no data</div>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">autonomously discovered environment↔system correlations</div>
+      <div class="hyp-list" id="hyp-list">
+        <div style="color:var(--dim);font-size:0.7rem">no data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIRCADIAN + CMC (2-col) -->
+  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller</div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)</div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">Q-values for current state · highlighted = highest Q</div>
+      <div class="cmc-grid" id="cmc-grid">
+        <div class="cmc-cell"><div class="cmc-mode">OBSERVE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">INVEST.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">OPTIMIZE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">DREAM</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+      </div>
+      <div id="cmc-meta" style="font-size:0.6rem;color:var(--dim);margin-top:12px;line-height:1.6;letter-spacing:0.04em;"></div>
+    </div>
+  </div>
+
+  <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
+  <div class="section-label mb12">Kill Ineffective &amp; Agent Log</div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
+      <div class="ki-list" id="ki-list">
+        <div style="color:var(--dim);font-size:0.7rem">none flagged</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">recent log lines (color coded)</div>
+      <div class="log-wrap" id="log-wrap">
+        <div class="log-line">awaiting data...</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
+    <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
+  </footer>
+
+</div><!-- /dashboard -->
 </div><!-- /wrapper -->
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 300000; // display refresh interval
+const REFRESH_MS = 300000;
 
-const EMOTION_COLORS = {
-  calm: 'eb-calm', curious: 'eb-curious', focused: 'eb-focused',
-  confident: 'eb-confident', stressed: 'eb-stressed',
-  frustrated: 'eb-frustrated', bored: 'eb-bored'
-};
-
-const SIT_CLASS = {
-  idle: 'sit-idle', io_bound: 'sit-io_bound', cpu_bound: 'sit-cpu_bound',
-  compile: 'sit-compile', browse: 'sit-browse'
-};
-
-function fmt(n) {
-  if (n === undefined || n === null || n === '') return '--';
-  return Number(n).toLocaleString();
-}
+/* ── helpers ── */
+function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
 
 function staleness(ts) {
   if (!ts) return null;
-  const then = new Date(ts.replace(' ', 'T'));
-  const mins = (Date.now() - then) / 60000;
-  return mins;
+  const then = new Date(ts.replace(' ','T'));
+  return (Date.now() - then) / 60000;
 }
 
-async function fetchData() {
-  const res = await fetch(GIST_URL + '?_=' + Date.now());
-  if (!res.ok) throw new Error('fetch failed ' + res.status);
-  return res.json();
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
 }
 
+/* ── charts (singletons) ── */
+let rewChart, sparkChart, circChart;
+
+function destroyCharts() {
+  [rewChart, sparkChart, circChart].forEach(c => { if (c) c.destroy(); });
+  rewChart = sparkChart = circChart = null;
+}
+
+/* ── render ── */
 function render(d) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  // staleness check — three states
+  /* staleness */
   const mins = staleness(d.updated_ts);
   const pill = document.getElementById('status-pill');
-  const lastSeenEl = document.getElementById('last-seen');
-
+  const lsEl = document.getElementById('last-seen');
   if (mins !== null) {
-    // format last-seen string
-    let seenStr;
-    if (mins < 1)        seenStr = 'last seen just now';
-    else if (mins < 60)  seenStr = `last seen ${Math.floor(mins)}m ago`;
-    else                 seenStr = `last seen ${Math.floor(mins/60)}h ${Math.floor(mins%60)}m ago`;
-    lastSeenEl.textContent = seenStr;
-
-    if (mins <= 20) {
-      pill.textContent = 'AGENT ACTIVE';
-      pill.className = 'status-pill active';
-      lastSeenEl.className = 'last-seen recent';
-    } else if (mins <= 60) {
-      pill.textContent = 'SIGNAL WEAK';
-      pill.className = 'status-pill stale';
-      lastSeenEl.className = 'last-seen stale';
-    } else {
-      pill.textContent = 'AGENT OFFLINE';
-      pill.className = 'status-pill offline';
-      lastSeenEl.className = 'last-seen offline';
-    }
+    let s = mins < 1 ? 'last seen just now' : mins < 60 ? `last seen ${Math.floor(mins)}m ago` : `last seen ${Math.floor(mins/60)}h ${Math.floor(mins%60)}m ago`;
+    lsEl.textContent = s;
+    if (mins <= 20)  { pill.textContent='AGENT ACTIVE'; pill.className='status-pill active';  lsEl.className='last-seen recent'; }
+    else if(mins<=60){ pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
+    else             { pill.textContent='AGENT OFFLINE';pill.className='status-pill offline'; lsEl.className='last-seen offline'; }
   } else {
-    pill.textContent = 'AGENT ACTIVE';
-    pill.className = 'status-pill active';
-    lastSeenEl.textContent = '';
+    pill.textContent='AGENT ACTIVE'; pill.className='status-pill active'; lsEl.textContent='';
   }
 
-  document.getElementById('last-updated').textContent =
-    'DATA: ' + (d.updated_ts || d.updated || '--');
+  setEl('last-updated', 'DATA: ' + (d.updated_ts || d.updated || '--'));
 
-  // hero step
-  document.getElementById('step-count').textContent =
-    d.step_count ? Number(d.step_count).toLocaleString() : '--';
+  /* hero */
+  setEl('step-count', d.step_count ? Number(d.step_count).toLocaleString() : '--');
 
-  // cognitive mode
+  /* mode */
   const mode = (d.cognitive_mode || 'unknown').toUpperCase();
-  const modeEl = document.getElementById('cog-mode');
-  modeEl.textContent = mode;
-  modeEl.className = 'mode-value mode-' + mode;
+  const mEl = document.getElementById('cog-mode');
+  mEl.textContent = mode; mEl.className = 'mode-val mode-' + mode;
 
-  // situation
+  /* situation */
   const sit = d.situation || 'unknown';
-  const sitClass = SIT_CLASS[sit] || 'sit-unknown';
   document.getElementById('situation-badge').innerHTML =
-    `<span class="sit-badge ${sitClass}">${sit.toUpperCase()}</span>`;
+    `<span class="sit-badge sit-${sit}">${sit.toUpperCase()}</span>`;
 
-  // reward
-  const rEl = document.getElementById('total-reward');
+  /* reward */
   const rVal = d.total_reward !== undefined ? d.total_reward : null;
-  rEl.textContent = rVal !== null ? (rVal >= 0 ? '+' : '') + rVal.toFixed(1) : '--';
-  rEl.className = 'card-value ' + (rVal >= 0 ? 'reward-pos' : 'reward-neg');
-  rEl.style.fontSize = '1.4rem';
+  const rEl = document.getElementById('total-reward');
+  rEl.textContent = rVal !== null ? (rVal >= 0 ? '+' : '') + Number(rVal).toFixed(1) : '--';
+  rEl.className = 'mode-val ' + (rVal !== null && rVal >= 0 ? 'reward-pos' : 'reward-neg');
 
-  // emotion dominant
-  const domEl = document.getElementById('dominant-emotion');
+  /* error steps */
+  const errEl = document.getElementById('error-steps');
+  const errN = d.error_step_count !== undefined ? d.error_step_count : null;
+  errEl.textContent = errN !== null ? errN : '--';
+  errEl.style.color = errN > 0 ? 'var(--red)' : 'var(--dim)';
+
+  /* dominant emotion */
   const dom = d.emotion || '--';
+  const domEl = document.getElementById('dominant-emotion');
   domEl.textContent = dom.toUpperCase();
-  const domColor = {
-    calm:'#00e5ff', curious:'#ffb300', focused:'#39ff14',
-    confident:'#69f0ae', stressed:'#ff3d3d', frustrated:'#ff6e6e', bored:'#3a4a5a'
-  };
-  domEl.style.color = domColor[dom] || '#c8d8e8';
+  const domColors = { calm:'#00e5ff', curious:'#ffb300', focused:'#39ff14', confident:'#69f0ae', stressed:'#ff3d3d', frustrated:'#ff6e6e', bored:'#3a4a5a' };
+  domEl.style.color = domColors[dom] || 'var(--text)';
 
-  // emotion bars
+  /* emotion bars */
   const ev = d.emotion_vals || {};
   const grid = document.getElementById('emotion-grid');
   grid.innerHTML = '';
-  const order = ['calm','curious','focused','confident','stressed','frustrated','bored'];
-  order.forEach(name => {
-    const val = ev[name] !== undefined ? ev[name] : 0;
+  ['calm','curious','focused','confident','stressed','frustrated','bored'].forEach(name => {
+    const val = ev[name] !== undefined ? +ev[name] : 0;
     const pct = Math.min(100, (val / 5.0) * 100).toFixed(1);
-    const colorClass = EMOTION_COLORS[name] || 'eb-bored';
-    grid.innerHTML += `
-      <div class="emotion-item">
-        <div class="emotion-name">
-          <span>${name}</span>
-          <span class="val">${val.toFixed ? val.toFixed(2) : val}</span>
-        </div>
-        <div class="emotion-bar-bg">
-          <div class="emotion-bar-fill ${colorClass}" style="width:${pct}%"></div>
-        </div>
-      </div>`;
+    grid.innerHTML += `<div class="emotion-item"><div class="emotion-name"><span>${name}</span><span class="val">${val.toFixed ? val.toFixed(2) : val}</span></div><div class="emotion-bar-bg"><div class="emotion-bar-fill eb-${name}" style="width:${pct}%"></div></div></div>`;
   });
 
-  // stat cards
-  document.getElementById('episodes').textContent    = fmt(d.episodes);
-  document.getElementById('dreams').textContent      = fmt(d.dream_count);
-  document.getElementById('hypotheses').textContent  = fmt(d.hypotheses);
-  document.getElementById('causal-edges').textContent= fmt(d.causal_edges);
-  document.getElementById('interventions').textContent= fmt(d.interventions);
-  document.getElementById('self-mods').textContent   = fmt(d.self_mods);
+  /* stat cards */
+  setEl('causal-edges', fmt(d.causal_edges));
+  setEl('dreams', fmt(d.dream_count));
+  setEl('hypotheses', fmt(d.hypotheses));
+  setEl('interventions', fmt(d.interventions));
+  setEl('self-mods', fmt(d.self_mods));
+  setEl('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
+
+  /* governor */
+  setEl('gov-saved', d.saved_governor || 'none');
+  const govOver = document.getElementById('gov-override');
+  govOver.textContent = d.governor_override || 'none';
+  govOver.style.color = d.governor_override ? 'var(--amber)' : 'var(--dim)';
+  setEl('gov-idle', d.governor_idle_steps !== undefined ? d.governor_idle_steps : '--');
+  const bootEl = document.getElementById('bootstrap');
+  bootEl.textContent = d.bootstrap_phase ? 'YES' : 'no';
+  bootEl.style.color = d.bootstrap_phase ? 'var(--amber)' : 'var(--dim)';
+
+  /* adaptive thresholds */
+  const at = d.adaptive_thresholds || {};
+  const tCpu = document.getElementById('thresh-cpu');
+  if (at.CPU_WARN !== undefined) { tCpu.textContent = at.CPU_WARN.toFixed(1) + '%'; tCpu.style.color = at.CPU_WARN < 60 ? 'var(--amber)' : 'var(--cyan)'; }
+  const tMem = document.getElementById('thresh-mem');
+  if (at.MEM_WARN !== undefined) { tMem.textContent = at.MEM_WARN.toFixed(1) + '%'; tMem.style.color = at.MEM_WARN < 72 ? 'var(--amber)' : 'var(--cyan)'; }
+  if (at.DILUTION_LOG_TRIGGER !== undefined) setEl('thresh-dilu-log', at.DILUTION_LOG_TRIGGER.toFixed(2));
+  if (at.DILUTION_KILL_TRIGGER !== undefined) setEl('thresh-dilu-kill', at.DILUTION_KILL_TRIGGER.toFixed(2));
+  if (at.NET_WARN !== undefined) setEl('thresh-net', Math.round(at.NET_WARN) + ' KB/s');
+
+  /* ── CAUSAL EDGE BARS ── */
+  const edges = d.top_causal_edges || [];
+  const edgeList = document.getElementById('edge-list');
+  edgeList.innerHTML = '';
+  if (edges.length) {
+    const maxE = Math.max(...edges.map(e => Math.abs(e.effect)));
+    edges.slice(0, 12).forEach(e => {
+      const pct = (Math.abs(e.effect) / maxE * 100).toFixed(1);
+      const col = e.effect >= 0 ? '#39ff14' : '#ff3d3d';
+      const sign = e.effect >= 0 ? '+' : '';
+      edgeList.innerHTML += `
+        <div class="edge-row">
+          <div class="edge-label" title="${e.action} → ${e.metric}">${e.action.replace('_',' ')} → ${e.metric.replace('_',' ')}</div>
+          <div class="edge-track"><div class="edge-fill" style="width:${pct}%;background:${col}"></div></div>
+          <div class="edge-val" style="color:${col}">${sign}${e.effect.toFixed(3)}</div>
+          <div class="edge-n">n=${e.n}</div>
+        </div>`;
+    });
+  } else {
+    edgeList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no edge data</div>';
+  }
+
+  /* ── ACTION REWARD CHART ── */
+  const arData = d.action_rewards || [];
+  if (rewChart) { rewChart.destroy(); rewChart = null; }
+  if (arData.length) {
+    const labels = arData.map(r => r.action.replace(/_/g,' '));
+    const vals   = arData.map(r => +r.mean_reward);
+    const colors = vals.map(v => v >= 0 ? 'rgba(57,255,20,0.7)' : 'rgba(255,61,61,0.7)');
+    rewChart = new Chart(document.getElementById('rewChart'), {
+      type: 'bar',
+      data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0 }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x.toFixed(4) } } },
+        scales: {
+          x: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) }, grid: { color:'rgba(26,35,50,0.8)' } },
+          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10} }, grid: { display:false } }
+        }
+      }
+    });
+  }
+
+  /* ── REWARD SPARKLINE ── */
+  const rh = d.reward_history || [];
+  if (sparkChart) { sparkChart.destroy(); sparkChart = null; }
+  if (rh.length) {
+    const clampedRH = rh.map(v => Math.max(-2, Math.min(2, +v)));
+    const sparkColors = clampedRH.map(v => v >= 0 ? 'rgba(57,255,20,0.6)' : 'rgba(255,61,61,0.6)');
+    sparkChart = new Chart(document.getElementById('sparkChart'), {
+      type: 'bar',
+      data: { labels: clampedRH.map((_,i) => i), datasets: [{ data: clampedRH, backgroundColor: sparkColors, borderWidth: 0, barPercentage: 0.9 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => rh[ctx.dataIndex].toFixed(4) } } },
+        scales: {
+          x: { display:false },
+          y: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v.toFixed(1)}, grid:{color:'rgba(26,35,50,0.6)'} }
+        }
+      }
+    });
+  }
+
+  /* ── OPEN QUESTIONS ── */
+  const qs = d.open_questions || [];
+  const qList = document.getElementById('q-list');
+  qList.innerHTML = '';
+  if (qs.length) {
+    qs.slice(0, 6).forEach((q, i) => {
+      const cls = i < 2 ? 'q-high' : i < 4 ? 'q-med' : 'q-low';
+      qList.innerHTML += `
+        <div class="q-item ${cls}">
+          <div class="q-text">${q.text}</div>
+          <div class="q-meta">step ${fmt(q.step)} · revisits: ${q.revisits !== undefined ? q.revisits : '?'} · via ${q.via || '?'}</div>
+        </div>`;
+    });
+  } else {
+    qList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no anomalies recorded</div>';
+  }
+
+  /* ── MOSAIC HYPOTHESES ── */
+  const hyps = d.mosaic_hypotheses || [];
+  const hypList = document.getElementById('hyp-list');
+  hypList.innerHTML = '';
+  if (hyps.length) {
+    hyps.slice(0, 6).forEach(h => {
+      const absC = Math.abs(h.correlation);
+      const pct  = (absC * 100).toFixed(0);
+      const col  = h.correlation >= 0 ? '#ff3d3d' : '#39ff14';
+      const sign = h.correlation >= 0 ? '+' : '−';
+      hypList.innerHTML += `
+        <div class="hyp-item">
+          <div class="hyp-top">
+            <div class="hyp-label">${h.source} → ${h.target}</div>
+            <div class="hyp-corr" style="color:${col}">${sign}${absC.toFixed(3)}</div>
+          </div>
+          <div class="hyp-bar-wrap"><div class="hyp-bar" style="width:${pct}%;background:${col}"></div></div>
+          <div class="hyp-meta">conf ${(h.confidence||0).toFixed(2)} · +${h.confirmations||0} −${h.refutations||0} · born step ${fmt(h.born_step)}</div>
+        </div>`;
+    });
+  } else {
+    hypList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no hypotheses yet</div>';
+  }
+
+  /* ── CIRCADIAN CHART ── */
+  const circ = d.circadian || [];
+  if (circChart) { circChart.destroy(); circChart = null; }
+  if (circ.length) {
+    const hourBuckets = {};
+    circ.forEach(pt => {
+      const h = pt.hour;
+      if (!hourBuckets[h]) hourBuckets[h] = [];
+      hourBuckets[h].push(pt.cpu);
+    });
+    const hours = Array.from({length:24}, (_,i) => i);
+    const avgCpu = hours.map(h => {
+      const b = hourBuckets[h];
+      return b ? +(b.reduce((a,x)=>a+x,0)/b.length).toFixed(2) : null;
+    });
+    circChart = new Chart(document.getElementById('circChart'), {
+      type: 'line',
+      data: {
+        labels: hours.map(h => h + 'h'),
+        datasets: [{
+          data: avgCpu,
+          borderColor: '#00e5ff',
+          backgroundColor: 'rgba(0,229,255,0.06)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 2,
+          pointBackgroundColor: '#00e5ff',
+          spanGaps: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false} },
+        scales: {
+          x: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},maxRotation:0}, grid:{color:'rgba(26,35,50,0.6)'} },
+          y: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v+'%'}, grid:{color:'rgba(26,35,50,0.6)'} }
+        }
+      }
+    });
+  }
+
+  /* ── CMC Q-TABLE ── */
+  const cmc = d.cmc_q_values || {};
+  const cmcModes = ['OBSERVE','INVESTIGATE','OPTIMIZE','DREAM','SELF_ASSESS'];
+  const cmcShort = ['OBSERVE','INVEST.','OPTIMIZE','DREAM','SELF_A.'];
+  const cmcColors = { OBSERVE:'#00e5ff', INVESTIGATE:'#ffb300', OPTIMIZE:'#39ff14', DREAM:'#b39ddb', SELF_ASSESS:'#ff80ab' };
+  if (Object.keys(cmc).length) {
+    const vals = cmcModes.map(m => cmc[m] !== undefined ? +cmc[m] : null);
+    const maxQ = Math.max(...vals.filter(v => v !== null));
+    const cmcGrid = document.getElementById('cmc-grid');
+    cmcGrid.innerHTML = '';
+    cmcModes.forEach((m, i) => {
+      const v = vals[i];
+      const isBest = v !== null && v === maxQ;
+      const col = cmcColors[m] || 'var(--text)';
+      cmcGrid.innerHTML += `
+        <div class="cmc-cell${isBest?' best':''}">
+          <div class="cmc-mode">${cmcShort[i]}</div>
+          <div class="cmc-q" style="color:${v !== null ? col : 'var(--dim)'}">${v !== null ? v.toFixed(4) : '--'}</div>
+        </div>`;
+    });
+  }
+  const cmcMeta = d.cmc_meta || {};
+  const metaEl = document.getElementById('cmc-meta');
+  if (cmcMeta.epsilon !== undefined) {
+    metaEl.innerHTML = `ε = ${cmcMeta.epsilon.toFixed(3)} exploration &nbsp;·&nbsp; lr = ${(cmcMeta.lr||0).toFixed(4)} &nbsp;·&nbsp; γ = ${(cmcMeta.discount||0).toFixed(4)}`;
+  }
+
+  /* ── KILL INEFFECTIVE ── */
+  const ki = d.kill_ineffective || [];
+  const kiList = document.getElementById('ki-list');
+  kiList.innerHTML = '';
+  if (ki.length) {
+    ki.forEach(name => { kiList.innerHTML += `<div class="ki-item">⚠ ${name}</div>`; });
+  } else {
+    kiList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">none flagged</div>';
+  }
+
+  /* ── LOG LINES ── */
+  const logs = d.log_lines || [];
+  const logWrap = document.getElementById('log-wrap');
+  logWrap.innerHTML = '';
+  if (logs.length) {
+    logs.slice(-60).forEach(line => {
+      let cls = 'log-line';
+      const l = line.toLowerCase();
+      if (l.includes('[obs]'))       cls += ' obs';
+      else if (l.includes('[err]'))  cls += ' err';
+      else if (l.includes('[gov]'))  cls += ' gov';
+      else if (l.includes('[curiosity]') || l.includes('[dream]')) cls += ' cur';
+      else if (l.includes('kill') || l.includes('kill')) cls += ' act';
+      else if (l.match(/set_|drop_|sync|compact|renice/)) cls += ' act';
+      logWrap.innerHTML += `<div class="${cls}">&gt; ${line}</div>`;
+    });
+    logWrap.scrollTop = logWrap.scrollHeight;
+  } else {
+    logWrap.innerHTML = '<div class="log-line">no log data</div>';
+  }
 }
 
+/* ── error ── */
 function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
   b.textContent = 'UPLINK ERROR: ' + msg;
-  // still show dashboard with stale data if it was shown before
   if (document.getElementById('dashboard').style.display === 'block') return;
   document.getElementById('dashboard').style.display = 'block';
+}
+
+/* ── fetch + loop ── */
+async function fetchData() {
+  const res = await fetch(GIST_URL + '?_=' + Date.now());
+  if (!res.ok) throw new Error('fetch failed ' + res.status);
+  return res.json();
 }
 
 async function refresh() {
