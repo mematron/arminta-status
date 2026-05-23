@@ -490,6 +490,10 @@ footer a:hover { color: var(--text); }
   <div class="section-label mb12">Governor State</div>
   <div class="gov-row mb28">
     <div class="gov-cell">
+      <div class="gov-key">Current Governor</div>
+      <div class="gov-val" id="gov-current" style="color:var(--green)">--</div>
+    </div>
+    <div class="gov-cell">
       <div class="gov-key">Saved Governor</div>
       <div class="gov-val" id="gov-saved" style="color:var(--cyan)">--</div>
     </div>
@@ -609,14 +613,17 @@ footer a:hover { color: var(--text); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 300000;
+const REFRESH_MS_FAST = 300000;   // 5 min — normal polling
+const REFRESH_MS_SLOW = 600000;   // 10 min — back off when agent is clearly offline
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
 
 function staleness(ts) {
   if (!ts) return null;
-  const then = new Date(ts.replace(' ','T'));
+  // Handles both 'YYYY-MM-DDTHH:MMZ' (new UTC) and 'YYYY-MM-DD HH:MM' (legacy local)
+  const then = new Date(ts.includes('T') ? ts : ts.replace(' ', 'T'));
+  if (isNaN(then)) return null;
   return (Date.now() - then) / 60000;
 }
 
@@ -705,6 +712,9 @@ function render(d) {
   setEl('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
 
   /* governor */
+  const govCur = document.getElementById('gov-current');
+  govCur.textContent = d.current_governor || '--';
+  govCur.style.color = d.current_governor === 'performance' ? 'var(--green)' : d.current_governor === 'powersave' ? 'var(--amber)' : 'var(--cyan)';
   setEl('gov-saved', d.saved_governor || 'none');
   const govOver = document.getElementById('gov-override');
   govOver.textContent = d.governor_override || 'none';
@@ -956,8 +966,32 @@ async function refresh() {
   }
 }
 
+/* ── adaptive refresh loop ── */
+// Polls at 5 min while the agent is active or signal is weak.
+// Backs off to 10 min only when the agent has been confirmed offline (>60 min stale),
+// so we don't hammer the Gist API for no reason. Snaps back to 5 min the moment
+// data freshens up again.
+let _refreshTimer = null;
+
+async function refresh() {
+  let nextMs = REFRESH_MS_FAST;
+  try {
+    const data = await fetchData();
+    render(data);
+    document.getElementById('error-banner').style.display = 'none';
+    // Back off only when clearly offline (>60 min stale) — saves API calls
+    const mins = staleness(data.updated_ts);
+    if (mins !== null && mins > 60) nextMs = REFRESH_MS_SLOW;
+  } catch(e) {
+    showError(e.message);
+    // On fetch error also back off to avoid hammering
+    nextMs = REFRESH_MS_SLOW;
+  }
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(refresh, nextMs);
+}
+
 refresh();
-setInterval(refresh, REFRESH_MS);
 </script>
 </body>
 </html>
