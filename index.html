@@ -490,6 +490,10 @@ footer a:hover { color: var(--text); }
   <div class="section-label mb12">Governor State</div>
   <div class="gov-row mb28">
     <div class="gov-cell">
+      <div class="gov-key">Current Governor</div>
+      <div class="gov-val" id="gov-current" style="color:var(--green)">--</div>
+    </div>
+    <div class="gov-cell">
       <div class="gov-key">Saved Governor</div>
       <div class="gov-val" id="gov-saved" style="color:var(--cyan)">--</div>
     </div>
@@ -705,6 +709,9 @@ function render(d) {
   setEl('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
 
   /* governor */
+  const govCur = document.getElementById('gov-current');
+  govCur.textContent = d.current_governor || '--';
+  govCur.style.color = d.current_governor === 'performance' ? 'var(--green)' : d.current_governor === 'powersave' ? 'var(--amber)' : 'var(--cyan)';
   setEl('gov-saved', d.saved_governor || 'none');
   const govOver = document.getElementById('gov-override');
   govOver.textContent = d.governor_override || 'none';
