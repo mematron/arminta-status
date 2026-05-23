@@ -436,6 +436,7 @@ footer a:hover { color: var(--text); }
     <div class="mode-block">
       <div class="mode-key">Cumulative Reward</div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
+      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;">running total across all steps</div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
@@ -513,7 +514,7 @@ footer a:hover { color: var(--text); }
 
   <!-- ADAPTIVE THRESHOLDS -->
   <div class="section-label mb12">Adaptive Thresholds</div>
-  <div class="thresh-grid mb28" id="thresh-grid">
+  <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
     <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
     <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
     <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.25</div></div>
@@ -734,6 +735,7 @@ function render(d) {
   /* ── CAUSAL EDGE BARS ── */
   const edges = d.top_causal_edges || [];
   const edgeList = document.getElementById('edge-list');
+  if (!edgeList) return;
   edgeList.innerHTML = '';
   if (edges.length) {
     const maxE = Math.max(...edges.map(e => Math.abs(e.effect)));
@@ -796,7 +798,13 @@ function render(d) {
   }
 
   /* ── OPEN QUESTIONS ── */
-  const qs = d.open_questions || [];
+  const RETIRED_ACTIONS = ['kill_extension_renderers'];
+  const qs = (d.open_questions || []).filter(q => {
+    // Filter out questions about retired/poisoned actions that will never resolve
+    if (!q.text && !q.via) return true;
+    const text = (q.text || '') + (q.via || '');
+    return !RETIRED_ACTIONS.some(a => text.includes(a));
+  });
   const qList = document.getElementById('q-list');
   qList.innerHTML = '';
   if (qs.length) {
