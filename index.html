@@ -264,12 +264,73 @@ header {
 
 /* ── TWO-COL LAYOUT ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-@media(max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+@media(max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── VALUE FLASH ON UPDATE ── */
+@keyframes valflash {
+  0%   { opacity: 0.3; background: rgba(0,229,255,0.12); }
+  60%  { opacity: 1;   background: rgba(0,229,255,0.06); }
+  100% { opacity: 1;   background: transparent; }
+}
+.flash { animation: valflash 0.6s ease-out; }
+
+/* ── STALE DATA INDICATOR ── */
+.stale-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: rgba(255,179,0,0.1);
+  color: var(--amber);
+  border: 1px solid rgba(255,179,0,0.25);
+  letter-spacing: 0.1em;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-family: var(--font-ui);
+}
+
+/* ── LOG LOCK BUTTON ── */
+.log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.log-lock-btn {
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--dim);
+  cursor: pointer;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+}
+.log-lock-btn.locked { border-color: var(--amber); color: var(--amber); background: rgba(255,179,0,0.07); }
+.log-lock-btn:hover  { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── FOCUS STYLES ── */
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* ── HYP SOURCE TAG ── */
+.hyp-source-tag {
+  display: inline-block;
+  font-size: 0.58rem;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: rgba(0,229,255,0.07);
+  border: 1px solid rgba(0,229,255,0.15);
+  color: var(--cyan);
+  margin-left: 5px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}
 
 /* ── CAUSAL EDGE BARS ── */
 .edge-list { display: flex; flex-direction: column; gap: 7px; }
 .edge-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
-.edge-label { width: 178px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.edge-label { width: clamp(140px, 30%, 220px); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; cursor: default; }
 .edge-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .edge-fill  { height: 100%; border-radius: 3px; }
 .edge-val   { width: 48px; text-align: right; font-size: 0.65rem; flex-shrink: 0; }
@@ -573,7 +634,7 @@ footer a:hover { color: var(--text); }
       <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
-      <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)">?</button>
+      <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
       <div>
         <div class="last-updated" id="last-updated">--</div>
         <div class="last-seen" id="last-seen"></div>
@@ -615,13 +676,13 @@ footer a:hover { color: var(--text); }
 
   <!-- EMOTION -->
   <div class="emotion-section mb12">
-    <div class="section-label">Emotional State<button class="help-btn inline" onclick="openHelp('help-emotion')" title="What is Emotional State?">?</button></div>
+    <div class="section-label">Emotional State<button class="help-btn inline" onclick="openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
     <div class="dominant-emotion" id="dominant-emotion">--</div>
     <div class="emotion-grid" id="emotion-grid"></div>
   </div>
 
   <!-- CORE STATS -->
-  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="openHelp('help-cognitive')" title="What are Cognitive Metrics?">?</button></div>
+  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="openHelp('help-cognitive')" title="What are Cognitive Metrics?" aria-label="Help: Cognitive Metrics">?</button></div>
   <div class="stat-grid mb28">
     <div class="stat-card">
       <div class="stat-label">Causal Edges</div>
@@ -656,7 +717,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- GOVERNOR -->
-  <div class="section-label mb12">Governor State<button class="help-btn inline" onclick="openHelp('help-governor')" title="What is Governor State?">?</button></div>
+  <div class="section-label mb12">Governor State<button class="help-btn inline" onclick="openHelp('help-governor')" title="What is Governor State?" aria-label="Help: Governor State">?</button></div>
   <div class="gov-row mb28">
     <div class="gov-cell">
       <div class="gov-key">Current Governor</div>
@@ -681,7 +742,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- ADAPTIVE THRESHOLDS -->
-  <div class="section-label mb12">Adaptive Thresholds<button class="help-btn inline" onclick="openHelp('help-thresholds')" title="What are Adaptive Thresholds?">?</button></div>
+  <div class="section-label mb12">Adaptive Thresholds<button class="help-btn inline" onclick="openHelp('help-thresholds')" title="What are Adaptive Thresholds?" aria-label="Help: Adaptive Thresholds">?</button></div>
   <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
     <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
     <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
@@ -691,7 +752,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- CAUSAL EDGES + REWARD CHART (2-col) -->
-  <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="openHelp('help-causal')" title="What is the Causal Graph?">?</button></div>
+  <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="openHelp('help-causal')" title="What is the Causal Graph?" aria-label="Help: Causal Graph">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric rose · n = observations</div>
@@ -708,7 +769,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- REWARD HISTORY SPARKLINE -->
-  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?">?</button></div>
+  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?" aria-label="Help: Reward History">?</button></div>
   <div class="card card-pad mb28">
     <div class="chart-wrap" style="height:120px;">
       <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
@@ -716,7 +777,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
-  <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="openHelp('help-questions')" title="What are Open Questions?">?</button></div>
+  <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">reward reversals arminta cannot yet explain</div>
@@ -733,7 +794,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- CIRCADIAN + CMC (2-col) -->
-  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?">?</button></div>
+  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)</div>
@@ -755,7 +816,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
-  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="openHelp('help-kill')" title="What is Kill Ineffective?">?</button></div>
+  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="openHelp('help-kill')" title="What is Kill Ineffective?" aria-label="Help: Kill Ineffective">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
@@ -764,7 +825,10 @@ footer a:hover { color: var(--text); }
       </div>
     </div>
     <div>
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">recent log lines (color coded)</div>
+      <div class="log-header">
+        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
+        <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
+      </div>
       <div class="log-wrap" id="log-wrap">
         <div class="log-line">awaiting data...</div>
       </div>
@@ -806,6 +870,30 @@ function destroyCharts() {
   rewChart = sparkChart = circChart = null;
 }
 
+/* ── log scroll lock ── */
+let logLocked = false;
+function toggleLogLock() {
+  logLocked = !logLocked;
+  const btn = document.getElementById('log-lock-btn');
+  if (btn) {
+    btn.textContent = logLocked ? 'SCROLL LOCKED' : 'SCROLL AUTO';
+    btn.classList.toggle('locked', logLocked);
+    btn.setAttribute('aria-label', logLocked ? 'Unlock log scroll (currently locked)' : 'Lock log scroll position');
+  }
+}
+
+/* ── value flash helper ── */
+function flashEl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('flash');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('flash');
+}
+
+/* ── stale data tracking ── */
+let lastUpdatedTs = null;
+
 /* ── render ── */
 function render(d) {
   document.getElementById('loading').style.display = 'none';
@@ -825,10 +913,21 @@ function render(d) {
     pill.textContent='AGENT ACTIVE'; pill.className='status-pill active'; lsEl.textContent='';
   }
 
-  setEl('last-updated', 'DATA: ' + (d.updated_ts || d.updated || '--'));
+  /* stale data detection */
+  const currentTs = d.updated_ts || d.updated || null;
+  const isStale = lastUpdatedTs && currentTs && currentTs === lastUpdatedTs;
+  const luEl = document.getElementById('last-updated');
+  if (luEl) {
+    luEl.innerHTML = 'DATA: ' + (currentTs || '--') +
+      (isStale ? ' <span class="stale-badge" title="Data unchanged since last refresh — agent may be paused">CACHED</span>' : '');
+  }
+  lastUpdatedTs = currentTs;
 
   /* hero */
-  setEl('step-count', d.step_count ? Number(d.step_count).toLocaleString() : '--');
+  const newStepCount = d.step_count ? Number(d.step_count).toLocaleString() : '--';
+  const prevStepEl = document.getElementById('step-count');
+  if (prevStepEl && prevStepEl.textContent !== newStepCount) flashEl('step-count');
+  setEl('step-count', newStepCount);
 
   /* mode */
   const mode = (d.cognitive_mode || 'unknown').toUpperCase();
@@ -869,13 +968,19 @@ function render(d) {
     grid.innerHTML += `<div class="emotion-item"><div class="emotion-name"><span>${name}</span><span class="val">${val.toFixed ? val.toFixed(2) : val}</span></div><div class="emotion-bar-bg"><div class="emotion-bar-fill eb-${name}" style="width:${pct}%"></div></div></div>`;
   });
 
-  /* stat cards */
-  setEl('causal-edges', fmt(d.causal_edges));
-  setEl('dreams', fmt(d.dream_count));
-  setEl('hypotheses', fmt(d.hypotheses));
-  setEl('interventions', fmt(d.interventions));
-  setEl('self-mods', fmt(d.self_mods));
-  setEl('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
+  /* stat cards — flash on change */
+  function setAndFlash(id, newVal) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const v = String(newVal);
+    if (el.textContent !== v) { el.textContent = v; flashEl(id); }
+  }
+  setAndFlash('causal-edges', fmt(d.causal_edges));
+  setAndFlash('dreams', fmt(d.dream_count));
+  setAndFlash('hypotheses', fmt(d.hypotheses));
+  setAndFlash('interventions', fmt(d.interventions));
+  setAndFlash('self-mods', fmt(d.self_mods));
+  setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
 
   /* governor */
   const govCur = document.getElementById('gov-current');
@@ -956,10 +1061,20 @@ function render(d) {
       data: { labels: clampedRH.map((_,i) => i), datasets: [{ data: clampedRH, backgroundColor: sparkColors, borderWidth: 0, barPercentage: 0.9 }] },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => rh[ctx.dataIndex].toFixed(4) } } },
+        plugins: {
+          legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => (rh[ctx.dataIndex] >= 0 ? '+' : '') + rh[ctx.dataIndex].toFixed(4) } },
+          annotation: undefined
+        },
         scales: {
           x: { display:false },
-          y: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v.toFixed(1)}, grid:{color:'rgba(26,35,50,0.6)'} }
+          y: {
+            ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v.toFixed(1)},
+            grid:{
+              color: ctx => ctx.tick.value === 0 ? 'rgba(200,216,232,0.25)' : 'rgba(26,35,50,0.6)',
+              lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1
+            }
+          }
         }
       }
     });
@@ -1001,7 +1116,7 @@ function render(d) {
       hypList.innerHTML += `
         <div class="hyp-item">
           <div class="hyp-top">
-            <div class="hyp-label">${h.source} → ${h.target}</div>
+            <div class="hyp-label" title="${h.source} — autonomously discovered environmental variable">${h.source} → ${h.target}${h.source && h.source.startsWith('wttr_') ? '<span class=\"hyp-source-tag\">weather</span>' : h.source && h.source.startsWith('hass_') ? '<span class=\"hyp-source-tag\">home</span>' : ''}</div>
             <div class="hyp-corr" style="color:${col}">${sign}${absC.toFixed(3)}</div>
           </div>
           <div class="hyp-bar-wrap"><div class="hyp-bar" style="width:${pct}%;background:${col}"></div></div>
@@ -1070,7 +1185,7 @@ function render(d) {
       cmcGrid.innerHTML += `
         <div class="cmc-cell${isBest?' best':''}">
           <div class="cmc-mode">${cmcShort[i]}</div>
-          <div class="cmc-q" style="color:${v !== null ? col : 'var(--dim)'}">${v !== null ? v.toFixed(4) : '--'}</div>
+          <div class="cmc-q" style="color:${v !== null ? col : 'var(--dim)'}">${v !== null ? v.toFixed(2) : '--'}</div>
         </div>`;
     });
   }
@@ -1106,7 +1221,7 @@ function render(d) {
       else if (l.match(/set_|drop_|sync|compact|renice/)) cls += ' act';
       logWrap.innerHTML += `<div class="${cls}">&gt; ${line}</div>`;
     });
-    logWrap.scrollTop = logWrap.scrollHeight;
+    if (!logLocked) logWrap.scrollTop = logWrap.scrollHeight;
   } else {
     logWrap.innerHTML = '<div class="log-line">no log data</div>';
   }
@@ -1117,7 +1232,15 @@ function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
-  b.textContent = 'UPLINK ERROR: ' + msg;
+    const errMsgs = {
+    '404': 'UPLINK ERROR: data source not found (404) — check gist URL',
+    '403': 'UPLINK ERROR: access denied (403) — gist may be private',
+    '429': 'UPLINK ERROR: rate limited (429) — too many requests',
+    '500': 'UPLINK ERROR: server error (500) — gist service issue',
+    '0':   'UPLINK ERROR: network unreachable — check connection',
+  };
+  const code = (msg.match(/\d{3}/) || [''])[0];
+  b.textContent = errMsgs[code] || ('UPLINK ERROR: ' + msg);
   if (document.getElementById('dashboard').style.display === 'block') return;
   document.getElementById('dashboard').style.display = 'block';
 }
