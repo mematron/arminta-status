@@ -392,6 +392,171 @@ footer a:hover { color: var(--text); }
 
 .mb12 { margin-bottom: 12px; }
 .mb28 { margin-bottom: 28px; }
+
+/* ── HELP BUTTON ── */
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--dim);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  user-select: none;
+}
+.help-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.07);
+  box-shadow: 0 0 8px rgba(0,229,255,0.15);
+}
+.help-btn.inline {
+  width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+  margin-left: 7px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* ── HELP OVERLAY ── */
+#help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+#help-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+#help-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border2);
+  z-index: 9001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.6);
+}
+#help-panel.open {
+  transform: translateX(0);
+}
+.help-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.help-panel-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+.help-close-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.help-close-btn:hover { border-color: var(--red); color: var(--red); }
+.help-panel-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0 0 32px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.help-entry {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 60px;
+}
+.help-entry:last-child { border-bottom: none; }
+.help-entry-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-entry-title .tag {
+  font-size: 0.58rem;
+  padding: 2px 7px;
+  border-radius: 2px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.tag-live  { background: rgba(57,255,20,0.1);  color: var(--green);  border: 1px solid var(--green-dim); }
+.tag-learn { background: rgba(0,229,255,0.08);  color: var(--cyan);   border: 1px solid rgba(0,229,255,0.2); }
+.tag-meta  { background: rgba(179,157,219,0.1); color: var(--purple); border: 1px solid rgba(179,157,219,0.2); }
+.help-entry-body {
+  font-size: 0.72rem;
+  color: var(--dim);
+  line-height: 1.75;
+  letter-spacing: 0.03em;
+}
+.help-entry-body strong { color: var(--text); font-weight: 400; }
+.help-entry-body code {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--cyan);
+  background: rgba(0,229,255,0.06);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.help-shortcut {
+  font-size: 0.62rem;
+  color: var(--dim);
+  padding: 10px 24px 14px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.06em;
+}
+.help-shortcut kbd {
+  display: inline-block;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin: 0 2px;
+}
 </style>
 </head>
 <body>
@@ -407,10 +572,13 @@ footer a:hover { color: var(--text); }
       ARMINTA
       <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
-    <div class="header-right">
-      <div class="last-updated" id="last-updated">--</div>
-      <div class="last-seen" id="last-seen"></div>
-      <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
+    <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
+      <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)">?</button>
+      <div>
+        <div class="last-updated" id="last-updated">--</div>
+        <div class="last-seen" id="last-seen"></div>
+        <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
+      </div>
     </div>
   </header>
 
@@ -447,13 +615,13 @@ footer a:hover { color: var(--text); }
 
   <!-- EMOTION -->
   <div class="emotion-section mb12">
-    <div class="section-label">Emotional State</div>
+    <div class="section-label">Emotional State<button class="help-btn inline" onclick="openHelp('help-emotion')" title="What is Emotional State?">?</button></div>
     <div class="dominant-emotion" id="dominant-emotion">--</div>
     <div class="emotion-grid" id="emotion-grid"></div>
   </div>
 
   <!-- CORE STATS -->
-  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics</div>
+  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="openHelp('help-cognitive')" title="What are Cognitive Metrics?">?</button></div>
   <div class="stat-grid mb28">
     <div class="stat-card">
       <div class="stat-label">Causal Edges</div>
@@ -488,7 +656,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- GOVERNOR -->
-  <div class="section-label mb12">Governor State</div>
+  <div class="section-label mb12">Governor State<button class="help-btn inline" onclick="openHelp('help-governor')" title="What is Governor State?">?</button></div>
   <div class="gov-row mb28">
     <div class="gov-cell">
       <div class="gov-key">Current Governor</div>
@@ -513,7 +681,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- ADAPTIVE THRESHOLDS -->
-  <div class="section-label mb12">Adaptive Thresholds</div>
+  <div class="section-label mb12">Adaptive Thresholds<button class="help-btn inline" onclick="openHelp('help-thresholds')" title="What are Adaptive Thresholds?">?</button></div>
   <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
     <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
     <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
@@ -523,7 +691,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- CAUSAL EDGES + REWARD CHART (2-col) -->
-  <div class="section-label mb12">Causal Graph — Top Interventional Edges</div>
+  <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="openHelp('help-causal')" title="What is the Causal Graph?">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric rose · n = observations</div>
@@ -540,7 +708,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- REWARD HISTORY SPARKLINE -->
-  <div class="section-label mb12">Reward History (recent 150 steps)</div>
+  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?">?</button></div>
   <div class="card card-pad mb28">
     <div class="chart-wrap" style="height:120px;">
       <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
@@ -548,7 +716,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
-  <div class="section-label mb12">Open Questions / Unresolved Anomalies</div>
+  <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="openHelp('help-questions')" title="What are Open Questions?">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">reward reversals arminta cannot yet explain</div>
@@ -565,7 +733,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- CIRCADIAN + CMC (2-col) -->
-  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller</div>
+  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)</div>
@@ -587,7 +755,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
-  <div class="section-label mb12">Kill Ineffective &amp; Agent Log</div>
+  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="openHelp('help-kill')" title="What is Kill Ineffective?">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
@@ -974,5 +1142,180 @@ async function refresh() {
 refresh();
 setInterval(refresh, REFRESH_MS);
 </script>
+<!-- ── HELP OVERLAY ── -->
+<div id="help-overlay" onclick="if(event.target===this)closeHelp()"></div>
+<div id="help-panel">
+  <div class="help-panel-header">
+    <div class="help-panel-title">// ARMINTA FIELD GUIDE</div>
+    <button class="help-close-btn" onclick="closeHelp()">CLOSE [esc]</button>
+  </div>
+  <div class="help-shortcut">Press <kbd>?</kbd> to toggle · <kbd>Esc</kbd> to close · click <kbd>?</kbd> on any section to jump to its entry</div>
+  <div class="help-panel-body" id="help-panel-body">
+
+    <div class="help-entry" id="help-hero">
+      <div class="help-entry-title"><span>Total Empirical Steps</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The cumulative count of <strong>every real action ARMINTA has taken on the host machine</strong> since it started. Each "step" is a concrete OS-level intervention — killing a process, adjusting CPU governor, compacting memory — not a simulation. A higher number means more field experience and a richer causal model.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-mode">
+      <div class="help-entry-title"><span>Cognitive Mode / Situation / Reward</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        <strong>Cognitive Mode</strong> — what ARMINTA is doing right now:
+        <br>· <code>OBSERVE</code> — watching, collecting baselines, not intervening
+        <br>· <code>INVESTIGATE</code> — actively testing a hypothesis with targeted interventions
+        <br>· <code>OPTIMIZE</code> — exploiting known good actions to maximise reward
+        <br>· <code>DREAM</code> — running offline counterfactual simulations (no real actions)
+        <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making and rewriting rules
+        <br><br><strong>Situation</strong> — what the host system is currently doing (idle, IO-bound, CPU-bound, compiling, browsing, streaming). ARMINTA uses this as context when choosing actions.
+        <br><br><strong>Cumulative Reward</strong> — the running score since boot. Positive means the agent has on net improved system performance; negative means it has so far caused more harm than good. The goal is to push this into positive territory over time.
+        <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error. Should stay near zero.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-emotion">
+      <div class="help-entry-title"><span>Emotional State</span><span class="tag tag-meta">META</span></div>
+      <div class="help-entry-body">
+        ARMINTA models internal drive states as "emotions" — not anthropomorphism, but a practical mechanism for biasing exploration vs. exploitation.
+        <br><br>· <strong>Calm</strong> — low arousal; suitable for patient observation
+        <br>· <strong>Curious</strong> — high novelty signal; drives exploration and dreaming
+        <br>· <strong>Focused</strong> — mid-arousal; sustains investigation of a specific hypothesis
+        <br>· <strong>Confident</strong> — strong prior; biases toward exploitation
+        <br>· <strong>Stressed</strong> — resource pressure detected; triggers conservative governors
+        <br>· <strong>Frustrated</strong> — repeated failed hypotheses; may trigger self-modification
+        <br>· <strong>Bored</strong> — low novelty; increases exploration probability
+        <br><br>The dominant emotion (large label) is the highest-valued state. Bars show relative intensity on a 0–5 scale.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-cognitive">
+      <div class="help-entry-title"><span>Cognitive Metrics</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        Six counters that track the size of ARMINTA's learned world-model:
+        <br><br>· <strong>Causal Edges</strong> — confirmed directed relationships in the interventional graph. Each edge says "action X reliably changes metric Y by amount Z."
+        <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
+        <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded.
+        <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
+        <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own decision logic autonomously. A non-zero value means the agent has changed its own behaviour at runtime.
+        <br>· <strong>Mosaic Hypotheses</strong> — cross-domain correlations discovered by the Mosaic sub-system (e.g. "humidity sensor correlates with CPU temperature"). These are environment↔system links, not action↔metric links.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-governor">
+      <div class="help-entry-title"><span>Governor State</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The Linux CPU frequency governor controls the CPU's power/performance trade-off. ARMINTA switches governors as an optimisation action.
+        <br><br>· <strong>Current Governor</strong> — the governor active right now (<code>performance</code> = max frequency, <code>powersave</code> = minimum frequency, <code>schedutil</code> = kernel-managed).
+        <br>· <strong>Saved Governor</strong> — what was set before ARMINTA's last switch; used to restore state if needed.
+        <br>· <strong>Override</strong> — a manual lock preventing ARMINTA from switching governors. "none" means ARMINTA has full control.
+        <br>· <strong>Idle Steps</strong> — steps since the last action. Counts up while ARMINTA observes; resets on any intervention.
+        <br>· <strong>Bootstrap Phase</strong> — if YES, ARMINTA is still in its early data-collection phase and takes more exploratory actions than usual.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-thresholds">
+      <div class="help-entry-title"><span>Adaptive Thresholds</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        These thresholds are <strong>learned, not hardcoded</strong> — ARMINTA adjusts them based on what it observes about normal system behaviour.
+        <br><br>· <strong>CPU Warn</strong> — CPU % that triggers a "high CPU" observation. Shown in amber if it has drifted below the default (meaning ARMINTA has learned the system usually runs lighter than expected).
+        <br>· <strong>MEM Warn</strong> — RAM % threshold for memory pressure observations.
+        <br>· <strong>Dilution Log</strong> — when causal evidence for a relationship drops below this score, ARMINTA logs a warning that the edge may be weakening.
+        <br>· <strong>Dilution Kill</strong> — if evidence drops below this harder threshold, the causal edge is removed from the graph entirely.
+        <br>· <strong>Net Warn</strong> — network throughput (KB/s) at which ARMINTA flags high network activity.
+        <br><br>Deviations from defaults mean the agent has updated its beliefs about what "normal" looks like on this machine.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-causal">
+      <div class="help-entry-title"><span>Causal Graph — Top Interventional Edges</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        The left panel shows the strongest confirmed cause-and-effect relationships ARMINTA has discovered. Each row is one edge: <strong>action → metric</strong>.
+        <br><br>· Bar length = effect magnitude (normalised to the strongest edge)
+        <br>· <span style="color:var(--green)">Green</span> = positive effect (action raised the metric)
+        <br>· <span style="color:var(--red)">Red</span> = negative effect (action lowered the metric)
+        <br>· <code>n</code> = number of times this relationship has been observed
+        <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-reward">
+      <div class="help-entry-title"><span>Reward History</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        A bar-chart sparkline of the per-step reward signal over the most recent 150 steps. Each bar is one step.
+        <br><br>· <span style="color:var(--green)">Green bars</span> — that action improved system performance (positive reward)
+        <br>· <span style="color:var(--red)">Red bars</span> — that action hurt performance (negative reward)
+        <br><br>A healthy agent should trend toward more green over time as it learns. Clusters of red indicate a period of exploration or a bad hypothesis being tested. Values are clamped to ±2 for display clarity; extreme outliers exist but are rare.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-questions">
+      <div class="help-entry-title"><span>Open Questions / Unresolved Anomalies</span><span class="tag tag-meta">META</span></div>
+      <div class="help-entry-body">
+        The left panel lists <strong>reward reversals ARMINTA cannot yet explain</strong> — cases where a metric jumped or dropped between two observation steps and no recorded action accounts for it. Each entry shows:
+        <br>· What changed (metric, direction, magnitude)
+        <br>· Which action was last tested via that observation path
+        <br>· How many times this anomaly has been revisited without resolution
+        <br><br>Red border = high priority, amber = medium, grey = low. These drive future investigation steps.
+        <br><br>The right panel shows <strong>Mosaic Hypotheses</strong> — autonomously discovered correlations between environmental sensors (e.g. ambient humidity from a smart-home API) and internal system metrics. Correlation strength shown as a bar; these are candidates for future causal investigation, not confirmed cause-and-effect.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-cmc">
+      <div class="help-entry-title"><span>Circadian CPU Pattern &amp; Meta-Cognitive Controller</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        <strong>Circadian chart (left)</strong> — average CPU usage by hour of day, learned over the agent's entire lifetime. ARMINTA uses this pattern to contextualise whether current CPU usage is unusual for the time of day, and to pre-emptively adjust governors before predictable load spikes.
+        <br><br><strong>Meta-Cognitive Controller (right)</strong> — a Q-learning agent that sits above ARMINTA's main loop and chooses <em>which cognitive mode to use</em>. Each cell shows the Q-value (expected future reward) for switching to that mode given the current system state. The highlighted cell is the mode with the highest Q-value — what the controller recommends.
+        <br><br>· <code>ε</code> — exploration rate: probability of picking a random mode instead of the greedy best (decreases as the controller becomes more confident)
+        <br>· <code>lr</code> — learning rate: how fast Q-values update from new experience
+        <br>· <code>γ</code> — discount factor: how much future reward is weighted vs. immediate reward
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-kill">
+      <div class="help-entry-title"><span>Kill Ineffective &amp; Agent Log</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGKILL</code> or <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that killing it doesn't help performance.
+        <br><br><strong>Agent Log (right)</strong> — the raw tail of ARMINTA's operational log, colour-coded by event type:
+        <br>· <span style="color:#4a8080">Teal</span> — observation events (<code>[OBS]</code>)
+        <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
+        <br>· <span style="color:var(--purple)">Purple</span> — curiosity / dream events
+        <br>· <span style="color:var(--red)">Red</span> — errors
+        <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
+        <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
+      </div>
+    </div>
+
+  </div><!-- /help-panel-body -->
+</div><!-- /help-panel -->
+
+<script>
+function toggleHelp() {
+  const overlay = document.getElementById('help-overlay');
+  const panel = document.getElementById('help-panel');
+  if (panel.classList.contains('open')) { closeHelp(); } else { openHelp(); }
+}
+function openHelp(targetId) {
+  document.getElementById('help-overlay').classList.add('open');
+  document.getElementById('help-panel').classList.add('open');
+  if (targetId) {
+    setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  } else {
+    document.getElementById('help-panel-body').scrollTop = 0;
+  }
+}
+function closeHelp() {
+  document.getElementById('help-overlay').classList.remove('open');
+  document.getElementById('help-panel').classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) { toggleHelp(); }
+  if (e.key === 'Escape') { closeHelp(); }
+});
+</script>
+
 </body>
 </html>
