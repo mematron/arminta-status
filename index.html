@@ -1177,7 +1177,7 @@ function render(d) {
             fill: false,
             order: 1,
             label: '10-step avg',
-            clip: true
+            clip: false
           }
         ]
       },
@@ -1198,11 +1198,12 @@ function render(d) {
         scales: {
           x: { display: false },
           y: (() => {
-            const sorted = [...clampedRH].sort((a,b) => a - b);
+            const allVals = [...clampedRH, ...rollingAvg.filter(v => v !== null)];
+            const sorted = [...allVals].sort((a,b) => a - b);
             const p05 = sorted[Math.floor(sorted.length * 0.05)];
             const p95 = sorted[Math.floor(sorted.length * 0.95)];
-            const pad = Math.max(Math.abs(p95 - p05) * 0.2, 0.05);
-            const yMin = p05 - pad;
+            const pad = Math.max(Math.abs(p95 - p05) * 0.25, 0.05);
+            const yMin = Math.min(...allVals) - pad;
             const yMax = p95 + pad;
             const range = yMax - yMin;
             const prec = range < 0.05 ? 4 : range < 0.5 ? 3 : range < 2 ? 2 : 1;
