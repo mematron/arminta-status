@@ -365,11 +365,23 @@ button:focus-visible, a:focus-visible {
 .hyp-meta { font-size: 0.6rem; color: var(--dim); }
 
 /* ── CMC Q-TABLE ── */
-.cmc-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
-.cmc-cell { border: 1px solid var(--border); padding: 10px 8px; text-align: center; background: var(--surface2); }
-.cmc-cell.best { border-color: rgba(0,229,255,0.4); background: rgba(0,229,255,0.05); }
-.cmc-mode { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
+.cmc-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
+.cmc-cell { border: 1px solid var(--border); padding: 10px 6px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; }
+.cmc-cell::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background: currentColor; opacity: 0; transition: opacity 0.3s; }
+.cmc-cell.best { border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.06); }
+.cmc-cell.best::after { opacity: 0.6; }
+.cmc-mode { font-size: 0.58rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
 .cmc-q { font-family: var(--font-ui); font-size: 1.05rem; font-weight: 700; }
+.cmc-bar { height: 2px; border-radius: 1px; margin-top: 6px; opacity: 0.5; }
+
+/* ── EMOTION TIMELINE ── */
+.emo-timeline { display: flex; flex-wrap: wrap; gap: 2px; }
+.emo-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── MODE DONUT LEGEND ── */
+.mode-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
+.mode-legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--dim); }
+.mode-legend-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
 /* ── ADAPTIVE THRESHOLDS ── */
 .thresh-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; }
@@ -793,17 +805,21 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
-  <!-- CIRCADIAN + CMC (2-col) -->
+  <!-- CIRCADIAN + CMC + EMOTION (3-col) -->
   <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
-  <div class="two-col mb28">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px;">
+
+    <!-- circadian chart -->
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)</div>
       <div class="chart-wrap" style="height:180px;">
         <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
       </div>
     </div>
+
+    <!-- CMC Q-values -->
     <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">Q-values for current state · highlighted = highest Q</div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">G-values for current state · highlighted = highest Q</div>
       <div class="cmc-grid" id="cmc-grid">
         <div class="cmc-cell"><div class="cmc-mode">OBSERVE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
         <div class="cmc-cell"><div class="cmc-mode">INVEST.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
@@ -812,7 +828,29 @@ footer a:hover { color: var(--text); }
         <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
       </div>
       <div id="cmc-meta" style="font-size:0.6rem;color:var(--dim);margin-top:12px;line-height:1.6;letter-spacing:0.04em;"></div>
+
+      <!-- mode distribution donut -->
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">cognitive mode distribution · recent 200</div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="position:relative;width:90px;height:90px;flex-shrink:0;">
+            <canvas id="modeDonut" role="img" aria-label="Cognitive mode distribution donut chart"></canvas>
+          </div>
+          <div class="mode-legend" id="modeLegend"></div>
+        </div>
+      </div>
     </div>
+
+    <!-- emotion timeline -->
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">dominant emotion · last 200 recorded steps</div>
+      <div class="emo-timeline" id="emoTimeline"></div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">current emotion state</div>
+        <div id="emoStateBars"></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
@@ -1175,17 +1213,24 @@ function render(d) {
   const cmcColors = { OBSERVE:'#00e5ff', INVESTIGATE:'#ffb300', OPTIMIZE:'#39ff14', DREAM:'#b39ddb', SELF_ASSESS:'#ff80ab' };
   if (Object.keys(cmc).length) {
     const vals = cmcModes.map(m => cmc[m] !== undefined ? +cmc[m] : null);
-    const maxQ = Math.max(...vals.filter(v => v !== null));
+    const validVals = vals.filter(v => v !== null);
+    const maxQ = Math.max(...validVals);
+    const absMax = Math.max(...validVals.map(Math.abs), 0.001);
     const cmcGrid = document.getElementById('cmc-grid');
     cmcGrid.innerHTML = '';
     cmcModes.forEach((m, i) => {
       const v = vals[i];
       const isBest = v !== null && v === maxQ;
       const col = cmcColors[m] || 'var(--text)';
+      const allTiny = validVals.every(x => Math.abs(x) < 0.01);
+      const disp = v !== null ? (allTiny ? v.toFixed(5) : v.toFixed(3)) : '--';
+      const barPct = v !== null ? Math.abs(v) / absMax * 100 : 0;
+      const barCol = (v !== null && v >= 0) ? col : 'var(--red)';
       cmcGrid.innerHTML += `
-        <div class="cmc-cell${isBest?' best':''}">
+        <div class="cmc-cell${isBest?' best':''}" style="color:${col}">
           <div class="cmc-mode">${cmcShort[i]}</div>
-          <div class="cmc-q" style="color:${v !== null ? col : 'var(--dim)'}">${v !== null ? v.toFixed(2) : '--'}</div>
+          <div class="cmc-q" style="color:${v !== null ? col : 'var(--dim)'};">${disp}</div>
+          <div class="cmc-bar" style="background:${barCol};width:${barPct.toFixed(1)}%;"></div>
         </div>`;
     });
   }
@@ -1193,6 +1238,76 @@ function render(d) {
   const metaEl = document.getElementById('cmc-meta');
   if (cmcMeta.epsilon !== undefined) {
     metaEl.innerHTML = `ε = ${cmcMeta.epsilon.toFixed(3)} exploration &nbsp;·&nbsp; lr = ${(cmcMeta.lr||0).toFixed(4)} &nbsp;·&nbsp; γ = ${(cmcMeta.discount||0).toFixed(4)}`;
+  }
+
+  /* ── MODE DISTRIBUTION DONUT ── */
+  const modeHist = (d.operational_mode_history || []).slice(-200);
+  const modeCounts2 = {};
+  modeHist.forEach(m => { modeCounts2[m] = (modeCounts2[m]||0)+1; });
+  const modeOrder = ['SELF_ASSESS','INVESTIGATE','OBSERVE','OPTIMIZE','DREAM'];
+  const modeColMap = { OBSERVE:'#00e5ff', INVESTIGATE:'#ffb300', OPTIMIZE:'#39ff14', DREAM:'#b39ddb', SELF_ASSESS:'#ff80ab' };
+  const donutCanvas = document.getElementById('modeDonut');
+  if (donutCanvas && modeHist.length) {
+    if (window._modeDonutChart) { window._modeDonutChart.destroy(); }
+    const dLabels = modeOrder.filter(m => modeCounts2[m]);
+    const dData   = dLabels.map(m => modeCounts2[m]);
+    const dColors = dLabels.map(m => modeColMap[m] || '#888');
+    window._modeDonutChart = new Chart(donutCanvas, {
+      type: 'doughnut',
+      data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderWidth: 0 }] },
+      options: {
+        responsive: false, cutout: '62%',
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: c => c.label + ': ' + Math.round(c.raw / modeHist.length * 100) + '%' }
+        }}
+      }
+    });
+    const legendEl = document.getElementById('modeLegend');
+    if (legendEl) {
+      legendEl.innerHTML = dLabels.map((m,i) =>
+        `<div class="mode-legend-item"><div class="mode-legend-swatch" style="background:${dColors[i]}"></div>${m} <span style="color:var(--text);margin-left:2px;">${Math.round(dData[i]/modeHist.length*100)}%</span></div>`
+      ).join('');
+    }
+  }
+
+  /* ── EMOTION TIMELINE ── */
+  /* NOTE: dominant_emotion_history + operational_mode_history must be added
+     to arminta_v2.py's _gist_stats payload (around line 7282) like so:
+       'dominant_emotion_history': list(self.self_model.dominant_emotion_history),
+       'operational_mode_history': list(self.self_model.operational_mode_history),
+     Until then, the timeline renders as empty (graceful fallback). */
+  const emoColorMap = {
+    calm:'#1D9E75', curious:'#7F77DD', focused:'#378ADD',
+    confident:'#639922', stressed:'#EF9F27', frustrated:'#D85A30', bored:'#5F5E5A'
+  };
+  const emoHist = d.dominant_emotion_history || [];
+  const emoTL = document.getElementById('emoTimeline');
+  if (emoTL && emoHist.length) {
+    const slice = emoHist.slice(-200);
+    emoTL.innerHTML = slice.map(e =>
+      `<div class="emo-dot" title="${e}" style="background:${emoColorMap[e]||'#444'};"></div>`
+    ).join('');
+  }
+
+  /* ── EMOTION STATE BARS ── */
+  const emoVals = d.emotion_vals || {};
+  const emoStateEl = document.getElementById('emoStateBars');
+  if (emoStateEl && Object.keys(emoVals).length) {
+    const emoOrder = ['calm','curious','focused','confident','stressed','frustrated','bored'];
+    const emoMax = 5.0;
+    emoStateEl.innerHTML = emoOrder.map(e => {
+      const v = emoVals[e] || 0;
+      const pct = Math.min(v / emoMax * 100, 100);
+      const col = emoColorMap[e] || '#888';
+      const disp = v < 0.001 ? '~0' : v.toFixed(2);
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:0.65rem;">
+        <span style="width:68px;color:var(--dim);flex-shrink:0;">${e}</span>
+        <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${col};border-radius:2px;"></div>
+        </div>
+        <span style="width:36px;text-align:right;color:var(--text);">${disp}</span>
+      </div>`;
+    }).join('');
   }
 
   /* ── KILL INEFFECTIVE ── */
