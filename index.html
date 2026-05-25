@@ -805,6 +805,19 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
+  <!-- NETWORK HEALTH PROBES -->
+  <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
+  <div class="card card-pad mb28" id="net-probe-card">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — round-robin across 3 targets</div>
+      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
+    </div>
+    <!-- Probe dot strip -->
+    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
+    <!-- Last 3 probe results -->
+    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--mono);"></div>
+  </div>
+
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
   <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button></div>
   <div class="two-col mb28">
@@ -1463,11 +1476,55 @@ function render(d) {
       else if (l.includes('[curiosity]') || l.includes('[dream]') || l.includes('[mosaic]')) cls += ' cur';
       else if (l.includes('kill'))   cls += ' act';
       else if (l.match(/set_|drop_|sync|compact|renice|loaded/)) cls += ' act';
+      else if (l.includes('net_probe')) cls += ' gov';
       logWrap.innerHTML += `<div class="${cls}">&gt; ${safe}</div>`;
     });
     if (!logLocked) logWrap.scrollTop = logWrap.scrollHeight;
   } else {
     logWrap.innerHTML = '<div class="log-line">no log data</div>';
+  }
+
+  /* ── NET PROBE HISTORY ── */
+  const nph = d.net_probe_history || [];
+  const strip = document.getElementById('net-probe-strip');
+  const recent = document.getElementById('net-probe-recent');
+  const probeStatus = document.getElementById('net-probe-status');
+  strip.innerHTML = '';
+  recent.innerHTML = '';
+  if (nph.length) {
+    // Dot strip — green=ok, red=fail, tooltip shows label+latency
+    nph.forEach(p => {
+      const dot = document.createElement('div');
+      const ms  = p.latency_ms > 0 ? p.latency_ms + 'ms' : 'n/a';
+      dot.title = `${p.label} · step ${p.step} · ${ms}`;
+      dot.style.cssText = [
+        'width:10px', 'height:10px', 'border-radius:2px', 'flex-shrink:0',
+        `background:${p.ok ? 'var(--green)' : 'var(--red)'}`,
+        p.ok ? 'opacity:0.85' : 'opacity:1'
+      ].join(';');
+      strip.appendChild(dot);
+    });
+
+    // Degradation check — last 3 all failed?
+    const last3 = nph.slice(-3);
+    const degraded = last3.length === 3 && last3.every(p => !p.ok);
+    probeStatus.textContent = degraded
+      ? '⚠ DEGRADED — 3 consecutive failures'
+      : `${nph.filter(p=>p.ok).length}/${nph.length} ok`;
+    probeStatus.style.color = degraded ? 'var(--red)' : 'var(--green)';
+
+    // Last 3 probe lines
+    nph.slice(-3).reverse().forEach(p => {
+      const ms   = p.latency_ms > 0 ? p.latency_ms + 'ms' : 'timeout';
+      const icon = p.ok ? '●' : '○';
+      const col  = p.ok ? 'var(--green)' : 'var(--red)';
+      recent.innerHTML += `<div><span style="color:${col}">${icon}</span> `
+        + `<span style="color:var(--cyan)">${p.label.padEnd(12)}</span>`
+        + `<span style="color:var(--dim)"> step ${p.step} · ${ms}</span></div>`;
+    });
+  } else {
+    probeStatus.textContent = 'no data yet';
+    strip.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">probes will appear once Arminta has been idle</span>';
   }
 }
 
@@ -1621,6 +1678,22 @@ setInterval(refresh, REFRESH_MS);
         <br><br>· <span style="color:var(--green)">Green bars</span> — that action improved system performance (positive reward)
         <br>· <span style="color:var(--red)">Red bars</span> — that action hurt performance (negative reward)
         <br><br>A healthy agent should trend toward more green over time as it learns. Clusters of red indicate a period of exploration or a bad hypothesis being tested. Values are clamped to ±2 for display clarity; extreme outliers exist but are rare.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-netprobe">
+      <div class="help-entry-title"><span>Network Health Probes</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        ARMINTA periodically fires lightweight HTTP probes to three targets to measure real network connectivity and latency — not simulated, not estimated from traffic.
+        <br><br>· <strong>cf_trace</strong> — Cloudflare's trace endpoint: confirms upstream routing and measures round-trip latency
+        <br>· <strong>dns_check</strong> — Google's DNS-over-HTTPS resolver: measures DNS resolution RTT specifically
+        <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability
+        <br><br>Probes fire on two triggers:
+        <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%
+        <br>· <strong>Triggered</strong> — immediately when <code>iface_drops</code> or <code>iface_errors</code> are nonzero, to distinguish local interface problems from upstream failures
+        <br><br>· <span style="color:var(--green)">Green dot</span> — probe succeeded
+        <br>· <span style="color:var(--red)">Red dot</span> — probe failed (timeout or error)
+        <br><br>Three consecutive failures trigger a <strong>DEGRADED</strong> warning and a log suggestion to try <code>flush_dns</code>.
       </div>
     </div>
 
