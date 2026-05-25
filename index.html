@@ -364,14 +364,25 @@ button:focus-visible, a:focus-visible {
 .hyp-bar { height: 100%; border-radius: 2px; }
 .hyp-meta { font-size: 0.6rem; color: var(--dim); }
 
+/* ── CMC 3-col section ── */
+.cmc-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+@media(max-width: 720px) {
+  .cmc-section-grid { grid-template-columns: 1fr; }
+}
+
 /* ── CMC Q-TABLE ── */
-.cmc-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
-.cmc-cell { border: 1px solid var(--border); padding: 10px 6px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; }
+.cmc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+@media(min-width: 900px) { .cmc-grid { grid-template-columns: repeat(5, 1fr); } }
+.cmc-cell { border: 1px solid var(--border); padding: 10px 8px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; min-width: 0; }
 .cmc-cell::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background: currentColor; opacity: 0; transition: opacity 0.3s; }
 .cmc-cell.best { border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.06); }
 .cmc-cell.best::after { opacity: 0.6; }
-.cmc-mode { font-size: 0.58rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
-.cmc-q { font-family: var(--font-ui); font-size: 1.05rem; font-weight: 700; }
+.cmc-mode { font-size: 0.58rem; letter-spacing: 0.05em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmc-q { font-family: var(--font-ui); font-size: 0.95rem; font-weight: 700; word-break: break-all; }
 .cmc-bar { height: 2px; border-radius: 1px; margin-top: 6px; opacity: 0.5; }
 
 /* ── EMOTION TIMELINE ── */
@@ -807,7 +818,7 @@ footer a:hover { color: var(--text); }
 
   <!-- CIRCADIAN + CMC + EMOTION (3-col) -->
   <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px;">
+  <div class="cmc-section-grid" style="margin-bottom:28px;">
 
     <!-- circadian chart -->
     <div class="card card-pad">
