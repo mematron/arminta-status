@@ -825,7 +825,7 @@ footer a:hover { color: var(--text); }
   <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
 
   <!-- Row 1: circadian chart + Q-values -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;align-items:start;">
 
     <!-- circadian chart -->
     <div class="card card-pad">
@@ -851,7 +851,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- Row 2: mode donut + emotion timeline -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;align-items:start;">
 
     <!-- mode distribution donut -->
     <div class="card card-pad">
@@ -1113,11 +1113,12 @@ function render(d) {
         },
         scales: {
           x: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) }, grid: { color:'rgba(26,35,50,0.8)' } },
-          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10},
+          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:9},
             callback: (val, i) => {
-              const s = labels[i];
-              return s.length > 16 ? s.slice(0,15) + '…' : s;
-            }
+              const s = labels[i] || '';
+              return s.length > 18 ? s.slice(0, 17) + '…' : s;
+            },
+            maxTicksLimit: 20
           }, grid: { display:false } }
         }
       }
@@ -1178,7 +1179,10 @@ function render(d) {
         scales: {
           x: { display: false },
           y: {
-            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 10 }, callback: v => v.toFixed(1) },
+            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 10 }, callback: v => {
+              const snapped = Math.abs(v) < 0.05 ? 0 : v;
+              return snapped.toFixed(1);
+            }},
             grid: {
               color: ctx => ctx.tick.value === 0 ? 'rgba(200,216,232,0.3)' : 'rgba(26,35,50,0.6)',
               lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1
@@ -1402,15 +1406,19 @@ function render(d) {
   logWrap.innerHTML = '';
   if (logs.length) {
     logs.slice(-60).forEach(line => {
+      // Sanitize: escape HTML and fix stray trailing bracket from obs lines
+      const safe = line
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\]$/, match => line.trim().endsWith(']') && (line.match(/\]/g)||[]).length > 1 ? '' : match);
       let cls = 'log-line';
       const l = line.toLowerCase();
       if (l.includes('[obs]'))       cls += ' obs';
       else if (l.includes('[err]'))  cls += ' err';
       else if (l.includes('[gov]'))  cls += ' gov';
-      else if (l.includes('[curiosity]') || l.includes('[dream]')) cls += ' cur';
-      else if (l.includes('kill') || l.includes('kill')) cls += ' act';
-      else if (l.match(/set_|drop_|sync|compact|renice/)) cls += ' act';
-      logWrap.innerHTML += `<div class="${cls}">&gt; ${line}</div>`;
+      else if (l.includes('[curiosity]') || l.includes('[dream]') || l.includes('[mosaic]')) cls += ' cur';
+      else if (l.includes('kill'))   cls += ' act';
+      else if (l.match(/set_|drop_|sync|compact|renice|loaded/)) cls += ' act';
+      logWrap.innerHTML += `<div class="${cls}">&gt; ${safe}</div>`;
     });
     if (!logLocked) logWrap.scrollTop = logWrap.scrollHeight;
   } else {
