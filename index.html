@@ -409,8 +409,8 @@ button:focus-visible, a:focus-visible {
 .ki-item { padding: 7px 12px; border: 1px solid var(--border); background: rgba(255,61,61,0.04); font-size: 0.72rem; color: var(--red); letter-spacing: 0.05em; }
 
 /* ── ADAPTIVE GOVERNOR ── */
-.gov-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
-.gov-cell { border: 1px solid var(--border); padding: 12px 16px; background: var(--surface); flex: 1; min-width: 120px; }
+.gov-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.gov-cell { border: 1px solid var(--border); padding: 12px 16px; background: var(--surface); }
 .gov-key { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
 .gov-val { font-family: var(--font-ui); font-size: 1.15rem; font-weight: 700; }
 
@@ -461,6 +461,7 @@ footer a:hover { color: var(--text); }
   animation: blink 1.2s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
 #dashboard { display: none; }
 
@@ -658,6 +659,7 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
       <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
+      <button class="help-btn" id="refresh-btn" onclick="manualRefresh()" title="Refresh data now" aria-label="Refresh data now" style="font-size:0.8rem;">↻</button>
       <div>
         <div class="last-updated" id="last-updated">--</div>
         <div class="last-seen" id="last-seen"></div>
@@ -686,7 +688,7 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Cumulative Reward</div>
+      <div class="mode-key">Cumulative Reward <span title="Negative values are normal during exploration — the agent takes many interventions to learn what works. This is a running total, not a score." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;">running total across all steps</div>
     </div>
@@ -794,7 +796,7 @@ footer a:hover { color: var(--text); }
   <!-- REWARD HISTORY SPARKLINE -->
   <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?" aria-label="Help: Reward History">?</button></div>
   <div class="card card-pad mb28">
-    <div class="chart-wrap" style="height:120px;">
+    <div class="chart-wrap" style="height:160px;">
       <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
     </div>
   </div>
@@ -838,7 +840,7 @@ footer a:hover { color: var(--text); }
         <div class="cmc-cell"><div class="cmc-mode">DREAM</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
         <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
       </div>
-      <div id="cmc-meta" style="font-size:0.6rem;color:var(--dim);margin-top:12px;line-height:1.6;letter-spacing:0.04em;"></div>
+      <div id="cmc-meta" style="font-size:0.65rem;color:var(--dim);margin-top:12px;line-height:1.8;letter-spacing:0.04em;"></div>
 
       <!-- mode distribution donut -->
       <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
@@ -895,7 +897,7 @@ footer a:hover { color: var(--text); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 300000;
+const REFRESH_MS = 180000; // 3 minutes
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
@@ -1067,7 +1069,7 @@ function render(d) {
       const sign = e.effect >= 0 ? '+' : '';
       edgeList.innerHTML += `
         <div class="edge-row">
-          <div class="edge-label" title="${e.action} → ${e.metric}">${e.action.replace('_',' ')} → ${e.metric.replace('_',' ')}</div>
+          <div class="edge-label" title="${e.action} → ${e.metric}">${e.action.replace(/_/g,' ')} → ${e.metric.replace(/_/g,' ')}</div>
           <div class="edge-track"><div class="edge-fill" style="width:${pct}%;background:${col}"></div></div>
           <div class="edge-val" style="color:${col}">${sign}${e.effect.toFixed(3)}</div>
           <div class="edge-n">n=${e.n}</div>
@@ -1090,10 +1092,23 @@ function render(d) {
       options: {
         indexAxis: 'y',
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x.toFixed(4) } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: ctx => arData[ctx[0].dataIndex].action,
+              label: ctx => ' mean reward: ' + (ctx.parsed.x >= 0 ? '+' : '') + ctx.parsed.x.toFixed(4)
+            }
+          }
+        },
         scales: {
           x: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) }, grid: { color:'rgba(26,35,50,0.8)' } },
-          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10} }, grid: { display:false } }
+          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10},
+            callback: (val, i) => {
+              const s = labels[i];
+              return s.length > 16 ? s.slice(0,15) + '…' : s;
+            }
+          }, grid: { display:false } }
         }
       }
     });
@@ -1104,23 +1119,60 @@ function render(d) {
   if (sparkChart) { sparkChart.destroy(); sparkChart = null; }
   if (rh.length) {
     const clampedRH = rh.map(v => Math.max(-2, Math.min(2, +v)));
-    const sparkColors = clampedRH.map(v => v >= 0 ? 'rgba(57,255,20,0.6)' : 'rgba(255,61,61,0.6)');
+    // Compute 10-step rolling average
+    const rollingAvg = clampedRH.map((_, i) => {
+      const window = clampedRH.slice(Math.max(0, i - 9), i + 1);
+      return +(window.reduce((a, x) => a + x, 0) / window.length).toFixed(4);
+    });
+    const barColors = clampedRH.map(v => v >= 0 ? 'rgba(57,255,20,0.5)' : 'rgba(255,61,61,0.5)');
     sparkChart = new Chart(document.getElementById('sparkChart'), {
       type: 'bar',
-      data: { labels: clampedRH.map((_,i) => i), datasets: [{ data: clampedRH, backgroundColor: sparkColors, borderWidth: 0, barPercentage: 0.9 }] },
+      data: {
+        labels: clampedRH.map((_, i) => i),
+        datasets: [
+          {
+            type: 'bar',
+            data: clampedRH,
+            backgroundColor: barColors,
+            borderWidth: 0,
+            barPercentage: 0.85,
+            order: 2
+          },
+          {
+            type: 'line',
+            data: rollingAvg,
+            borderColor: 'rgba(0,229,255,0.8)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: false,
+            order: 1,
+            label: '10-step avg'
+          }
+        ]
+      },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => (rh[ctx.dataIndex] >= 0 ? '+' : '') + rh[ctx.dataIndex].toFixed(4) } },
-          annotation: undefined
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              title: ctx => 'step −' + (clampedRH.length - ctx[0].dataIndex),
+              label: ctx => {
+                if (ctx.datasetIndex === 0) return 'reward: ' + (rh[ctx.dataIndex] >= 0 ? '+' : '') + (+rh[ctx.dataIndex]).toFixed(4);
+                return '10-step avg: ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(4);
+              }
+            }
+          }
         },
         scales: {
-          x: { display:false },
+          x: { display: false },
           y: {
-            ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v.toFixed(1)},
-            grid:{
-              color: ctx => ctx.tick.value === 0 ? 'rgba(200,216,232,0.25)' : 'rgba(26,35,50,0.6)',
+            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 10 }, callback: v => v.toFixed(1) },
+            grid: {
+              color: ctx => ctx.tick.value === 0 ? 'rgba(200,216,232,0.3)' : 'rgba(26,35,50,0.6)',
               lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1
             }
           }
@@ -1388,6 +1440,14 @@ async function refresh() {
   } catch(e) {
     showError(e.message);
   }
+}
+
+/* ── manual refresh ── */
+async function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.style.animation = 'spin 0.6s linear'; btn.disabled = true; }
+  await refresh();
+  if (btn) { btn.style.animation = ''; btn.disabled = false; }
 }
 
 refresh();
