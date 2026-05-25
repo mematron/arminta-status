@@ -1684,10 +1684,12 @@ setInterval(refresh, REFRESH_MS);
     <div class="help-entry" id="help-netprobe">
       <div class="help-entry-title"><span>Network Health Probes</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        ARMINTA periodically fires lightweight HTTP probes to three targets to measure real network connectivity and latency — not simulated, not estimated from traffic.
-        <br><br>· <strong>cf_trace</strong> — Cloudflare's trace endpoint: confirms upstream routing and measures round-trip latency
-        <br>· <strong>dns_check</strong> — Google's DNS-over-HTTPS resolver: measures DNS resolution RTT specifically
-        <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability
+        ARMINTA periodically fires lightweight probes to three targets resolved dynamically from the actual system network configuration — not hardcoded vendors. Targets are re-read on every probe cycle so they stay current if the network changes.
+        <br><br>· <strong>gateway</strong> — the default route's first-hop IP, read from <code>ip route show default</code>. An HTTP request to the router's LAN address; confirms the local path is up.
+        <br>· <strong>dns</strong> — the first nameserver in <code>/etc/resolv.conf</code>, probed in one of two ways depending on what it is:
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;- Known public resolvers (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9 9.9.9.9) — probed via their DNS-over-HTTPS endpoints; measures real resolver RTT.
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;- Local/unknown resolvers (router DNS, Pi-hole, corporate nameserver, etc.) — probed via a TCP socket connect to port 53. These don't serve HTTP; port 53 is always open on a functioning DNS server and a successful connect confirms reachability.
+        <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability regardless of upstream DNS.
         <br><br>Probes fire on two triggers:
         <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%
         <br>· <strong>Triggered</strong> — immediately when <code>iface_drops</code> or <code>iface_errors</code> are nonzero, to distinguish local interface problems from upstream failures
