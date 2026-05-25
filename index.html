@@ -372,16 +372,20 @@ button:focus-visible, a:focus-visible {
 }
 @media(max-width: 720px) {
   .cmc-section-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  /* Stack any inline-style 2-col grids in the CMC section */
+  [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
 }
 
 /* ── CMC Q-TABLE ── */
 .cmc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.cmc-cell { border: 1px solid var(--border); padding: 8px 4px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; min-width: 0; }
+@media(min-width: 600px) { .cmc-grid { grid-template-columns: repeat(5, 1fr); } }
+.cmc-cell { border: 1px solid var(--border); padding: 10px 6px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; min-width: 0; }
 .cmc-cell::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background: currentColor; opacity: 0; transition: opacity 0.3s; }
 .cmc-cell.best { border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.06); }
 .cmc-cell.best::after { opacity: 0.6; }
-.cmc-mode { font-size: 0.56rem; letter-spacing: 0.02em; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cmc-q { font-family: var(--font-ui); font-size: 0.82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmc-mode { font-size: 0.58rem; letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmc-q { font-family: var(--font-ui); font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cmc-bar { height: 2px; border-radius: 1px; margin-top: 5px; opacity: 0.5; }
 
 /* ── EMOTION TIMELINE ── */
@@ -817,9 +821,11 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
-  <!-- CIRCADIAN + CMC + EMOTION (3-col) -->
+  <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
   <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
-  <div class="cmc-section-grid" style="margin-bottom:28px;">
+
+  <!-- Row 1: circadian chart + Q-values -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;">
 
     <!-- circadian chart -->
     <div class="card card-pad">
@@ -840,20 +846,25 @@ footer a:hover { color: var(--text); }
         <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
       </div>
       <div id="cmc-meta" style="font-size:0.65rem;color:var(--dim);margin-top:12px;line-height:1.8;letter-spacing:0.04em;"></div>
+    </div>
 
-      <!-- mode distribution donut -->
-      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
-        <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">cognitive mode distribution · recent 200</div>
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="position:relative;width:90px;height:90px;flex-shrink:0;">
-            <canvas id="modeDonut" width="90" height="90" role="img" aria-label="Cognitive mode distribution donut chart"></canvas>
-          </div>
-          <div class="mode-legend" id="modeLegend"></div>
+  </div>
+
+  <!-- Row 2: mode donut + emotion timeline -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+
+    <!-- mode distribution donut -->
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">cognitive mode distribution · recent 200</div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="position:relative;width:100px;height:100px;flex-shrink:0;">
+          <canvas id="modeDonut" width="100" height="100" role="img" aria-label="Cognitive mode distribution donut chart"></canvas>
         </div>
+        <div class="mode-legend" id="modeLegend"></div>
       </div>
     </div>
 
-    <!-- emotion timeline -->
+    <!-- emotion timeline + state bars -->
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">dominant emotion · last 200 recorded steps</div>
       <div class="emo-timeline" id="emoTimeline"></div>
@@ -1315,8 +1326,8 @@ function render(d) {
     const dLabels = modeOrder.filter(m => modeCounts2[m]);
     const dData   = dLabels.map(m => modeCounts2[m]);
     const dColors = dLabels.map(m => modeColMap[m] || '#888');
-    donutCanvas.width  = 90;
-    donutCanvas.height = 90;
+    donutCanvas.width  = 100;
+    donutCanvas.height = 100;
     window._modeDonutChart = new Chart(donutCanvas, {
       type: 'doughnut',
       data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderWidth: 0 }] },
