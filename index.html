@@ -376,14 +376,13 @@ button:focus-visible, a:focus-visible {
 
 /* ── CMC Q-TABLE ── */
 .cmc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-@media(min-width: 900px) { .cmc-grid { grid-template-columns: repeat(5, 1fr); } }
-.cmc-cell { border: 1px solid var(--border); padding: 10px 8px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; min-width: 0; }
+.cmc-cell { border: 1px solid var(--border); padding: 8px 4px; text-align: center; background: var(--surface2); position: relative; overflow: hidden; transition: border-color 0.3s; min-width: 0; }
 .cmc-cell::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background: currentColor; opacity: 0; transition: opacity 0.3s; }
 .cmc-cell.best { border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.06); }
 .cmc-cell.best::after { opacity: 0.6; }
-.cmc-mode { font-size: 0.58rem; letter-spacing: 0.05em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cmc-q { font-family: var(--font-ui); font-size: 0.95rem; font-weight: 700; word-break: break-all; }
-.cmc-bar { height: 2px; border-radius: 1px; margin-top: 6px; opacity: 0.5; }
+.cmc-mode { font-size: 0.56rem; letter-spacing: 0.02em; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmc-q { font-family: var(--font-ui); font-size: 0.82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmc-bar { height: 2px; border-radius: 1px; margin-top: 5px; opacity: 0.5; }
 
 /* ── EMOTION TIMELINE ── */
 .emo-timeline { display: flex; flex-wrap: wrap; gap: 2px; }
@@ -1158,12 +1157,10 @@ function render(d) {
           tooltip: {
             mode: 'index',
             intersect: false,
+            filter: item => item.datasetIndex === 0,
             callbacks: {
               title: ctx => 'step −' + (clampedRH.length - ctx[0].dataIndex),
-              label: ctx => {
-                if (ctx.datasetIndex === 0) return 'reward: ' + (rh[ctx.dataIndex] >= 0 ? '+' : '') + (+rh[ctx.dataIndex]).toFixed(4);
-                return '10-step avg: ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(4);
-              }
+              label: ctx => 'reward: ' + (rh[ctx.dataIndex] >= 0 ? '+' : '') + (+rh[ctx.dataIndex]).toFixed(4) + '  avg: ' + (rollingAvg[ctx.dataIndex] >= 0 ? '+' : '') + rollingAvg[ctx.dataIndex].toFixed(4)
             }
           }
         },
@@ -1285,8 +1282,11 @@ function render(d) {
       const v = vals[i];
       const isBest = v !== null && v === maxQ;
       const col = cmcColors[m] || 'var(--text)';
-      const allTiny = validVals.every(x => Math.abs(x) < 0.01);
-      const disp = v !== null ? (allTiny ? v.toFixed(5) : v.toFixed(3)) : '--';
+      const allTiny = validVals.every(x => Math.abs(x) < 0.001);
+      const maxAbs  = Math.max(...validVals.map(Math.abs));
+      // Pick precision: tiny values need more decimals; larger values fewer
+      const prec = allTiny ? 5 : maxAbs < 0.1 ? 4 : maxAbs < 1 ? 3 : 2;
+      const disp = v !== null ? v.toFixed(prec) : '--';
       const barPct = v !== null ? Math.abs(v) / absMax * 100 : 0;
       const barCol = (v !== null && v >= 0) ? col : 'var(--red)';
       cmcGrid.innerHTML += `
