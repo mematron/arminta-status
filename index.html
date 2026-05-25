@@ -1102,6 +1102,13 @@ function render(d) {
     const labels = arData.map(r => r.action.replace(/_/g,' '));
     const vals   = arData.map(r => +r.mean_reward);
     const colors = vals.map(v => v >= 0 ? 'rgba(57,255,20,0.7)' : 'rgba(255,61,61,0.7)');
+    // Clip x-axis to 5th–95th percentile range so outliers don't squash the chart
+    const sorted = [...vals].sort((a,b) => a - b);
+    const p05 = sorted[Math.max(0, Math.floor(sorted.length * 0.05))];
+    const p95 = sorted[Math.min(sorted.length-1, Math.floor(sorted.length * 0.95))];
+    const xPad = Math.max(Math.abs(p95 - p05) * 0.15, 0.02);
+    const xMin = p05 - xPad;
+    const xMax = p95 + xPad;
     rewChart = new Chart(document.getElementById('rewChart'), {
       type: 'bar',
       data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0 }] },
@@ -1118,7 +1125,11 @@ function render(d) {
           }
         },
         scales: {
-          x: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) }, grid: { color:'rgba(26,35,50,0.8)' } },
+          x: {
+            min: xMin, max: xMax,
+            ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) },
+            grid: { color:'rgba(26,35,50,0.8)' }
+          },
           y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:9},
             callback: (val, i) => {
               const s = labels[i] || '';
@@ -1153,7 +1164,8 @@ function render(d) {
             backgroundColor: barColors,
             borderWidth: 0,
             barPercentage: 0.85,
-            order: 2
+            order: 2,
+            clip: true
           },
           {
             type: 'line',
@@ -1164,7 +1176,8 @@ function render(d) {
             tension: 0.4,
             fill: false,
             order: 1,
-            label: '10-step avg'
+            label: '10-step avg',
+            clip: true
           }
         ]
       },
@@ -1199,8 +1212,8 @@ function render(d) {
                 callback: v => Math.abs(v) < Math.pow(10, -prec) / 2 ? '0' : v.toFixed(prec)
               },
               grid: {
-                color: ctx => Math.abs(ctx.tick.value) < pad * 0.1 ? 'rgba(200,216,232,0.3)' : 'rgba(26,35,50,0.6)',
-                lineWidth: ctx => Math.abs(ctx.tick.value) < pad * 0.1 ? 2 : 1
+                color: ctx => Math.abs(ctx.tick.value) < (range * 0.02) ? 'rgba(200,216,232,0.3)' : 'rgba(26,35,50,0.6)',
+                lineWidth: ctx => Math.abs(ctx.tick.value) < (range * 0.02) ? 2 : 1
               }
             };
           })()
