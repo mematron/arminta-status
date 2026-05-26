@@ -262,6 +262,83 @@ header {
 .eb-frustrated{ background: #ff6e6e; }
 .eb-bored     { background: var(--muted); }
 
+/* ── CONTINUITY ADVISORY PANEL ── */
+.continuity-panel {
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  background: var(--surface);
+  margin-bottom: 28px;
+  position: relative;
+}
+.continuity-panel.advisory-green  { border-color: var(--green-dim); }
+.continuity-panel.advisory-yellow { border-color: rgba(255,179,0,0.4); }
+.continuity-panel.advisory-red    { border-color: rgba(255,61,61,0.5); background: rgba(255,61,61,0.04); }
+
+.continuity-status-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.continuity-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.continuity-dot.green  { background: var(--green);  color: var(--green); }
+.continuity-dot.yellow { background: var(--amber);  color: var(--amber); }
+.continuity-dot.red    { background: var(--red);    color: var(--red);   }
+
+.continuity-verdict {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.continuity-verdict.green  { color: var(--green); }
+.continuity-verdict.yellow { color: var(--amber); }
+.continuity-verdict.red    { color: var(--red);   }
+
+.continuity-confidence {
+  font-size: 0.68rem;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  margin-left: auto;
+}
+.continuity-step {
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.continuity-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.continuity-reasons li {
+  font-size: 0.7rem;
+  color: var(--text);
+  padding: 7px 10px;
+  background: var(--surface2);
+  border-left: 2px solid var(--border2);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+.continuity-reasons li.reason-warn { border-left-color: var(--amber); }
+.continuity-reasons li.reason-crit { border-left-color: var(--red);   }
+.continuity-none {
+  font-size: 0.7rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+}
+
 /* ── TWO-COL LAYOUT ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 @media(max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
@@ -914,6 +991,20 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
+  <!-- CONTINUITY ADVISOR -->
+  <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
+  <div class="continuity-panel advisory-green" id="continuity-panel">
+    <div class="continuity-status-row">
+      <div class="continuity-dot green" id="continuity-dot"></div>
+      <div class="continuity-verdict green" id="continuity-verdict">NOMINAL</div>
+      <div class="continuity-confidence" id="continuity-confidence">confidence: --</div>
+      <div class="continuity-step" id="continuity-step">last evaluated: --</div>
+    </div>
+    <ul class="continuity-reasons" id="continuity-reasons">
+      <li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>
+    </ul>
+  </div>
+
   <footer>
     <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
@@ -1526,6 +1617,74 @@ function render(d) {
     probeStatus.textContent = 'no data yet';
     strip.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">probes will appear once Arminta has been idle</span>';
   }
+
+  /* ── CONTINUITY ADVISORY ── */
+  const ma = d.migration_advisory;
+  const panel     = document.getElementById('continuity-panel');
+  const dot       = document.getElementById('continuity-dot');
+  const verdict   = document.getElementById('continuity-verdict');
+  const confEl    = document.getElementById('continuity-confidence');
+  const stepEl    = document.getElementById('continuity-step');
+  const reasonsEl = document.getElementById('continuity-reasons');
+
+  if (ma && typeof ma === 'object') {
+    const warranted  = !!ma.warranted;
+    const confidence = typeof ma.confidence === 'number' ? ma.confidence : 0;
+    const reasons    = Array.isArray(ma.reasons) ? ma.reasons : [];
+    const evalStep   = ma.step || 0;
+
+    // Determine severity level
+    let level = 'green';
+    if (warranted && confidence >= 0.65) level = 'red';
+    else if (warranted) level = 'yellow';
+
+    // Panel border class
+    panel.className = 'continuity-panel advisory-' + level;
+
+    // Dot
+    dot.className = 'continuity-dot ' + level;
+
+    // Verdict text
+    const verdictText = level === 'green'
+      ? 'NOMINAL — no migration signals'
+      : level === 'yellow'
+      ? 'ADVISORY — migration may be warranted'
+      : 'MIGRATION WARRANTED';
+    verdict.textContent = verdictText;
+    verdict.className = 'continuity-verdict ' + level;
+
+    // Confidence + step
+    confEl.textContent = warranted
+      ? 'confidence: ' + (confidence * 100).toFixed(0) + '%'
+      : 'confidence: --';
+    stepEl.textContent = evalStep > 0
+      ? 'last evaluated: step ' + Number(evalStep).toLocaleString()
+      : 'not yet evaluated';
+
+    // Reasons list
+    if (reasons.length > 0) {
+      reasonsEl.innerHTML = '';
+      reasons.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = r;
+        // Classify as warn or crit based on keywords in reason text
+        if (r.includes('critical')) li.className = 'reason-crit';
+        else li.className = 'reason-warn';
+        reasonsEl.appendChild(li);
+      });
+    } else {
+      reasonsEl.innerHTML = '<li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>';
+    }
+  } else {
+    // No data yet — show nominal state
+    panel.className = 'continuity-panel advisory-green';
+    dot.className = 'continuity-dot green';
+    verdict.textContent = 'NOMINAL — awaiting evaluation';
+    verdict.className = 'continuity-verdict green';
+    confEl.textContent = 'confidence: --';
+    stepEl.textContent = 'not yet evaluated';
+    reasonsEl.innerHTML = '<li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>';
+  }
 }
 
 /* ── error ── */
@@ -1733,6 +1892,23 @@ setInterval(refresh, REFRESH_MS);
         <br>· <span style="color:var(--red)">Red</span> — errors
         <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-continuity">
+      <div class="help-entry-title"><span>Continuity Advisor</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The <strong>Continuity Advisor</strong> is a read-only subsystem that watches for hardware stress patterns indicating the agent should be migrated to a new machine. It cannot act on its findings — it can only name them clearly.
+        <br><br><strong>Status indicator:</strong>
+        <br>· <span style="color:var(--green)">GREEN / NOMINAL</span> — no sustained stress signals detected.
+        <br>· <span style="color:var(--amber)">YELLOW / ADVISORY</span> — one or more stress signals are present but not severe. Review reasons.
+        <br>· <span style="color:var(--red)">RED / MIGRATION WARRANTED</span> — high-confidence multi-signal stress. Plan migration.
+        <br><br><strong>Signals monitored (cross-session, persisted in pkl):</strong>
+        <br>· <em>Sustained thermal stress</em> — rolling average of temp_c across sessions. Spikes don't trigger; a climbing trend does.
+        <br>· <em>PSI_IO pressure</em> — average psi_io_some (% of time tasks were stalled on disk IO). Rising values indicate a disk under increasing strain.
+        <br>· <em>Save failures</em> — count of entries in arminta_crash.log. Each represents a failed pickle write, a symptom of storage layer degradation.
+        <br>· <em>Error step rate</em> — fraction of steps that logged errors in the most recent evaluation window. A climbing rate indicates systemic instability.
+        <br><br>The advisor evaluates every 500 steps and emits a <code>[CONTINUITY]</code> log entry when warranted. The confidence score is a probability-union of individual signal scores.
       </div>
     </div>
 
