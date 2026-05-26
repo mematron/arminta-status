@@ -24,9 +24,9 @@
   --red-dim:   rgba(255,61,61,0.1);
   --purple:    #b39ddb;
   --pink:      #ff80ab;
-  --muted:     #3a4a5a;
-  --text:      #c8d8e8;
-  --dim:       #5a6a7a;
+  --muted:     #5a7a9a;
+  --text:      #d8e8f4;
+  --dim:       #8a9eb4;
   --font-mono: 'Share Tech Mono', monospace;
   --font-ui:   'Exo 2', sans-serif;
 }
@@ -307,7 +307,6 @@ header {
   font-size: 0.68rem;
   color: var(--dim);
   letter-spacing: 0.06em;
-  margin-left: auto;
 }
 .continuity-step {
   font-size: 0.62rem;
@@ -1586,7 +1585,7 @@ function render(d) {
     // Dot strip — green=ok, red=fail, tooltip shows label+latency
     nph.forEach(p => {
       const dot = document.createElement('div');
-      const ms  = p.latency_ms > 0 ? p.latency_ms + 'ms' : 'n/a';
+      const ms  = p.latency_ms >= 0 ? p.latency_ms + 'ms' : 'n/a';
       dot.title = `${p.label} · step ${p.step} · ${ms}`;
       dot.style.cssText = [
         'width:10px', 'height:10px', 'border-radius:2px', 'flex-shrink:0',
@@ -1606,7 +1605,7 @@ function render(d) {
 
     // Last 3 probe lines
     nph.slice(-3).reverse().forEach(p => {
-      const ms   = p.latency_ms > 0 ? p.latency_ms + 'ms' : 'timeout';
+      const ms   = p.latency_ms >= 0 ? p.latency_ms + 'ms' : 'timeout';
       const icon = p.ok ? '●' : '○';
       const col  = p.ok ? 'var(--green)' : 'var(--red)';
       recent.innerHTML += `<div><span style="color:${col}">${icon}</span> `
