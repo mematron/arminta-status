@@ -347,6 +347,41 @@ header {
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 @media(max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
 
+/* ── CAUSAL GRAPH TAB SWITCHER (mobile only) ── */
+.causal-tabs {
+  display: none;
+  gap: 0;
+  margin-bottom: 10px;
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.causal-tab {
+  flex: 1;
+  padding: 7px 0;
+  background: var(--surface2);
+  border: none;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.causal-tab.active {
+  background: rgba(0,229,255,0.1);
+  color: var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+}
+.causal-tab:not(.active):hover { color: var(--text); background: var(--surface); }
+
+@media(max-width: 720px) {
+  .causal-tabs { display: flex; }
+  .causal-two-col { grid-template-columns: 1fr; }
+  .causal-two-col > [id^="causal-panel-"] { display: none; }
+  .causal-two-col > .causal-panel-visible { display: block; }
+}
+
 /* ── VALUE FLASH ON UPDATE ── */
 @keyframes valflash {
   0%   { opacity: 0.3; background: rgba(0,229,255,0.12); }
@@ -409,22 +444,40 @@ button:focus-visible, a:focus-visible {
 }
 
 /* ── CAUSAL EDGE BARS ── */
-.edge-list { display: flex; flex-direction: column; gap: 7px; }
-.edge-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
-.edge-label { width: clamp(140px, 30%, 220px); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; cursor: default; }
-.edge-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.edge-list { display: flex; flex-direction: column; gap: 9px; }
+.edge-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; flex-wrap: nowrap; }
+.edge-label {
+  width: clamp(120px, 28%, 200px);
+  min-width: 0;
+  color: var(--dim);
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+  flex-shrink: 0;
+  padding-top: 2px; /* vertically centre against the track */
+}
+.edge-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 7px; min-width: 30px; }
 .edge-fill  { height: 100%; border-radius: 3px; }
-.edge-val   { width: 48px; text-align: right; font-size: 0.65rem; flex-shrink: 0; }
-.edge-n     { width: 32px; text-align: right; font-size: 0.6rem; color: var(--dim); flex-shrink: 0; }
+.edge-val   { width: 48px; text-align: right; font-size: 0.65rem; flex-shrink: 0; padding-top: 2px; }
+.edge-n     { width: 32px; text-align: right; font-size: 0.6rem; color: var(--dim); flex-shrink: 0; padding-top: 2px; }
 
 /* ── ACTION REWARD BARS ── */
 .rew-list { display: flex; flex-direction: column; gap: 8px; }
-.rew-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
-.rew-label { width: 148px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
-.rew-mid { flex: 1; display: flex; align-items: center; position: relative; height: 5px; }
+.rew-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; }
+.rew-label {
+  width: clamp(100px, 35%, 170px);
+  min-width: 0;
+  color: var(--dim);
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.rew-mid { flex: 1; display: flex; align-items: center; position: relative; height: 5px; margin-top: 7px; min-width: 30px; }
 .rew-axis { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border2); }
 .rew-bar { position: absolute; top: 0; height: 5px; border-radius: 3px; }
-.rew-val { width: 52px; text-align: right; font-size: 0.65rem; flex-shrink: 0; }
+.rew-val { width: 52px; text-align: right; font-size: 0.65rem; flex-shrink: 0; padding-top: 2px; }
 
 /* ── OPEN QUESTIONS ── */
 .q-list { display: flex; flex-direction: column; gap: 8px; }
@@ -864,19 +917,26 @@ footer a:hover { color: var(--text); }
     <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 3000 KB/s</div></div>
   </div>
 
-  <!-- CAUSAL EDGES + REWARD CHART (2-col) -->
+  <!-- CAUSAL EDGES + REWARD CHART (2-col / tab on mobile) -->
   <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="openHelp('help-causal')" title="What is the Causal Graph?" aria-label="Help: Causal Graph">?</button></div>
-  <div class="two-col mb28">
-    <div class="card card-pad">
+
+  <!-- Tab switcher — hidden on desktop, shown on mobile -->
+  <div class="causal-tabs" id="causal-tabs" role="tablist" aria-label="Causal graph panels">
+    <button class="causal-tab active" role="tab" aria-selected="true"  aria-controls="causal-panel-edges"  id="tab-edges"  onclick="switchCausalTab('edges')">EDGES</button>
+    <button class="causal-tab"        role="tab" aria-selected="false" aria-controls="causal-panel-reward" id="tab-reward" onclick="switchCausalTab('reward')">REWARDS</button>
+  </div>
+
+  <div class="two-col mb28 causal-two-col">
+    <div class="card card-pad" id="causal-panel-edges" role="tabpanel" aria-labelledby="tab-edges">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric rose · n = observations</div>
       <div class="edge-list" id="edge-list">
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
     </div>
-    <div class="card card-pad">
+    <div class="card card-pad" id="causal-panel-reward" role="tabpanel" aria-labelledby="tab-reward">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">mean reward per action (last 30 executions) · centered axis</div>
-      <div class="chart-wrap" style="height:260px;">
-        <canvas id="rewChart" role="img" aria-label="Action mean reward bar chart"></canvas>
+      <div class="rew-list" id="rew-list">
+        <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
     </div>
   </div>
@@ -1040,11 +1100,11 @@ function setEl(id, val) {
 }
 
 /* ── charts (singletons) ── */
-let rewChart, sparkChart, circChart;
+let sparkChart, circChart;
 
 function destroyCharts() {
-  [rewChart, sparkChart, circChart].forEach(c => { if (c) c.destroy(); });
-  rewChart = sparkChart = circChart = null;
+  [sparkChart, circChart].forEach(c => { if (c) c.destroy(); });
+  sparkChart = circChart = null;
 }
 
 /* ── log scroll lock ── */
@@ -1217,51 +1277,34 @@ function render(d) {
     edgeList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no edge data</div>';
   }
 
-  /* ── ACTION REWARD CHART ── */
+  /* ── ACTION REWARD BARS (custom HTML — no label truncation) ── */
   const arData = d.action_rewards || [];
-  if (rewChart) { rewChart.destroy(); rewChart = null; }
+  const rewList = document.getElementById('rew-list');
+  if (!rewList) return;
+  rewList.innerHTML = '';
   if (arData.length) {
-    const labels = arData.map(r => r.action.replace(/_/g,' '));
-    const vals   = arData.map(r => +r.mean_reward);
-    const colors = vals.map(v => v >= 0 ? 'rgba(57,255,20,0.7)' : 'rgba(255,61,61,0.7)');
-    // Clip x-axis to 5th–95th percentile range so outliers don't squash the chart
-    const sorted = [...vals].sort((a,b) => a - b);
-    const p05 = sorted[Math.max(0, Math.floor(sorted.length * 0.05))];
-    const p95 = sorted[Math.min(sorted.length-1, Math.floor(sorted.length * 0.95))];
-    const xPad = Math.max(Math.abs(p95 - p05) * 0.15, 0.02);
-    const xMin = p05 - xPad;
-    const xMax = p95 + xPad;
-    rewChart = new Chart(document.getElementById('rewChart'), {
-      type: 'bar',
-      data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0 }] },
-      options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: ctx => arData[ctx[0].dataIndex].action,
-              label: ctx => ' mean reward: ' + (ctx.parsed.x >= 0 ? '+' : '') + ctx.parsed.x.toFixed(4)
-            }
-          }
-        },
-        scales: {
-          x: {
-            min: xMin, max: xMax,
-            ticks: { color:'rgba(90,106,122,0.8)', font:{size:10}, callback: v => v.toFixed(2) },
-            grid: { color:'rgba(26,35,50,0.8)' }
-          },
-          y: { ticks: { color:'rgba(90,106,122,0.8)', font:{size:9},
-            callback: (val, i) => {
-              const s = labels[i] || '';
-              return s.length > 18 ? s.slice(0, 17) + '…' : s;
-            },
-            maxTicksLimit: 20
-          }, grid: { display:false } }
-        }
-      }
+    const vals = arData.map(r => +r.mean_reward);
+    const absMax = Math.max(...vals.map(Math.abs), 0.0001);
+    arData.forEach(r => {
+      const v = +r.mean_reward;
+      const pct = Math.min(100, (Math.abs(v) / absMax) * 50); // 50% = half-width from center
+      const col = v >= 0 ? '#39ff14' : '#ff3d3d';
+      const sign = v >= 0 ? '+' : '';
+      const label = r.action.replace(/_/g, ' ');
+      const barLeft  = v < 0 ? `${50 - pct}%` : '50%';
+      const barWidth = `${pct}%`;
+      rewList.innerHTML += `
+        <div class="rew-row">
+          <div class="rew-label" title="${r.action}">${label}</div>
+          <div class="rew-mid">
+            <div class="rew-axis"></div>
+            <div class="rew-bar" style="left:${barLeft};width:${barWidth};background:${col}"></div>
+          </div>
+          <div class="rew-val" style="color:${col}">${sign}${v.toFixed(4)}</div>
+        </div>`;
     });
+  } else {
+    rewList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no reward data</div>';
   }
 
   /* ── REWARD SPARKLINE ── */
@@ -1957,6 +2000,31 @@ setInterval(refresh, REFRESH_MS);
 </div><!-- /help-panel -->
 
 <script>
+/* ── CAUSAL TAB SWITCHER (mobile) ── */
+function switchCausalTab(which) {
+  const edgesPanel  = document.getElementById('causal-panel-edges');
+  const rewardPanel = document.getElementById('causal-panel-reward');
+  const edgesTab    = document.getElementById('tab-edges');
+  const rewardTab   = document.getElementById('tab-reward');
+  if (!edgesPanel || !rewardPanel) return;
+  if (which === 'edges') {
+    edgesPanel.classList.add('causal-panel-visible');
+    rewardPanel.classList.remove('causal-panel-visible');
+    edgesTab.classList.add('active');     edgesTab.setAttribute('aria-selected','true');
+    rewardTab.classList.remove('active'); rewardTab.setAttribute('aria-selected','false');
+  } else {
+    rewardPanel.classList.add('causal-panel-visible');
+    edgesPanel.classList.remove('causal-panel-visible');
+    rewardTab.classList.add('active');    rewardTab.setAttribute('aria-selected','true');
+    edgesTab.classList.remove('active');  edgesTab.setAttribute('aria-selected','false');
+  }
+}
+// Initialise — edges panel visible by default
+document.addEventListener('DOMContentLoaded', function() {
+  const ep = document.getElementById('causal-panel-edges');
+  if (ep) ep.classList.add('causal-panel-visible');
+});
+
 function toggleHelp() {
   const overlay = document.getElementById('help-overlay');
   const panel = document.getElementById('help-panel');
