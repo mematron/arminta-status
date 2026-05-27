@@ -237,13 +237,18 @@ header {
   font-weight: 700;
   border: 1px solid;
 }
-.sit-idle     { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
-.sit-io_bound { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
-.sit-cpu_bound{ color: var(--red);    border-color: rgba(255,61,61,0.3);   background: rgba(255,61,61,0.07); }
-.sit-compile  { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
-.sit-browse   { color: var(--green);  border-color: var(--green-dim);      background: var(--green-bg); }
-.sit-streaming{ color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
-.sit-unknown  { color: var(--dim);    border-color: var(--border);         background: transparent; }
+.sit-idle             { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
+.sit-io_bound         { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
+.sit-cpu_bound        { color: var(--red);    border-color: rgba(255,61,61,0.3);   background: rgba(255,61,61,0.07); }
+.sit-compile          { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
+.sit-browse           { color: var(--green);  border-color: var(--green-dim);      background: var(--green-bg); }
+.sit-streaming        { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
+.sit-browser_compute  { color: var(--amber);  border-color: rgba(255,179,0,0.4);   background: rgba(255,179,0,0.08); }
+.sit-memory_pressure  { color: var(--red);    border-color: rgba(255,61,61,0.4);   background: rgba(255,61,61,0.08); }
+.sit-network_saturated{ color: var(--cyan);   border-color: rgba(0,229,255,0.5);   background: rgba(0,229,255,0.1); }
+.sit-irq_storm        { color: var(--pink);   border-color: rgba(255,128,171,0.4); background: rgba(255,128,171,0.07); }
+.sit-thermal_stress   { color: #ff6e40;       border-color: rgba(255,110,64,0.4);  background: rgba(255,110,64,0.07); }
+.sit-unknown          { color: var(--dim);    border-color: var(--border);         background: transparent; }
 
 /* ── EMOTION ── */
 .emotion-section { border: 1px solid var(--border); padding: 20px 24px; background: var(--surface); margin-bottom: 12px; }
@@ -511,6 +516,9 @@ button:focus-visible, a:focus-visible {
 .log-line.err  { color: var(--red); }
 .log-line.gov  { color: var(--green); }
 .log-line.warn { color: var(--red); }
+.log-line.meta { color: var(--pink); }
+.log-line.lex  { color: #b0bec5; }
+.log-line.res  { color: var(--cyan); }
 
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
@@ -763,14 +771,14 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Situation</div>
+      <div class="mode-key">Situation<button class="help-btn inline" onclick="openHelp('help-situation')" title="What do situation labels mean?" aria-label="Help: Situation Classification">?</button></div>
       <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Cumulative Reward <span title="Negative values are normal during exploration — the agent takes many interventions to learn what works. This is a running total, not a score." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
+      <div class="mode-key">Rolling Avg Reward <span title="Mean reward per step over the last 150 steps. Positive = agent is improving system performance. More meaningful than the cumulative total at 300k+ steps." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
-      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;">running total across all steps</div>
+      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
@@ -1108,11 +1116,22 @@ function render(d) {
   document.getElementById('situation-badge').innerHTML =
     `<span class="sit-badge sit-${sit}">${sit.toUpperCase()}</span>`;
 
-  /* reward */
-  const rVal = d.total_reward !== undefined ? d.total_reward : null;
-  const rEl = document.getElementById('total-reward');
-  rEl.textContent = rVal !== null ? (rVal >= 0 ? '+' : '') + Number(rVal).toFixed(1) : '--';
-  rEl.className = 'mode-val ' + (rVal !== null && rVal >= 0 ? 'reward-pos' : 'reward-neg');
+  /* reward — prefer rolling_avg_reward (150-step window); fall back to total_reward */
+  const rollingR = d.rolling_avg_reward !== undefined ? d.rolling_avg_reward : null;
+  const totalR   = d.total_reward !== undefined ? d.total_reward : null;
+  const rVal     = rollingR !== null ? rollingR : totalR;
+  const rEl      = document.getElementById('total-reward');
+  const rSubEl   = document.getElementById('reward-sub');
+  if (rVal !== null) {
+    rEl.textContent = (rVal >= 0 ? '+' : '') + Number(rVal).toFixed(4) + '/step';
+    rEl.className   = 'mode-val ' + (rVal >= 0 ? 'reward-pos' : 'reward-neg');
+    if (rSubEl && totalR !== null) {
+      rSubEl.textContent = 'cumulative: ' + (totalR >= 0 ? '+' : '') + Number(totalR).toFixed(1);
+    }
+  } else {
+    rEl.textContent = '--';
+    rEl.className   = 'mode-val';
+  }
 
   /* error steps */
   const errEl = document.getElementById('error-steps');
@@ -1560,13 +1579,18 @@ function render(d) {
       const safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       let cls = 'log-line';
       const l = line.toLowerCase();
-      if (l.includes('[obs]'))       cls += ' obs';
-      else if (l.includes('[err]'))  cls += ' err';
-      else if (l.includes('[gov]'))  cls += ' gov';
+      if (l.includes('[obs]'))                                          cls += ' obs';
+      else if (l.includes('[err]'))                                     cls += ' err';
+      else if (l.includes('[warn]'))                                    cls += ' warn';
+      else if (l.includes('[meta]'))                                    cls += ' meta';
+      else if (l.includes('[lexical]') || l.includes('[lex]'))         cls += ' lex';
+      else if (l.includes('[resolver]') || l.includes('[resolve]'))    cls += ' res';
+      else if (l.includes('[gov]'))                                     cls += ' gov';
       else if (l.includes('[curiosity]') || l.includes('[dream]') || l.includes('[mosaic]')) cls += ' cur';
-      else if (l.includes('kill'))   cls += ' act';
-      else if (l.match(/set_|drop_|sync|compact|renice|loaded/)) cls += ' act';
-      else if (l.includes('net_probe')) cls += ' gov';
+      else if (l.includes('[delayed]'))                                 cls += ' cur';
+      else if (l.includes('kill'))                                      cls += ' act';
+      else if (l.match(/set_|drop_|sync|compact|renice|loaded/))       cls += ' act';
+      else if (l.includes('net_probe'))                                 cls += ' gov';
       logWrap.innerHTML += `<div class="${cls}">&gt; ${safe}</div>`;
     });
     if (!logLocked) logWrap.scrollTop = logWrap.scrollHeight;
@@ -1779,6 +1803,23 @@ setInterval(refresh, REFRESH_MS);
       </div>
     </div>
 
+    <div class="help-entry" id="help-situation">
+      <div class="help-entry-title"><span>Situation Classification</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        ARMINTA continuously classifies the current workload into one of nine named situations from metric history (not snapshots). Each situation has its own causal edge weights, so knowledge learned during streaming doesn't pollute compile-time decisions.
+        <br><br>· <strong>idle</strong> — low CPU, low net, minimal process activity
+        <br>· <strong>streaming</strong> — significant network download + browser renderer pressure + moderate CPU. Cloud gaming, video, remote desktop.
+        <br>· <strong>browser_compute</strong> — browser pegging cores (high dilution, renderer pressure) with minimal network. JS compute, WebGL, local video decode. System CPU looks deceptively low because Chrome's multi-process architecture hides per-core saturation.
+        <br>· <strong>compile</strong> — high dilution + high system CPU + low net. Build systems, ML training, video encode.
+        <br>· <strong>memory_pressure</strong> — RAM above 75%, swap active.
+        <br>· <strong>io_bound</strong> — high iowait and PSI IO stall. Disk-heavy writes or reads.
+        <br>· <strong>network_saturated</strong> — very high bidirectional net traffic (P2P, large upload/download).
+        <br>· <strong>irq_storm</strong> — hardware interrupt rate spiking (typically wireless driver bursts).
+        <br>· <strong>thermal_stress</strong> — sustained high temperature under load.
+        <br><br>Confidence score (shown in parens) reflects how cleanly the current metrics match that profile. Low confidence means the situation is transitioning or ambiguous.
+      </div>
+    </div>
+
     <div class="help-entry" id="help-cognitive">
       <div class="help-entry-title"><span>Cognitive Metrics</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
@@ -1832,10 +1873,11 @@ setInterval(refresh, REFRESH_MS);
     <div class="help-entry" id="help-reward">
       <div class="help-entry-title"><span>Reward History</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        A bar-chart sparkline of the per-step reward signal over the most recent 150 steps. Each bar is one step.
+        <strong>Rolling Avg Reward</strong> — the mean reward per step over the last 150 steps. This is the meaningful health signal: positive means the agent is currently improving system performance; negative means recent actions are net-harmful. At 300k+ steps, the cumulative total is mathematically dominated by history and converges to a meaningless constant — the 150-step window is what matters.
+        <br><br>The <strong>reward sparkline</strong> below shows per-step reward as a bar chart over the same 150-step window. The cyan line is a 10-step rolling average overlay.
         <br><br>· <span style="color:var(--green)">Green bars</span> — that action improved system performance (positive reward)
         <br>· <span style="color:var(--red)">Red bars</span> — that action hurt performance (negative reward)
-        <br><br>A healthy agent should trend toward more green over time as it learns. Clusters of red indicate a period of exploration or a bad hypothesis being tested. Values are clamped to ±2 for display clarity; extreme outliers exist but are rare.
+        <br><br>A healthy agent should trend toward more green over time as it learns. Clusters of red indicate exploration or a bad hypothesis being tested.
       </div>
     </div>
 
