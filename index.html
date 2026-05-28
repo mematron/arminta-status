@@ -343,6 +343,47 @@ header {
   letter-spacing: 0.05em;
 }
 
+/* ── S.M.A.R.T. DRIVE HEALTH PANEL ── */
+.smart-panel {
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--surface);
+  margin-bottom: 12px;
+}
+.smart-panel.smart-ok   { border-color: var(--green-dim); }
+.smart-panel.smart-warn { border-color: rgba(255,61,61,0.5); background: rgba(255,61,61,0.03); }
+.smart-panel.smart-none { border-color: var(--border); }
+.smart-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.smart-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.smart-dot.ok   { background: var(--green); color: var(--green); }
+.smart-dot.warn { background: var(--red);   color: var(--red);   }
+.smart-dot.none { background: var(--muted); color: var(--muted); }
+.smart-verdict  { font-family: var(--font-ui); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; }
+.smart-verdict.ok   { color: var(--green); }
+.smart-verdict.warn { color: var(--red); }
+.smart-verdict.none { color: var(--dim); }
+.smart-device   { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.05em; }
+.smart-metrics  { display: flex; flex-wrap: wrap; gap: 8px; }
+.smart-metric {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 8px 12px;
+  min-width: 90px;
+}
+.smart-metric-key { font-size: 0.58rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
+.smart-metric-val { font-family: var(--font-ui); font-size: 1.1rem; font-weight: 700; color: var(--cyan); }
+.smart-metric-val.warn { color: var(--red); }
+.smart-metric-val.amber { color: var(--amber); }
+
 /* ── TWO-COL LAYOUT ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 @media(max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
@@ -1058,6 +1099,17 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
+  <!-- DRIVE HEALTH (S.M.A.R.T.) -->
+  <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
+  <div class="smart-panel" id="smart-panel">
+    <div class="smart-status-row">
+      <div class="smart-dot" id="smart-dot"></div>
+      <div class="smart-verdict" id="smart-verdict">awaiting first check (~17h at idle)</div>
+      <div class="smart-device" id="smart-device"></div>
+    </div>
+    <div class="smart-metrics" id="smart-metrics"></div>
+  </div>
+
   <!-- CONTINUITY ADVISOR -->
   <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
   <div class="continuity-panel advisory-green" id="continuity-panel">
@@ -1631,6 +1683,9 @@ function render(d) {
       else if (l.includes('[gov]'))                                     cls += ' gov';
       else if (l.includes('[curiosity]') || l.includes('[dream]') || l.includes('[mosaic]')) cls += ' cur';
       else if (l.includes('[delayed]'))                                 cls += ' cur';
+      else if (l.includes('[smart][warn]'))                             cls += ' warn';
+      else if (l.includes('[smart][ok]'))                               cls += ' gov';
+      else if (l.includes('[maint]'))                                   cls += ' act';
       else if (l.includes('kill'))                                      cls += ' act';
       else if (l.match(/set_|drop_|sync|compact|renice|loaded/))       cls += ' act';
       else if (l.includes('net_probe'))                                 cls += ' gov';
@@ -1682,6 +1737,67 @@ function render(d) {
   } else {
     probeStatus.textContent = 'no data yet';
     strip.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">probes will appear once Arminta has been idle</span>';
+  }
+
+  /* ── S.M.A.R.T. DRIVE HEALTH ── */
+  const sh = d.smart_health;
+  const smartPanel   = document.getElementById('smart-panel');
+  const smartDot     = document.getElementById('smart-dot');
+  const smartVerdict = document.getElementById('smart-verdict');
+  const smartDevice  = document.getElementById('smart-device');
+  const smartMetrics = document.getElementById('smart-metrics');
+
+  if (sh && typeof sh === 'object') {
+    const ok = !!sh.ok;
+    smartPanel.className   = 'smart-panel ' + (ok ? 'smart-ok' : 'smart-warn');
+    smartDot.className     = 'smart-dot '   + (ok ? 'ok'       : 'warn');
+    smartVerdict.className = 'smart-verdict '+ (ok ? 'ok'       : 'warn');
+    smartVerdict.textContent = ok ? 'OK — no critical signals' : 'WARNING — check drive';
+    smartDevice.textContent  = sh.device || '';
+
+    const cells = [];
+    if (sh.spare_pct !== undefined) {
+      const low  = sh.spare_pct < 10;
+      const alow = sh.spare_pct < 25;
+      cells.push({ key: 'Spare', val: sh.spare_pct + '%',
+                   cls: low ? 'warn' : alow ? 'amber' : '' });
+    }
+    if (sh.wear_pct !== undefined) {
+      const hi  = sh.wear_pct >= 80;
+      const med = sh.wear_pct >= 50;
+      cells.push({ key: 'Wear', val: sh.wear_pct + '%',
+                   cls: hi ? 'warn' : med ? 'amber' : '' });
+    }
+    if (sh.media_errors !== undefined) {
+      cells.push({ key: 'Media Err', val: sh.media_errors,
+                   cls: sh.media_errors > 0 ? 'warn' : '' });
+    }
+    if (sh.written_tib !== undefined) {
+      cells.push({ key: 'Written', val: sh.written_tib.toFixed(1) + ' TiB', cls: '' });
+    }
+    if (sh.nvme_temp_c !== undefined) {
+      const hot = sh.nvme_temp_c >= 70;
+      const warm = sh.nvme_temp_c >= 55;
+      cells.push({ key: 'NVMe Temp', val: sh.nvme_temp_c + '°C',
+                   cls: hot ? 'warn' : warm ? 'amber' : '' });
+    }
+    if (sh.critical_warning) {
+      cells.push({ key: 'Crit Warn', val: sh.critical_warning, cls: 'warn' });
+    }
+
+    smartMetrics.innerHTML = cells.map(c =>
+      `<div class="smart-metric">
+        <div class="smart-metric-key">${c.key}</div>
+        <div class="smart-metric-val${c.cls ? ' '+c.cls : ''}">${c.val}</div>
+      </div>`
+    ).join('');
+  } else {
+    smartPanel.className   = 'smart-panel smart-none';
+    smartDot.className     = 'smart-dot none';
+    smartVerdict.className = 'smart-verdict none';
+    smartVerdict.textContent = 'awaiting first check (~17h at idle)';
+    smartDevice.textContent  = '';
+    smartMetrics.innerHTML   = '';
   }
 
   /* ── CONTINUITY ADVISORY ── */
@@ -1976,6 +2092,20 @@ setInterval(refresh, REFRESH_MS);
         <br>· <span style="color:var(--red)">Red</span> — errors
         <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-smart">
+      <div class="help-entry-title"><span>Drive Health (S.M.A.R.T.)</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        NVMe / SSD wear and health data read directly from the drive via <code>nvme smart-log</code> (or <code>smartctl -A</code> as fallback). Checked once every ~17 hours during idle maintenance passes.
+        <br><br>· <strong>Spare</strong> — percentage of spare blocks remaining. Below 10% = EOL approaching.
+        <br>· <strong>Wear</strong> — vendor wear indicator (0–100+%). Above 80% is high.
+        <br>· <strong>Media Err</strong> — cumulative uncorrectable read/write errors. Any non-zero value is significant.
+        <br>· <strong>Written</strong> — lifetime terabytes written to the drive (TBW counter).
+        <br>· <strong>NVMe Temp</strong> — drive temperature in °C. Throttling typically begins at 70–75°C.
+        <br>· <strong>Crit Warn</strong> — hardware critical warning byte. Non-zero means the drive is reporting a fault condition.
+        <br><br>Requires <code>nvme-cli</code> (<code>sudo apt install nvme-cli</code>) or <code>smartmontools</code> and root access.
       </div>
     </div>
 
