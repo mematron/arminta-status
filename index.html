@@ -1104,7 +1104,7 @@ footer a:hover { color: var(--text); }
   <div class="smart-panel" id="smart-panel">
     <div class="smart-status-row">
       <div class="smart-dot" id="smart-dot"></div>
-      <div class="smart-verdict" id="smart-verdict">awaiting first check (~17h at idle)</div>
+      <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
       <div class="smart-device" id="smart-device"></div>
     </div>
     <div class="smart-metrics" id="smart-metrics"></div>
@@ -1747,13 +1747,29 @@ function render(d) {
   const smartDevice  = document.getElementById('smart-device');
   const smartMetrics = document.getElementById('smart-metrics');
 
+  /* Format a Unix timestamp as "X ago" or absolute if old */
+  function _smartAge(ts) {
+    if (!ts) return null;
+    const secs = Math.floor(Date.now() / 1000) - ts;
+    if (secs < 0)   return null;
+    if (secs < 120) return secs + 's ago';
+    const mins = Math.floor(secs / 60);
+    if (mins < 120) return mins + 'm ago';
+    const hrs = (secs / 3600).toFixed(1);
+    return hrs + 'h ago';
+  }
+
   if (sh && typeof sh === 'object') {
     const ok = !!sh.ok;
     smartPanel.className   = 'smart-panel ' + (ok ? 'smart-ok' : 'smart-warn');
     smartDot.className     = 'smart-dot '   + (ok ? 'ok'       : 'warn');
     smartVerdict.className = 'smart-verdict '+ (ok ? 'ok'       : 'warn');
     smartVerdict.textContent = ok ? 'OK — no critical signals' : 'WARNING — check drive';
-    smartDevice.textContent  = sh.device || '';
+
+    /* last-checked age — prefer checked_ts on the sh dict, fallback to top-level */
+    const _cts = sh.checked_ts || d.last_smart_check_time || 0;
+    const _age = _smartAge(_cts);
+    smartDevice.textContent = (sh.device || '') + (_age ? '  ·  checked ' + _age : '');
 
     const cells = [];
     if (sh.spare_pct !== undefined) {
@@ -1795,7 +1811,7 @@ function render(d) {
     smartPanel.className   = 'smart-panel smart-none';
     smartDot.className     = 'smart-dot none';
     smartVerdict.className = 'smart-verdict none';
-    smartVerdict.textContent = 'awaiting first check (~17h at idle)';
+    smartVerdict.textContent = 'awaiting first check (~4h at idle)';
     smartDevice.textContent  = '';
     smartMetrics.innerHTML   = '';
   }
@@ -2098,7 +2114,7 @@ setInterval(refresh, REFRESH_MS);
     <div class="help-entry" id="help-smart">
       <div class="help-entry-title"><span>Drive Health (S.M.A.R.T.)</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        NVMe / SSD wear and health data read directly from the drive via <code>nvme smart-log</code> (or <code>smartctl -A</code> as fallback). Checked once every ~17 hours during idle maintenance passes.
+        NVMe / SSD wear and health data read directly from the drive via <code>nvme smart-log</code> (or <code>smartctl -A</code> as fallback). Checked every 4 hours during idle maintenance passes (wall-clock time, persisted across restarts).
         <br><br>· <strong>Spare</strong> — percentage of spare blocks remaining. Below 10% = EOL approaching.
         <br>· <strong>Wear</strong> — vendor wear indicator (0–100+%). Above 80% is high.
         <br>· <strong>Media Err</strong> — cumulative uncorrectable read/write errors. Any non-zero value is significant.
