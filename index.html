@@ -1498,13 +1498,10 @@ function render(d) {
   }
 
   /* ── OPEN QUESTIONS ── */
-  const RETIRED_ACTIONS = ['kill_extension_renderers'];
-  const qs = (d.open_questions || []).filter(q => {
-    // Filter out questions about retired/poisoned actions that will never resolve
-    if (!q.text && !q.via) return true;
-    const text = (q.text || '') + (q.via || '');
-    return !RETIRED_ACTIONS.some(a => text.includes(a));
-  });
+  // FIX: RETIRED_ACTIONS filter removed — kill_extension_renderers is now suppressed
+  // pre-dispatch by QuestionResolver (inhibition weight 0.75), so questions about it
+  // can and should resolve naturally. Hiding them prevented the resolver from closing them.
+  const qs = (d.open_questions || []);
   const qList = document.getElementById('q-list');
   qList.innerHTML = '';
   if (qs.length) {
@@ -2185,7 +2182,7 @@ setInterval(refresh, REFRESH_MS);
         <br><br>· <strong>gateway</strong> — the default route's first-hop IP, read from <code>ip route show default</code>. An HTTP request to the router's LAN address; confirms the local path is up.
         <br>· <strong>dns</strong> — the first nameserver in <code>/etc/resolv.conf</code>, probed in one of two ways depending on what it is:
         <br>&nbsp;&nbsp;&nbsp;&nbsp;- Known public resolvers (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9 9.9.9.9) — probed via their DNS-over-HTTPS endpoints; measures real resolver RTT.
-        <br>&nbsp;&nbsp;&nbsp;&nbsp;- Local/unknown resolvers (router DNS, Pi-hole, corporate nameserver, etc.) — probed via a TCP socket connect to port 53. These don't serve HTTP; port 53 is always open on a functioning DNS server and a successful connect confirms reachability.
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;- Local/unknown resolvers (router DNS, Pi-hole, corporate nameserver, etc.) — probed via a TCP socket connect to port 53, <em>unless</em> the address is loopback (127.x) or RFC-1918 private (10.x, 192.168.x, 172.16–31.x). Loopback resolvers like systemd-resolved (127.0.0.53) always answer in 0ms regardless of real network state, so probing them gives no useful signal. Those cases fall through to the portal probe instead.
         <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability regardless of upstream DNS.
         <br><br>Probes fire on two triggers:
         <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%
