@@ -614,6 +614,24 @@ button:focus-visible, a:focus-visible {
 .log-line.lex  { color: #b0bec5; }
 .log-line.res  { color: var(--cyan); }
 
+/* ── WEB LEARNER LOG ── */
+.wl-log-wrap {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 14px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  margin-top: 10px;
+}
+.wl-log-line { font-size: 0.67rem; color: var(--dim); line-height: 1.75; letter-spacing: 0.03em; font-family: var(--font-mono); }
+.wl-log-line.fetch   { color: var(--cyan); }
+.wl-log-line.learn   { color: var(--green); }
+.wl-log-line.concept { color: var(--amber); }
+.wl-log-line.reward  { color: var(--purple); }
+.wl-log-line.skip    { color: var(--muted); }
+
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
 
@@ -1142,13 +1160,21 @@ footer a:hover { color: var(--text); }
       </div>
       <div style="text-align:center;">
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">CONCEPTS MAPPED</div>
-        <div id="wl-queried" style="font-size:1.4rem;color:var(--magenta, #c678dd);font-family:var(--font-mono);">--</div>
+        <div id="wl-queried" style="font-size:1.4rem;color:#c678dd;font-family:var(--font-mono);">--</div>
       </div>
     </div>
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:6px;letter-spacing:0.05em;">last concept query — Arminta's vocabulary translated to Wikipedia search</div>
-    <div id="wl-query" style="font-size:0.7rem;color:var(--cyan);font-family:var(--font-mono);margin-bottom:14px;word-break:break-word;">--</div>
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">recent discoveries — article → new concepts learned</div>
-    <div id="wl-discoveries" style="font-family:var(--font-mono);font-size:0.65rem;line-height:2.0;"></div>
+    <div class="log-header">
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">learning session log — recent fetch &amp; discovery events</div>
+      <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;display:flex;gap:14px;">
+        <span style="color:var(--cyan)">■</span> fetch
+        <span style="color:var(--green)">■</span> learn
+        <span style="color:var(--amber)">■</span> concept
+        <span style="color:var(--purple)">■</span> reward
+      </div>
+    </div>
+    <div class="wl-log-wrap" id="wl-log-wrap">
+      <div class="wl-log-line">awaiting data...</div>
+    </div>
   </div>
   <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
     Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
@@ -1927,25 +1953,54 @@ function render(d) {
     document.getElementById('wl-symbols').textContent = fmt(wl.total_new_symbols);
     document.getElementById('wl-lexicon').textContent = fmt(wl.symbol_count);
     document.getElementById('wl-queried').textContent = fmt(wl.queried_symbols || 0);
-    document.getElementById('wl-query').textContent   = wl.last_query || '—';
 
-    const disc = wl.recent_discoveries || [];
-    const discEl = document.getElementById('wl-discoveries');
+    const disc    = wl.recent_discoveries || [];
+    const logWrap = document.getElementById('wl-log-wrap');
     if (disc.length) {
-      discEl.innerHTML = disc.map(d => {
-        const sample = Array.isArray(d.sample) ? d.sample.join(', ') : '';
-        const rew    = typeof d.reward === 'number' ? (d.reward >= 0 ? '+' : '') + d.reward.toFixed(3) : '';
-        return `<div style="border-left:2px solid var(--green-dim);padding-left:8px;margin-bottom:4px;">
-          <span style="color:var(--cyan)">${(d.article||'').substring(0,45)}</span>
-          <span style="color:var(--dim)"> · step ${d.step} · </span>
-          <span style="color:var(--green)">${d.new_words} new</span>
-          ${rew ? `<span style="color:var(--amber)"> Δ${rew}</span>` : ''}
-          ${sample ? `<div style="color:var(--dim);font-size:0.6rem;margin-top:1px">${sample}</div>` : ''}
-        </div>`;
-      }).join('');
+      const lines = [];
+      disc.forEach(entry => {
+        const article   = (entry.article || 'unknown').substring(0, 50);
+        const stepStr   = entry.step !== undefined ? `step ${entry.step}` : '';
+        const newWords  = typeof entry.new_words === 'number' ? entry.new_words : 0;
+        const rew       = typeof entry.reward === 'number' ? entry.reward : null;
+        const sample    = Array.isArray(entry.sample) ? entry.sample : [];
+        const query     = entry.query || wl.last_query || null;
+
+        // FETCH line
+        if (query) {
+          lines.push(`<div class="wl-log-line fetch">[FETCH]  query="${query}"  →  "${article}"</div>`);
+        } else {
+          lines.push(`<div class="wl-log-line fetch">[FETCH]  "${article}"${stepStr ? '  · ' + stepStr : ''}</div>`);
+        }
+
+        // LEARN line
+        if (newWords > 0) {
+          const sampleStr = sample.length ? `  (${sample.slice(0,4).join(', ')})` : '';
+          lines.push(`<div class="wl-log-line learn">[LEARN]  +${newWords} new symbols${sampleStr}</div>`);
+        } else {
+          lines.push(`<div class="wl-log-line skip">[SKIP]   no new symbols — already known</div>`);
+        }
+
+        // CONCEPT / REWARD line
+        if (rew !== null) {
+          const sign   = rew >= 0 ? '+' : '';
+          const cls    = rew >= 0 ? 'reward' : 'concept';
+          const tag    = rew >= 0 ? '[REWARD]' : '[COST]  ';
+          lines.push(`<div class="wl-log-line ${cls}">${tag}  Δr=${sign}${rew.toFixed(3)}  lexicon impact noted</div>`);
+        }
+      });
+
+      // If we have a last_query not already shown in discoveries, prepend a pending line
+      if (wl.last_query && disc.length && !disc[disc.length-1].query) {
+        lines.push(`<div class="wl-log-line concept">[QUERY]  pending → "${wl.last_query}"</div>`);
+      }
+
+      logWrap.innerHTML = lines.join('');
     } else {
-      discEl.innerHTML = '<span style="color:var(--dim)">no discoveries yet</span>';
+      logWrap.innerHTML = '<div class="wl-log-line">no discoveries yet this session</div>';
     }
+    // Auto-scroll to bottom
+    logWrap.scrollTop = logWrap.scrollHeight;
   } else {
     wlPanel.style.display = 'none';
     wlEmpty.style.display = 'block';
