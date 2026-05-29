@@ -1337,7 +1337,7 @@ function render(d) {
   setAndFlash('hypotheses', fmt(d.hypotheses));
   setAndFlash('interventions', fmt(d.interventions));
   setAndFlash('self-mods', fmt(d.self_mods));
-  setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
+  setAndFlash('mosaic-hyp-count', (d.mosaic_hypotheses && d.mosaic_hypotheses.length > 0) ? d.mosaic_hypotheses.length : '--');
 
   /* governor */
   const govCur = document.getElementById('gov-current');
@@ -1525,16 +1525,18 @@ function render(d) {
     hyps.slice(0, 6).forEach(h => {
       const absC = Math.abs(h.correlation);
       const pct  = (absC * 100).toFixed(0);
-      const col  = h.correlation >= 0 ? '#ff3d3d' : '#39ff14';
+      // positive = green (co-moves with metric), negative = red (inverse relation)
+      const col  = h.correlation >= 0 ? '#39ff14' : '#ff3d3d';
       const sign = h.correlation >= 0 ? '+' : '−';
+      const relLabel = h.correlation >= 0 ? 'co-moves' : 'inverse';
       hypList.innerHTML += `
         <div class="hyp-item">
           <div class="hyp-top">
             <div class="hyp-label" title="${h.source} — autonomously discovered environmental variable">${h.source} → ${h.target}${h.source && h.source.startsWith('wttr_') ? '<span class=\"hyp-source-tag\">weather</span>' : h.source && h.source.startsWith('hass_') ? '<span class=\"hyp-source-tag\">home</span>' : ''}</div>
-            <div class="hyp-corr" style="color:${col}">${sign}${absC.toFixed(3)}</div>
+            <div class="hyp-corr" style="color:${col}" title="${relLabel}">${sign}${absC.toFixed(3)}</div>
           </div>
           <div class="hyp-bar-wrap"><div class="hyp-bar" style="width:${pct}%;background:${col}"></div></div>
-          <div class="hyp-meta">conf ${(h.confidence||0).toFixed(2)} · +${h.confirmations||0} −${h.refutations||0} · born step ${fmt(h.born_step)}</div>
+          <div class="hyp-meta">conf ${(h.confidence||0).toFixed(2)} · +${h.confirmations||0} −${h.refutations||0} · born step ${fmt(h.born_step)} · <span style="color:${col}">${relLabel}</span></div>
         </div>`;
     });
   } else {
@@ -1996,8 +1998,8 @@ function render(d) {
     } else {
       logWrap.innerHTML = '<div class="wl-log-line">no discoveries yet this session</div>';
     }
-    // Auto-scroll to bottom
-    logWrap.scrollTop = logWrap.scrollHeight;
+    // Scroll to top — disc[0] is the most recent discovery (appendleft deque)
+    logWrap.scrollTop = 0;
   } else {
     wlPanel.style.display = 'none';
     wlEmpty.style.display = 'block';
@@ -2202,6 +2204,8 @@ setInterval(refresh, REFRESH_MS);
         <br>· How many times this anomaly has been revisited without resolution
         <br><br>Red border = high priority, amber = medium, grey = low. These drive future investigation steps.
         <br><br>The right panel shows <strong>Mosaic Hypotheses</strong> — autonomously discovered correlations between environmental sensors (e.g. ambient humidity from a smart-home API) and internal system metrics. Correlation strength shown as a bar; these are candidates for future causal investigation, not confirmed cause-and-effect.
+        <br>· <span style="color:#39ff14">Green</span> = positive correlation (the two variables move together)
+        <br>· <span style="color:#ff3d3d">Red</span> = inverse correlation (when one rises, the other tends to fall)
       </div>
     </div>
 
