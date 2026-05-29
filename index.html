@@ -1127,7 +1127,7 @@ footer a:hover { color: var(--text); }
   <!-- WEB LEARNER -->
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth</div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
       <div style="text-align:center;">
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">PAGES READ</div>
         <div id="wl-pages" style="font-size:1.4rem;color:var(--cyan);font-family:var(--font-mono);">--</div>
@@ -1140,14 +1140,18 @@ footer a:hover { color: var(--text); }
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">LEXICON SIZE</div>
         <div id="wl-lexicon" style="font-size:1.4rem;color:var(--amber);font-family:var(--font-mono);">--</div>
       </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">CONCEPTS MAPPED</div>
+        <div id="wl-queried" style="font-size:1.4rem;color:var(--magenta, #c678dd);font-family:var(--font-mono);">--</div>
+      </div>
     </div>
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:6px;letter-spacing:0.05em;">last query sent to Wikipedia</div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:6px;letter-spacing:0.05em;">last concept query — Arminta's vocabulary translated to Wikipedia search</div>
     <div id="wl-query" style="font-size:0.7rem;color:var(--cyan);font-family:var(--font-mono);margin-bottom:14px;word-break:break-word;">--</div>
     <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">recent discoveries — article → new concepts learned</div>
     <div id="wl-discoveries" style="font-family:var(--font-mono);font-size:0.65rem;line-height:2.0;"></div>
   </div>
   <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
-    Web learner not yet active — will fire when open questions accumulate (every ~400 steps in INVESTIGATE mode).
+    Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
   </div>
 
   <footer>
@@ -1922,6 +1926,7 @@ function render(d) {
     document.getElementById('wl-pages').textContent   = fmt(wl.total_pages_read);
     document.getElementById('wl-symbols').textContent = fmt(wl.total_new_symbols);
     document.getElementById('wl-lexicon').textContent = fmt(wl.symbol_count);
+    document.getElementById('wl-queried').textContent = fmt(wl.queried_symbols || 0);
     document.getElementById('wl-query').textContent   = wl.last_query || '—';
 
     const disc = wl.recent_discoveries || [];
