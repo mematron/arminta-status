@@ -1124,6 +1124,32 @@ footer a:hover { color: var(--text); }
     </ul>
   </div>
 
+  <!-- WEB LEARNER -->
+  <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth</div>
+  <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">PAGES READ</div>
+        <div id="wl-pages" style="font-size:1.4rem;color:var(--cyan);font-family:var(--font-mono);">--</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">NEW SYMBOLS</div>
+        <div id="wl-symbols" style="font-size:1.4rem;color:var(--green);font-family:var(--font-mono);">--</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">LEXICON SIZE</div>
+        <div id="wl-lexicon" style="font-size:1.4rem;color:var(--amber);font-family:var(--font-mono);">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:6px;letter-spacing:0.05em;">last query sent to Wikipedia</div>
+    <div id="wl-query" style="font-size:0.7rem;color:var(--cyan);font-family:var(--font-mono);margin-bottom:14px;word-break:break-word;">--</div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">recent discoveries — article → new concepts learned</div>
+    <div id="wl-discoveries" style="font-family:var(--font-mono);font-size:0.65rem;line-height:2.0;"></div>
+  </div>
+  <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
+    Web learner not yet active — will fire when open questions accumulate (every ~400 steps in INVESTIGATE mode).
+  </div>
+
   <footer>
     <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
@@ -1679,6 +1705,7 @@ function render(d) {
       else if (l.includes('[warn]'))                                    cls += ' warn';
       else if (l.includes('[meta]'))                                    cls += ' meta';
       else if (l.includes('[lexical]') || l.includes('[lex]'))         cls += ' lex';
+      else if (l.includes('[weblearn]'))                                cls += ' lex';
       else if (l.includes('[resolver]') || l.includes('[resolve]'))    cls += ' res';
       else if (l.includes('[gov]'))                                     cls += ' gov';
       else if (l.includes('[curiosity]') || l.includes('[dream]') || l.includes('[mosaic]')) cls += ' cur';
@@ -1882,6 +1909,41 @@ function render(d) {
     confEl.textContent = 'confidence: --';
     stepEl.textContent = 'not yet evaluated';
     reasonsEl.innerHTML = '<li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>';
+  }
+
+  /* ── WEB LEARNER ── */
+  const wl = d.web_learning;
+  const wlPanel = document.getElementById('weblearn-panel');
+  const wlEmpty = document.getElementById('weblearn-empty');
+  if (wl && typeof wl === 'object' && (wl.total_pages_read > 0 || wl.total_new_symbols > 0)) {
+    wlPanel.style.display = 'block';
+    wlEmpty.style.display = 'none';
+
+    document.getElementById('wl-pages').textContent   = fmt(wl.total_pages_read);
+    document.getElementById('wl-symbols').textContent = fmt(wl.total_new_symbols);
+    document.getElementById('wl-lexicon').textContent = fmt(wl.symbol_count);
+    document.getElementById('wl-query').textContent   = wl.last_query || '—';
+
+    const disc = wl.recent_discoveries || [];
+    const discEl = document.getElementById('wl-discoveries');
+    if (disc.length) {
+      discEl.innerHTML = disc.map(d => {
+        const sample = Array.isArray(d.sample) ? d.sample.join(', ') : '';
+        const rew    = typeof d.reward === 'number' ? (d.reward >= 0 ? '+' : '') + d.reward.toFixed(3) : '';
+        return `<div style="border-left:2px solid var(--green-dim);padding-left:8px;margin-bottom:4px;">
+          <span style="color:var(--cyan)">${(d.article||'').substring(0,45)}</span>
+          <span style="color:var(--dim)"> · step ${d.step} · </span>
+          <span style="color:var(--green)">${d.new_words} new</span>
+          ${rew ? `<span style="color:var(--amber)"> Δ${rew}</span>` : ''}
+          ${sample ? `<div style="color:var(--dim);font-size:0.6rem;margin-top:1px">${sample}</div>` : ''}
+        </div>`;
+      }).join('');
+    } else {
+      discEl.innerHTML = '<span style="color:var(--dim)">no discoveries yet</span>';
+    }
+  } else {
+    wlPanel.style.display = 'none';
+    wlEmpty.style.display = 'block';
   }
 }
 
