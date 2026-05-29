@@ -1337,7 +1337,7 @@ function render(d) {
   setAndFlash('hypotheses', fmt(d.hypotheses));
   setAndFlash('interventions', fmt(d.interventions));
   setAndFlash('self-mods', fmt(d.self_mods));
-  setAndFlash('mosaic-hyp-count', (d.mosaic_hypotheses && d.mosaic_hypotheses.length > 0) ? d.mosaic_hypotheses.length : '--');
+  setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
 
   /* governor */
   const govCur = document.getElementById('gov-current');
