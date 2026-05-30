@@ -343,6 +343,64 @@ header {
   letter-spacing: 0.05em;
 }
 
+/* ── WHY / CAUSAL REASONING PANEL ── */
+.why-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 0.72rem;
+}
+.why-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.why-label {
+  color: var(--cyan);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+.why-value {
+  color: var(--fg);
+  flex: 1;
+}
+.why-ctx {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.why-ctx-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 0.64rem;
+  color: var(--dim);
+}
+.why-cf {
+  color: var(--yellow, #e5c07b);
+  font-style: italic;
+}
+.why-mech {
+  color: var(--dim);
+  font-style: italic;
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.why-none {
+  color: var(--dim);
+  font-style: italic;
+}
+
 /* ── S.M.A.R.T. DRIVE HEALTH PANEL ── */
 .smart-panel {
   border: 1px solid var(--border);
@@ -1117,6 +1175,28 @@ footer a:hover { color: var(--text); }
     </div>
   </div>
 
+  <!-- CAUSAL REASONING / WHY PANEL -->
+  <div class="section-label mb12">Causal Reasoning<button class="help-btn inline" onclick="openHelp('help-why')" title="Why did Arminta do that?" aria-label="Help: Causal Reasoning">?</button></div>
+  <div class="why-panel" id="why-panel">
+    <div class="why-row">
+      <span class="why-label">Last Act</span>
+      <span class="why-value" id="why-action"><span class="why-none">awaiting first action</span></span>
+    </div>
+    <div class="why-row">
+      <span class="why-label">Why</span>
+      <span class="why-value" id="why-reason"><span class="why-none">--</span></span>
+    </div>
+    <div class="why-row" id="why-ctx-row" style="display:none">
+      <span class="why-label">Context</span>
+      <div class="why-ctx" id="why-ctx"></div>
+    </div>
+    <div class="why-row" id="why-cf-row" style="display:none">
+      <span class="why-label">Differs from</span>
+      <span class="why-value why-cf" id="why-cf"></span>
+    </div>
+    <div id="why-mechanisms" style="margin-top:6px"></div>
+  </div>
+
   <!-- DRIVE HEALTH (S.M.A.R.T.) -->
   <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
   <div class="smart-panel" id="smart-panel">
@@ -1814,6 +1894,70 @@ function render(d) {
     strip.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">probes will appear once Arminta has been idle</span>';
   }
 
+  /* ── CAUSAL REASONING / WHY PANEL ── */
+  const whyAction   = document.getElementById('why-action');
+  const whyReason   = document.getElementById('why-reason');
+  const whyCtxRow   = document.getElementById('why-ctx-row');
+  const whyCtx      = document.getElementById('why-ctx');
+  const whyCfRow    = document.getElementById('why-cf-row');
+  const whyCf       = document.getElementById('why-cf');
+  const whyMechs    = document.getElementById('why-mechanisms');
+
+  const _lastAction = d.last_action || '';
+  const _lastReason = d.last_reason || '';
+  const _lastCtx    = d.last_action_context || {};
+  const _lastCf     = d.last_counterfactual || '';
+  const _mechs      = d.hypothesis_mechanisms || [];
+
+  if (_lastAction && _lastAction !== 'monitor') {
+    whyAction.innerHTML = `<span style="color:var(--cyan);font-weight:600">${_lastAction.toUpperCase()}</span>`;
+  } else if (_lastAction === 'monitor') {
+    whyAction.innerHTML = `<span style="color:var(--dim)">MONITOR — no intervention warranted</span>`;
+  } else {
+    whyAction.innerHTML = '<span class="why-none">awaiting first action</span>';
+  }
+
+  whyReason.textContent = _lastReason || '--';
+
+  // Triggering metric chips
+  const _ctxKeys = ['cpu','mem','temp_c','psi_cpu_some','net_recv_kbps','sess_proc_cpu_dilution','nvme_temp_c','load'];
+  const _ctxLabels = {cpu:'CPU%',mem:'MEM%',temp_c:'Temp°C',psi_cpu_some:'PSI-cpu',
+    net_recv_kbps:'Net-in',sess_proc_cpu_dilution:'Dilution',nvme_temp_c:'NVMe°C',load:'Load'};
+  const _ctxChips = _ctxKeys
+    .filter(k => _lastCtx[k] !== undefined && _lastCtx[k] !== null)
+    .map(k => `<span class="why-ctx-chip">${_ctxLabels[k]||k}: ${Number(_lastCtx[k]).toFixed(1)}</span>`);
+  if (_ctxChips.length > 0) {
+    whyCtx.innerHTML = _ctxChips.join('');
+    whyCtxRow.style.display = 'flex';
+  } else {
+    whyCtxRow.style.display = 'none';
+  }
+
+  // Counterfactual explanation
+  if (_lastCf) {
+    whyCf.textContent = _lastCf;
+    whyCfRow.style.display = 'flex';
+  } else {
+    whyCfRow.style.display = 'none';
+  }
+
+  // Hypothesis mechanisms (last 5)
+  whyMechs.innerHTML = '';
+  if (_mechs.length > 0) {
+    const _mechHeader = document.createElement('div');
+    _mechHeader.style.cssText = 'color:var(--dim);font-size:0.64rem;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;margin-top:6px;border-top:1px solid var(--border);padding-top:6px';
+    _mechHeader.textContent = 'Active Hypothesis Mechanisms';
+    whyMechs.appendChild(_mechHeader);
+    _mechs.forEach(m => {
+      const el = document.createElement('div');
+      el.className = 'why-mech';
+      el.innerHTML = `<span style="color:var(--fg)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
+        + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${m.fitness}, step ${m.step})</span>`
+        + `<br><span style="color:var(--dim)">${m.mechanism}</span>`;
+      whyMechs.appendChild(el);
+    });
+  }
+
   /* ── S.M.A.R.T. DRIVE HEALTH ── */
   const sh = d.smart_health;
   const smartPanel   = document.getElementById('smart-panel');
@@ -2264,6 +2408,23 @@ setInterval(refresh, REFRESH_MS);
         <br>· <span style="color:var(--red)">Red</span> — errors
         <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-why">
+      <div class="help-entry-title"><span>Causal Reasoning</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel exposes four layers of Arminta's situational awareness — not just what she did, but why, and how she compares current outcomes to past experience.
+        <br><br>
+        <strong>Last Act</strong> — the most recent non-monitor action dispatched. <strong>Why</strong> — the reason string from the causal graph rule chain that selected it.
+        <br><br>
+        <strong>Context</strong> — the metric snapshot at the moment the action was selected: CPU%, memory, temperature, PSI pressure, network throughput, and dilution. This is the environmental state that made the action seem appropriate.
+        <br><br>
+        <strong>Differs from past</strong> — counterfactual explanation. When an action produces an unexpectedly good or bad outcome compared to similar past episodes, Arminta identifies which metrics changed between now and then. For example: "worked before (step 366400, r=+0.71) but now: CPU higher by 48, dilution higher by 0.4". This is Layer 3 causal reasoning — not just what happened, but what was structurally different.
+        <br><br>
+        <strong>Active Hypothesis Mechanisms</strong> — the last five hypotheses the HypothesisEngine generated, each annotated with a plain-language mechanism story. This is Layer 2: Arminta doesn't just notice that A correlates with B — she commits to a proposed explanation of why. Mechanisms are tested against subsequent observations and either confirmed or pruned.
+        <br><br>
+        All four layers feed back into the episodic memory database (<code>arminta_episodic.db</code>) with context, so Arminta can replay past decisions and compare them against current conditions as she matures.
       </div>
     </div>
 
