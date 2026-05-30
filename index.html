@@ -1791,13 +1791,22 @@ function render(d) {
       : `${nph.filter(p=>p.ok).length}/${nph.length} ok`;
     probeStatus.style.color = degraded ? 'var(--red)' : 'var(--green)';
 
-    // Last 3 probe lines
-    nph.slice(-3).reverse().forEach(p => {
-      const ms   = p.latency_ms >= 0 ? p.latency_ms + 'ms' : 'timeout';
+    // Per-target latest — one row per unique label, most recent result.
+    // Shows current state of each probe target without duplication.
+    const latestByLabel = {};
+    nph.forEach(p => { latestByLabel[p.label] = p; });
+    const labelOrder = ['gateway', 'cloudflare', 'dns', 'portal'];
+    const orderedLabels = [
+      ...labelOrder.filter(l => latestByLabel[l]),
+      ...Object.keys(latestByLabel).filter(l => !labelOrder.includes(l))
+    ];
+    orderedLabels.forEach(label => {
+      const p   = latestByLabel[label];
+      const ms  = p.latency_ms >= 0 ? p.latency_ms + 'ms' : 'timeout';
       const icon = p.ok ? '●' : '○';
       const col  = p.ok ? 'var(--green)' : 'var(--red)';
       recent.innerHTML += `<div><span style="color:${col}">${icon}</span> `
-        + `<span style="color:var(--cyan)">${p.label.padEnd(12)}</span>`
+        + `<span style="color:var(--cyan)">${label.padEnd(12)}</span>`
         + `<span style="color:var(--dim)"> step ${p.step} · ${ms}</span></div>`;
     });
   } else {
