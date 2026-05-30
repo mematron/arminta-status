@@ -1817,10 +1817,13 @@ function render(d) {
 
   if (sh && typeof sh === 'object') {
     const ok = !!sh.ok;
-    smartPanel.className   = 'smart-panel ' + (ok ? 'smart-ok' : 'smart-warn');
-    smartDot.className     = 'smart-dot '   + (ok ? 'ok'       : 'warn');
-    smartVerdict.className = 'smart-verdict '+ (ok ? 'ok'       : 'warn');
-    smartVerdict.textContent = ok ? 'OK — no critical signals' : 'WARNING — check drive';
+    const unavail = !!sh.unavailable;
+    smartPanel.className   = 'smart-panel ' + (unavail ? 'smart-none' : ok ? 'smart-ok' : 'smart-warn');
+    smartDot.className     = 'smart-dot '   + (unavail ? 'none'       : ok ? 'ok'       : 'warn');
+    smartVerdict.className = 'smart-verdict '+ (unavail ? 'none'      : ok ? 'ok'       : 'warn');
+    smartVerdict.textContent = unavail
+      ? 'checked — data unavailable (needs root or nvme-cli)'
+      : ok ? 'OK — no critical signals' : 'WARNING — check drive';
 
     /* last-checked age — prefer checked_ts on the sh dict, fallback to top-level */
     const _cts = sh.checked_ts || d.last_smart_check_time || 0;
@@ -1867,8 +1870,15 @@ function render(d) {
     smartPanel.className   = 'smart-panel smart-none';
     smartDot.className     = 'smart-dot none';
     smartVerdict.className = 'smart-verdict none';
-    smartVerdict.textContent = 'awaiting first check (~4h at idle)';
-    smartDevice.textContent  = '';
+    const _fallbackTs = d.last_smart_check_time || 0;
+    if (_fallbackTs > 0) {
+      const _fallbackAge = _smartAge(_fallbackTs);
+      smartVerdict.textContent = 'checked — result not available';
+      smartDevice.textContent  = _fallbackAge ? 'last checked ' + _fallbackAge : '';
+    } else {
+      smartVerdict.textContent = 'awaiting first check (~4h at idle)';
+      smartDevice.textContent  = '';
+    }
     smartMetrics.innerHTML   = '';
   }
 
