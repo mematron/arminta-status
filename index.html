@@ -1618,7 +1618,17 @@ function render(d) {
   const cmcMeta = d.cmc_meta || {};
   const metaEl = document.getElementById('cmc-meta');
   if (cmcMeta.epsilon !== undefined) {
-    metaEl.innerHTML = `ε = ${cmcMeta.epsilon.toFixed(3)} exploration &nbsp;·&nbsp; lr = ${(cmcMeta.lr||0).toFixed(4)} &nbsp;·&nbsp; γ = ${(cmcMeta.discount||0).toFixed(4)}`;
+    const line1 = `ε = ${cmcMeta.epsilon.toFixed(3)} &nbsp;·&nbsp; lr = ${(cmcMeta.lr||0).toFixed(4)} &nbsp;·&nbsp; γ = ${(cmcMeta.discount||0).toFixed(4)}`;
+    let line2 = '';
+    if (cmcMeta.ga_exploration_decay !== undefined) {
+      const ed = cmcMeta.ga_exploration_decay;
+      const rs = cmcMeta.ga_reward_scale;
+      const cw = cmcMeta.ga_curiosity_weight;
+      line2 = '<span style="color:var(--muted);font-size:0.62rem;letter-spacing:0.04em;">'
+        + 'ε&#775; = ' + ed.toFixed(4) + ' &nbsp;·&nbsp; r&#775; = ' + rs.toFixed(4) + ' &nbsp;·&nbsp; κ = ' + cw.toFixed(3)
+        + '</span>';
+    }
+    metaEl.innerHTML = line1 + (line2 ? '<br>' + line2 : '');
   }
 
   /* ── MODE DISTRIBUTION DONUT ── */
@@ -2134,7 +2144,7 @@ setInterval(refresh, REFRESH_MS);
         <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
         <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded.
         <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
-        <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own decision logic autonomously. A non-zero value means the agent has changed its own behaviour at runtime.
+        <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously. Targets include <code>STEP_RATE_DEFAULT</code> (pacing) and, as of v2.1, <code>CURIOSITY_STALE_STEPS</code> (how aggressively it probes for new causal edges when reward stagnates). A non-zero value means the agent has changed its own behaviour at runtime.
         <br>· <strong>Mosaic Hypotheses</strong> — cross-domain correlations discovered by the Mosaic sub-system (e.g. "humidity sensor correlates with CPU temperature"). These are environment↔system links, not action↔metric links.
       </div>
     </div>
@@ -2227,6 +2237,10 @@ setInterval(refresh, REFRESH_MS);
         <br><br>· <code>ε</code> — exploration rate: probability of picking a random mode instead of the greedy best (decreases as the controller becomes more confident)
         <br>· <code>lr</code> — learning rate: how fast Q-values update from new experience
         <br>· <code>γ</code> — discount factor: how much future reward is weighted vs. immediate reward
+        <br><br>A second row shows the three <strong>GA-evolved parameters</strong> now wired to live systems (v2.1):
+        <br>· <code>ε̇</code> — GA-evolved CMC epsilon decay rate (higher = slower exploration fade)
+        <br>· <code>ṙ</code> — GA-evolved reward scale: multiplier applied to every immediate metric delta
+        <br>· <code>κ</code> — GA-evolved curiosity weight: scales how aggressively curiosity probes fire (higher = sooner)
       </div>
     </div>
 
