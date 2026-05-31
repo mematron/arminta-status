@@ -736,6 +736,22 @@ footer a:hover { color: var(--text); }
 .mb12 { margin-bottom: 12px; }
 .mb28 { margin-bottom: 28px; }
 
+/* ── STALE BADGE ── */
+.stale-badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: rgba(255,179,0,0.12);
+  border: 1px solid rgba(255,179,0,0.35);
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  margin-left: 8px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 /* ── HELP BUTTON ── */
 .help-btn {
   display: inline-flex;
@@ -1293,6 +1309,8 @@ let sparkChart, circChart;
 function destroyCharts() {
   [sparkChart, circChart].forEach(c => { if (c) c.destroy(); });
   sparkChart = circChart = null;
+  // FIX-E: also destroy donut so it doesn't leak on error-path resets
+  if (window._modeDonutChart) { window._modeDonutChart.destroy(); window._modeDonutChart = null; }
 }
 
 /* ── log scroll lock ── */
@@ -1374,7 +1392,12 @@ function render(d) {
     rEl.textContent = (rVal >= 0 ? '+' : '') + Number(rVal).toFixed(4) + '/step';
     rEl.className   = 'mode-val ' + (rVal >= 0 ? 'reward-pos' : 'reward-neg');
     if (rSubEl && totalR !== null) {
-      rSubEl.textContent = 'cumulative: ' + (totalR >= 0 ? '+' : '') + Number(totalR).toFixed(1);
+      // FIX-G: show baseline value if available
+      const _baseline = d.reward_baseline !== undefined ? d.reward_baseline : null;
+      const _bStr = _baseline !== null
+        ? '  ·  baseline ' + (_baseline >= 0 ? '+' : '') + Number(_baseline).toFixed(4)
+        : '  ·  baseline-centred';
+      rSubEl.textContent = 'cumulative: ' + (totalR >= 0 ? '+' : '') + Number(totalR).toFixed(1) + _bStr;
     }
   } else {
     rEl.textContent = '--';
@@ -1557,7 +1580,9 @@ function render(d) {
             const p05 = sorted[Math.floor(sorted.length * 0.05)];
             const p95 = sorted[Math.floor(sorted.length * 0.95)];
             const pad = Math.max(Math.abs(p95 - p05) * 0.25, 0.05);
-            const yMin = Math.min(...allVals) - pad;
+            // FIX-D: use symmetric percentile bounds so baseline-subtracted
+            // rewards don't clip at yMin when the distribution shifts negative.
+            const yMin = p05 - pad;
             const yMax = p95 + pad;
             const range = yMax - yMin;
             const prec = range < 0.05 ? 4 : range < 0.5 ? 3 : range < 2 ? 2 : 1;
@@ -1587,10 +1612,12 @@ function render(d) {
   if (qs.length) {
     qs.slice(0, 6).forEach((q, i) => {
       const cls = i < 2 ? 'q-high' : i < 4 ? 'q-med' : 'q-low';
+      const _qt = (q.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const _qv = (q.via||'?').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       qList.innerHTML += `
         <div class="q-item ${cls}">
-          <div class="q-text">${q.text}</div>
-          <div class="q-meta">step ${fmt(q.step)} · revisits: ${q.revisits !== undefined ? q.revisits : '?'} · via ${q.via || '?'}</div>
+          <div class="q-text">${_qt}</div>
+          <div class="q-meta">step ${fmt(q.step)} · revisits: ${q.revisits !== undefined ? q.revisits : '?'} · via ${_qv}</div>
         </div>`;
     });
   } else {
@@ -1832,6 +1859,10 @@ function render(d) {
       else if (l.includes('[smart][warn]'))                             cls += ' warn';
       else if (l.includes('[smart][ok]'))                               cls += ' gov';
       else if (l.includes('[maint]'))                                   cls += ' act';
+      else if (l.includes('[cf]'))                                      cls += ' cur';
+      else if (l.includes('[tune]') || l.includes('[gap]'))             cls += ' res';
+      else if (l.includes('[mosaic][contam]'))                          cls += ' warn';
+      else if (l.includes('[fix-'))                                     cls += ' res';
       else if (l.includes('kill'))                                      cls += ' act';
       else if (l.match(/set_|drop_|sync|compact|renice|loaded/))       cls += ' act';
       else if (l.includes('net_probe'))                                 cls += ' gov';
@@ -2252,7 +2283,7 @@ setInterval(refresh, REFRESH_MS);
         <br>· <code>DREAM</code> — running offline counterfactual simulations (no real actions)
         <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making and rewriting rules
         <br><br><strong>Situation</strong> — what the host system is currently doing (idle, IO-bound, CPU-bound, compiling, browsing, streaming). ARMINTA uses this as context when choosing actions.
-        <br><br><strong>Cumulative Reward</strong> — the running score since boot. Positive means the agent has on net improved system performance; negative means it has so far caused more harm than good. The goal is to push this into positive territory over time.
+        <br><br><strong>Cumulative Reward</strong> — the running score since boot. As of v2.1 the per-step reward is mean-centred against a slow EMA baseline, so this number reflects accumulated performance <em>relative to the machine's recent ambient baseline</em>, not an absolute zero. Watch the <strong>Rolling Avg</strong> (150-step window) for the meaningful health signal — positive means recent actions are beating baseline, negative means they are not.
         <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error. Should stay near zero.
       </div>
     </div>
