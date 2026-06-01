@@ -1518,20 +1518,31 @@ function render(d) {
       first_intervention: '🎯 First Intervention',
       dreams_100:         '💤 100 Dreams',
       best_single_reward: '⭐ Best Reward',
-      steps_1000:   '🟢 1k Steps',  steps_10000:  '🟢 10k Steps',
-      steps_50000:  '🟢 50k Steps', steps_100000: '🟡 100k Steps',
-      steps_250000: '🟡 250k Steps',steps_500000: '🔴 500k Steps',
-      steps_1000000:'🔴 1M Steps',
+      steps_1000:    '🟢 1k Steps',   steps_10000:   '🟢 10k Steps',
+      steps_50000:   '🟢 50k Steps',  steps_100000:  '🟡 100k Steps',
+      steps_250000:  '🟡 250k Steps', steps_500000:  '🔴 500k Steps',
+      steps_1000000: '🔴 1M Steps',
     };
-    const keys = Object.keys(d.milestones).filter(k => !k.startsWith('session_'));
+    const MS_ORDER = ['steps_1000','steps_10000','steps_50000','steps_100000',
+                      'steps_250000','steps_500000','steps_1000000',
+                      'first_intervention','dreams_100','best_single_reward'];
+    const keys = Object.keys(d.milestones)
+      .filter(k => !k.startsWith('session_'))
+      .sort((a,b) => {
+        const ai = MS_ORDER.indexOf(a), bi = MS_ORDER.indexOf(b);
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      });
     if (keys.length) {
       msWrap.innerHTML = keys.map(k => {
         const ms = d.milestones[k];
         const label = MS_LABELS[k] || k.replace(/_/g,' ');
-        const stepStr = ms && ms.step ? ' · step ' + fmt(ms.step) : '';
+        const backfilled = ms && ms.backfilled;
+        const stepStr = ms && ms.step ? 'step ' + fmt(ms.step) : '';
         const val = (k === 'best_single_reward' && ms && ms.value !== undefined)
-          ? ' · ' + (+ms.value).toFixed(4) : '';
-        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-size:0.7rem;color:var(--text);" title="step${stepStr}">${label}${val}</span>`;
+          ? ' · r=' + (+ms.value).toFixed(4) : '';
+        const opacity = backfilled ? '0.55' : '1';
+        const title = stepStr + (backfilled ? ' (historical)' : '');
+        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-size:0.7rem;color:var(--text);opacity:${opacity};" title="${title}">${label}${val}</span>`;
       }).join('');
     } else {
       msWrap.innerHTML = '<span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>';
