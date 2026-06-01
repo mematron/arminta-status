@@ -2452,7 +2452,7 @@ setInterval(refresh, REFRESH_MS);
         <br>· <code>INVESTIGATE</code> — actively testing a hypothesis with targeted interventions
         <br>· <code>OPTIMIZE</code> — exploiting known good actions to maximise reward
         <br>· <code>DREAM</code> — running offline counterfactual simulations (no real actions)
-        <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making and rewriting rules
+        <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making, running a lexical reflection pass over recent history, and rewriting internal parameters via AST self-modification if warranted
         <br><br><strong>Situation</strong> — what the host system is currently doing (idle, IO-bound, CPU-bound, compiling, browsing, streaming). ARMINTA uses this as context when choosing actions.
         <br><br><strong>Cumulative Reward</strong> — the running score since boot. As of v2.1 the per-step reward is mean-centred against a slow EMA baseline, so this number reflects accumulated performance <em>relative to the machine's recent ambient baseline</em>, not an absolute zero. Watch the <strong>Rolling Avg</strong> (150-step window) for the meaningful health signal — positive means recent actions are beating baseline, negative means they are not.
         <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error. Should stay near zero.
@@ -2533,6 +2533,7 @@ setInterval(refresh, REFRESH_MS);
         <br>· <strong>Override</strong> — a manual lock preventing ARMINTA from switching governors. "none" means ARMINTA has full control.
         <br>· <strong>Idle Steps</strong> — steps since the last action. Counts up while ARMINTA observes; resets on any intervention.
         <br>· <strong>Bootstrap Phase</strong> — if YES, ARMINTA is still in its early data-collection phase and takes more exploratory actions than usual.
+        <br>· <strong>HW IRQ</strong> — tracks whether <code>renice_ksoftirqd</code> has permanently given up on an IRQ storm. When kernel softirq threads are reniced repeatedly with no effect (hardware-level interrupt flood that can't be suppressed in software), ARMINTA sets this flag to <code>STANDING DOWN</code> and stops attempting that action. <code>ok</code> means no persistent IRQ storm has been detected.
       </div>
     </div>
 
@@ -2626,7 +2627,7 @@ setInterval(refresh, REFRESH_MS);
     <div class="help-entry" id="help-kill">
       <div class="help-entry-title"><span>Kill Ineffective &amp; Agent Log</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that terminating it doesn't help performance.
+        <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that terminating it doesn't help performance. Entries expire after 2,000 steps and are re-evaluated — if the process reappears in the list, the pattern has been re-confirmed.
         <br><br><strong>Agent Log (right)</strong> — the raw tail of ARMINTA's operational log, colour-coded by event type:
         <br>· <span style="color:#4a8080">Teal</span> — observation events (<code>[OBS]</code>)
         <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
