@@ -241,7 +241,6 @@ header {
 .sit-io_bound         { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
 .sit-cpu_bound        { color: var(--red);    border-color: rgba(255,61,61,0.3);   background: rgba(255,61,61,0.07); }
 .sit-compile          { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
-.sit-browse           { color: var(--green);  border-color: var(--green-dim);      background: var(--green-bg); }
 .sit-streaming        { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
 .sit-browser_compute  { color: var(--amber);  border-color: rgba(255,179,0,0.4);   background: rgba(255,179,0,0.08); }
 .sit-memory_pressure  { color: var(--red);    border-color: rgba(255,61,61,0.4);   background: rgba(255,61,61,0.08); }
@@ -1064,6 +1063,10 @@ footer a:hover { color: var(--text); }
       <div class="gov-key">Bootstrap Phase</div>
       <div class="gov-val" id="bootstrap" style="color:var(--green)">--</div>
     </div>
+    <div class="gov-cell">
+      <div class="gov-key">HW IRQ</div>
+      <div class="gov-val" id="irq-gave-up" style="color:var(--dim)" title="renice_ksoftirqd fired but could not suppress the IRQ storm — hardware-level interrupt flood, agent has stood down">--</div>
+    </div>
   </div>
 
   <!-- ADAPTIVE THRESHOLDS -->
@@ -1361,21 +1364,27 @@ function flashEl(id) {
 
 /* ── stale data tracking ── */
 let lastUpdatedTs = null;
+let lastStepCount = null;
 
 /* ── render ── */
 function render(d) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  /* staleness */
+  /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
   const mins = staleness(d.updated_ts);
+  const currentStep = d.step_count ? Number(d.step_count) : null;
+  const stepAdvanced = lastStepCount !== null && currentStep !== null && currentStep > lastStepCount;
   const pill = document.getElementById('status-pill');
   const lsEl = document.getElementById('last-seen');
   if (mins !== null) {
     let s = mins < 1 ? 'last seen just now' : mins < 60 ? `last seen ${Math.floor(mins)}m ago` : `last seen ${Math.floor(mins/60)}h ${Math.floor(mins%60)}m ago`;
     lsEl.textContent = s;
-    if (mins <= 20)  { pill.textContent='AGENT ACTIVE'; pill.className='status-pill active';  lsEl.className='last-seen recent'; }
+    // Fix #18: if step_count is advancing but updated_ts is stale (Gist auth issue),
+    // show SIGNAL WEAK instead of OFFLINE so the dashboard doesn't mislead.
+    if (mins <= 20 || stepAdvanced)  { pill.textContent='AGENT ACTIVE'; pill.className='status-pill active';  lsEl.className='last-seen recent'; }
     else if(mins<=60){ pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
+    else if(stepAdvanced){ pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
     else             { pill.textContent='AGENT OFFLINE';pill.className='status-pill offline'; lsEl.className='last-seen offline'; }
   } else {
     pill.textContent='AGENT ACTIVE'; pill.className='status-pill active'; lsEl.textContent='';
@@ -1390,6 +1399,7 @@ function render(d) {
       (isStale ? ' <span class="stale-badge" title="Data unchanged since last refresh — agent may be paused">CACHED</span>' : '');
   }
   lastUpdatedTs = currentTs;
+  lastStepCount = currentStep;
 
   /* hero */
   const newStepCount = d.step_count ? Number(d.step_count).toLocaleString() : '--';
@@ -1599,6 +1609,16 @@ function render(d) {
   const bootEl = document.getElementById('bootstrap');
   bootEl.textContent = d.bootstrap_phase ? 'YES' : 'no';
   bootEl.style.color = d.bootstrap_phase ? 'var(--amber)' : 'var(--dim)';
+
+  const irqGaveUp = document.getElementById('irq-gave-up');
+  if (irqGaveUp) {
+    const gave = d.irq_renice_gave_up;
+    irqGaveUp.textContent = gave ? 'STANDING DOWN' : 'ok';
+    irqGaveUp.style.color = gave ? 'var(--pink)' : 'var(--dim)';
+    irqGaveUp.title = gave
+      ? 'renice_ksoftirqd was ineffective — hardware-level IRQ storm, agent has stood down permanently'
+      : 'No persistent IRQ storm detected';
+  }
 
   /* adaptive thresholds */
   const at = d.adaptive_thresholds || {};
