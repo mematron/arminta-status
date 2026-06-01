@@ -1616,7 +1616,7 @@ function render(d) {
   if (!edgeList) return;
   edgeList.innerHTML = '';
   if (edges.length) {
-    const maxE = Math.max(...edges.map(e => Math.abs(e.effect)));
+    const maxE = Math.max(...edges.map(e => Math.abs(e.effect)), 0.0001);
     edges.slice(0, 12).forEach(e => {
       const pct = (Math.abs(e.effect) / maxE * 100).toFixed(1);
       const col = e.effect >= 0 ? '#39ff14' : '#ff3d3d';
