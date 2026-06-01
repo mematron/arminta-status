@@ -1540,14 +1540,18 @@ function render(d) {
   /* milestones */
   const msWrap = document.getElementById('milestones-wrap');
   if (msWrap && d.milestones && typeof d.milestones === 'object') {
-    const MS_LABELS = {
-      first_intervention: '🎯 First Intervention',
-      dreams_100:         '💤 100 Dreams',
-      best_single_reward: '⭐ Best Reward',
-      steps_1000:    '🟢 1k Steps',   steps_10000:   '🟢 10k Steps',
-      steps_50000:   '🟢 50k Steps',  steps_100000:  '🟡 100k Steps',
-      steps_250000:  '🟡 250k Steps', steps_500000:  '🔴 500k Steps',
-      steps_1000000: '🔴 1M Steps',
+    // Dot colors: green=early milestones, amber=mid, red=late, cyan=special
+    const MS_META = {
+      first_intervention: { label: 'First Intervention', dot: '#4ade80' },
+      dreams_100:         { label: '100 Dreams',         dot: '#67e8f9' },
+      best_single_reward: { label: 'Best Reward',        dot: '#fbbf24' },
+      steps_1000:    { label: '1k Steps',   dot: '#4ade80' },
+      steps_10000:   { label: '10k Steps',  dot: '#4ade80' },
+      steps_50000:   { label: '50k Steps',  dot: '#4ade80' },
+      steps_100000:  { label: '100k Steps', dot: '#fbbf24' },
+      steps_250000:  { label: '250k Steps', dot: '#fbbf24' },
+      steps_500000:  { label: '500k Steps', dot: '#f87171' },
+      steps_1000000: { label: '1M Steps',   dot: '#f87171' },
     };
     const MS_ORDER = ['steps_1000','steps_10000','steps_50000','steps_100000',
                       'steps_250000','steps_500000','steps_1000000',
@@ -1561,14 +1565,15 @@ function render(d) {
     if (keys.length) {
       msWrap.innerHTML = keys.map(k => {
         const ms = d.milestones[k];
-        const label = MS_LABELS[k] || k.replace(/_/g,' ');
+        const meta = MS_META[k] || { label: k.replace(/_/g,' '), dot: '#67e8f9' };
         const backfilled = ms && ms.backfilled;
         const stepStr = ms && ms.step ? 'step ' + fmt(ms.step) : '';
         const val = (k === 'best_single_reward' && ms && ms.value !== undefined)
-          ? ' · r=' + (+ms.value).toFixed(4) : '';
-        const opacity = backfilled ? '0.55' : '1';
+          ? ' &middot; r=' + (+ms.value).toFixed(4) : '';
+        const opacity = backfilled ? '0.5' : '1';
         const title = stepStr + (backfilled ? ' (historical)' : '');
-        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-size:0.7rem;color:var(--text);opacity:${opacity};" title="${title}">${label}${val}</span>`;
+        const dot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${meta.dot};flex-shrink:0;"></span>`;
+        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-size:0.7rem;color:var(--text);opacity:${opacity};" title="${title}">${dot}${meta.label}${val}</span>`;
       }).join('');
     } else {
       msWrap.innerHTML = '<span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>';
