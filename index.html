@@ -1283,7 +1283,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- WEB LEARNER -->
-  <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth</div>
+  <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
       <div style="text-align:center;">
@@ -2657,6 +2657,34 @@ setInterval(refresh, REFRESH_MS);
       </div>
     </div>
 
+
+    <div class="help-entry" id="help-weblearn">
+      <div class="help-entry-title"><span>Web Learner — Autonomous Language Growth</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        Three interlocked subsystems that give Arminta a vocabulary of her own — built from operational history, not from pretrained language.
+        <br><br>
+        <strong>LexicalCore</strong> — Arminta's language acquisition layer. Four stages:
+        <br>· <em>Symbol corpus</em> — every term she uses (actions, emotions, modes, situations, causal relations) weighted by frequency and outcome. Words mean what they have meant in practice.
+        <br>· <em>Co-occurrence grammar</em> — which symbols appear together, which follow which, what sequences predict what. Structure without imposed rules.
+        <br>· <em>Composition</em> — assembling known symbols into statements she has never made before. These will not look like English; they look like Arminta.
+        <br>· <em>Open questions</em> — statements that could not be resolved against available data, held rather than discarded. Wonder as a data structure (up to 50 questions held concurrently).
+        <br><br>Reflection runs every 500 steps: Arminta reads her own action/emotion/mode history, updates symbol weights, forms new statements, and checks whether any open question can now be resolved by a recently formed statement.
+        <br><br>
+        <strong>WebLearner</strong> — autonomous web exploration, triggering every ~400 steps. Query generation uses two paths:
+        <br>· <em>Concept-curiosity</em> (primary) — selects symbols from LexicalCore with high weight but sparse co-occurrence context: things observed frequently but understood poorly. Translates through an internal action→concept table (e.g. <code>renice_chrome</code> → <em>nice process priority Unix</em>) into a searchable query. A 30% stochastic pool sample ensures exploration beyond the single top-weight symbol.
+        <br>· <em>Question-term translation</em> (fallback) — when the symbol table is sparse, extracts tokens from the oldest unresolved open question instead.
+        <br><br>Sources are restricted to a whitelist of structured knowledge domains: Wikipedia, MDN Web Docs, Linux man pages, Wiktionary, arXiv, and a handful of performance-analysis references directly relevant to what Arminta does. A hard rate cap of 8 pages/hour prevents runaway fetching. Reward is proportional to genuinely new symbols absorbed (information gain), decayed by repeat visits to the same domain.
+        <br><br>
+        <strong>QuestionResolver</strong> — runs after each WebLearner cycle. Checks whether newly absorbed text answers any of LexicalCore's open questions via token overlap. Resolved questions graduate into the lexicon as confirmed statements with a valence tag (positive or negative, based on the reward context in which they arose).
+        <br><br>
+        <strong>Dashboard counters:</strong>
+        <br>· <strong>Pages Read</strong> — total web pages fetched lifetime
+        <br>· <strong>New Symbols</strong> — cumulative unique vocabulary items absorbed from external sources
+        <br>· <strong>Lexicon Size</strong> — distinct symbols currently active in LexicalCore's weight table
+        <br>· <strong>Concepts Mapped</strong> — distinct action/state symbols looked up at least once (suppresses re-querying the same concept)
+        <br><br>The session log shows each fetch/learn cycle: query generated → article retrieved → symbols absorbed (with sample) → reward impact. Log colours: <span style="color:var(--cyan)">cyan</span> = fetch, <span style="color:var(--green)">green</span> = learn (new symbols), <span style="color:var(--amber)">amber</span> = concept/skip, <span style="color:var(--purple)">purple</span> = reward delta.
+      </div>
+    </div>
 
   </div><!-- /help-panel-body -->
 </div><!-- /help-panel -->
