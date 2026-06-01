@@ -690,35 +690,6 @@ button:focus-visible, a:focus-visible {
 .wl-log-line.reward  { color: var(--purple); }
 .wl-log-line.skip    { color: var(--muted); }
 
-/* ── NEURAL VECTOR BUNDLE ── */
-.bundle-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.bundle-stat {
-  border: 1px solid var(--border);
-  padding: 12px 14px;
-  background: var(--surface2);
-}
-.bundle-stat-key { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
-.bundle-stat-val { font-family: var(--font-ui); font-size: 1.1rem; font-weight: 700; color: var(--cyan); }
-.bundle-stat-val.warn  { color: var(--amber); }
-.bundle-stat-val.crit  { color: var(--red); }
-.bundle-stat-val.green { color: var(--green); }
-.bundle-bias-list { display: flex; flex-direction: column; gap: 7px; }
-.bundle-bias-row { display: flex; align-items: center; gap: 8px; font-size: 0.68rem; }
-.bundle-bias-label { width: clamp(100px,30%,160px); color: var(--dim); word-break: break-word; line-height: 1.3; flex-shrink: 0; }
-.bundle-bias-mid { flex: 1; display: flex; align-items: center; position: relative; height: 5px; min-width: 30px; }
-.bundle-bias-axis { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border2); }
-.bundle-bias-bar { position: absolute; top: 0; height: 5px; border-radius: 3px; }
-.bundle-bias-val { width: 48px; text-align: right; font-size: 0.63rem; flex-shrink: 0; }
-.patch-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.patch-cell { border: 1px solid var(--border); background: var(--surface2); padding: 8px 12px; min-width: 90px; text-align: center; }
-.patch-key { font-size: 0.58rem; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
-.patch-val { font-family: var(--font-ui); font-size: 0.95rem; font-weight: 700; }
-
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
 
@@ -1304,38 +1275,6 @@ footer a:hover { color: var(--text); }
   <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
     Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
   </div>
-
-  <!-- NEURAL VECTOR BUNDLE -->
-  <div class="section-label mb12" style="margin-top:28px;">Neural Vector Bundle — Geometric Reasoning Layer<button class="help-btn inline" onclick="openHelp('help-bundle')" title="What is the Neural Vector Bundle?" aria-label="Help: Neural Vector Bundle">?</button></div>
-  <div class="card card-pad mb28" id="bundle-panel">
-    <!-- Row 1: scalar stats -->
-    <div class="bundle-stats-grid" id="bundle-stats-grid">
-      <div class="bundle-stat"><div class="bundle-stat-key">Lie Consistency</div><div class="bundle-stat-val" id="bndl-lie">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Fiber Norm</div><div class="bundle-stat-val" id="bndl-fiber">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Geodesic Dist</div><div class="bundle-stat-val" id="bndl-geo">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Curvature Energy</div><div class="bundle-stat-val" id="bndl-curv">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Curv. Correction</div><div class="bundle-stat-val" id="bndl-corr">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Anchor Score</div><div class="bundle-stat-val" id="bndl-anc">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Mean Curvature</div><div class="bundle-stat-val" id="bndl-meancurv">--</div></div>
-      <div class="bundle-stat"><div class="bundle-stat-key">Bundle Step</div><div class="bundle-stat-val" id="bndl-step" style="color:var(--dim)">--</div></div>
-    </div>
-    <!-- Row 2: patch tensions + action bias -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-      <div>
-        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:8px;">patch tensions — local curvature by sub-manifold</div>
-        <div class="patch-grid" id="bundle-patches">
-          <div style="color:var(--dim);font-size:0.7rem">no data</div>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:8px;">action geometric bias — positive = smooth geodesic path</div>
-        <div class="bundle-bias-list" id="bundle-bias-list">
-          <div style="color:var(--dim);font-size:0.7rem">no data</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <footer>
     <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
@@ -2264,106 +2203,6 @@ function render(d) {
     wlEmpty.style.display = 'block';
   }
 
-  /* ── NEURAL VECTOR BUNDLE ── */
-  const bndl = d.bundle;
-  if (bndl && typeof bndl === 'object') {
-    // Scalar stats
-    const lieVal = bndl.lie_consistency !== undefined ? +bndl.lie_consistency : null;
-    const lieEl  = document.getElementById('bndl-lie');
-    if (lieEl && lieVal !== null) {
-      lieEl.textContent = lieVal.toFixed(3);
-      lieEl.className   = 'bundle-stat-val' + (lieVal < 0.4 ? ' crit' : lieVal < 0.7 ? ' warn' : ' green');
-    }
-
-    const fibEl = document.getElementById('bndl-fiber');
-    if (fibEl && bndl.fiber_norm !== undefined) fibEl.textContent = (+bndl.fiber_norm).toFixed(3);
-
-    const geoEl = document.getElementById('bndl-geo');
-    if (geoEl && bndl.geodesic_dist !== undefined) {
-      const gv = +bndl.geodesic_dist;
-      geoEl.textContent = gv.toFixed(4);
-      geoEl.className   = 'bundle-stat-val' + (gv > 1.0 ? ' warn' : '');
-    }
-
-    const curvEl = document.getElementById('bndl-curv');
-    if (curvEl && bndl.curvature_energy !== undefined) {
-      const cv = +bndl.curvature_energy;
-      curvEl.textContent = cv.toFixed(4);
-      curvEl.className   = 'bundle-stat-val' + (cv > 2.0 ? ' crit' : cv > 0.5 ? ' warn' : '');
-    }
-
-    const corrEl = document.getElementById('bndl-corr');
-    if (corrEl && bndl.curvature_correction !== undefined) {
-      const corr = +bndl.curvature_correction;
-      corrEl.textContent = (corr >= 0 ? '+' : '') + corr.toFixed(3);
-      corrEl.className   = 'bundle-stat-val' + (corr < -0.25 ? ' warn' : corr > 0.1 ? ' green' : '');
-    }
-
-    const ancEl = document.getElementById('bndl-anc');
-    if (ancEl && bndl.anchor_score !== undefined) {
-      const anc = +bndl.anchor_score;
-      ancEl.textContent = anc.toFixed(3);
-      ancEl.className   = 'bundle-stat-val' + (anc < 0.4 ? ' crit' : anc < 0.7 ? ' warn' : ' green');
-    }
-
-    const mcEl = document.getElementById('bndl-meancurv');
-    if (mcEl && bndl.mean_curvature !== undefined) mcEl.textContent = (+bndl.mean_curvature).toFixed(4);
-
-    const stEl = document.getElementById('bndl-step');
-    if (stEl && bndl.step !== undefined) stEl.textContent = Number(bndl.step).toLocaleString();
-
-    // Patch tensions
-    const patches = bndl.patch_tensions || {};
-    const patchEl = document.getElementById('bundle-patches');
-    if (patchEl && Object.keys(patches).length > 0) {
-      const pMax = Math.max(...Object.values(patches).map(v => +v || 0), 0.0001);
-      const pColors = { thermal: '#ff6e40', memory: '#ff80ab', cpu: '#00e5ff', network: '#39ff14' };
-      patchEl.innerHTML = Object.entries(patches).map(([name, val]) => {
-        const v   = +val || 0;
-        const pct = Math.min(v / pMax * 100, 100);
-        const col = pColors[name] || 'var(--cyan)';
-        const cls = v > pMax * 0.7 ? 'crit' : v > pMax * 0.4 ? 'warn' : '';
-        const colorStyle = cls === 'crit' ? 'color:var(--red)' : cls === 'warn' ? 'color:var(--amber)' : `color:${col}`;
-        return `<div class="patch-cell">
-          <div class="patch-key">${name}</div>
-          <div class="patch-val" style="${colorStyle}">${v.toFixed(4)}</div>
-          <div style="height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;">
-            <div style="height:100%;width:${pct.toFixed(1)}%;background:${col};border-radius:2px;"></div>
-          </div>
-        </div>`;
-      }).join('');
-    } else if (patchEl) {
-      patchEl.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no patch data yet</div>';
-    }
-
-    // Action bias bars
-    const biasData = bndl.action_bias || {};
-    const biasEl   = document.getElementById('bundle-bias-list');
-    if (biasEl) {
-      const biasPairs = Object.entries(biasData).filter(([,v]) => Math.abs(v) > 0.01);
-      biasPairs.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-      if (biasPairs.length > 0) {
-        const absMax = Math.max(...biasPairs.map(([,v]) => Math.abs(v)), 0.001);
-        biasEl.innerHTML = biasPairs.slice(0, 12).map(([action, val]) => {
-          const v    = +val;
-          const pct  = Math.min(Math.abs(v) / absMax * 50, 50);
-          const col  = v >= 0 ? 'var(--green)' : 'var(--red)';
-          const left = v < 0 ? `${50 - pct}%` : '50%';
-          const sign = v >= 0 ? '+' : '';
-          return `<div class="bundle-bias-row">
-            <div class="bundle-bias-label" title="${action}">${action.replace(/_/g,' ')}</div>
-            <div class="bundle-bias-mid">
-              <div class="bundle-bias-axis"></div>
-              <div class="bundle-bias-bar" style="left:${left};width:${pct}%;background:${col}"></div>
-            </div>
-            <div class="bundle-bias-val" style="color:${col}">${sign}${v.toFixed(3)}</div>
-          </div>`;
-        }).join('');
-      } else {
-        biasEl.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no action biases accumulated yet</div>';
-      }
-    }
-  }
 }
 
 /* ── error ── */
@@ -2646,21 +2485,6 @@ setInterval(refresh, REFRESH_MS);
       </div>
     </div>
 
-    <div class="help-entry" id="help-bundle">
-      <div class="help-entry-title"><span>Neural Vector Bundle</span><span class="tag tag-meta">META · v3</span></div>
-      <div class="help-entry-body">
-        The <strong>Neural Vector Bundle</strong> is a geometric reasoning layer that runs alongside the causal graph. It models the system's state as a coordinate on a Riemannian manifold and tracks how reasoning trajectories evolve geometrically step-by-step.
-        <br><br><strong>Key signals:</strong>
-        <br>· <strong>Lie Consistency</strong> — how faithfully the SO(n) rotation group action preserves vector norms in the fiber space. Values near 1.0 = geometrically consistent; below 0.4 triggers self-healing re-normalisation. Low values indicate the reasoning trajectory has become structurally inconsistent.
-        <br>· <strong>Fiber Norm</strong> — magnitude of the current latent reasoning vector (should stay near 1.0 on the unit sphere). Large deviations indicate drift.
-        <br>· <strong>Geodesic Dist</strong> — how far the system moved on the Riemannian manifold in one step. Large values = system changed rapidly; used to blend a geometric surprise signal into the prediction error estimator.
-        <br>· <strong>Curvature Energy</strong> — magnitude of the curvature 2-form Ω along the current reasoning path. High values mean the agent's trajectory is geometrically stressed — it is being pushed away from a stable geodesic.
-        <br>· <strong>Curvature Correction</strong> — steering signal derived from curvature energy: negative = penalise the current action, positive = the path is smooth. Applied directly to causal graph edge weights.
-        <br>· <strong>Anchor Score</strong> — how well the fiber's surjective projection back to observable metric space matches actual observed metrics. Low anchor = abstract reasoning has drifted from reality; a small grounding penalty is applied to rewards.
-        <br><br><strong>Patch Tensions</strong> — the curvature within each sub-manifold patch (thermal, memory, CPU, network). High tension in a patch means that sub-system changed rapidly this step.
-        <br><br><strong>Action Geometric Bias</strong> — accumulated curvature corrections per action. Actions taken during smooth geodesic paths accumulate positive bias; actions taken during high-curvature, geometrically inconsistent periods accumulate negative bias. Actions with persistent strong negative bias are candidates for redirection. Decays slowly during dream cycles.
-      </div>
-    </div>
 
   </div><!-- /help-panel-body -->
 </div><!-- /help-panel -->
