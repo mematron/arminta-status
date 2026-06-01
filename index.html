@@ -962,7 +962,7 @@ footer a:hover { color: var(--text); }
 
   <!-- HERO STEP -->
   <div class="hero-metric">
-    <div class="hero-label">TOTAL EMPIRICAL STEPS</div>
+    <div class="hero-label">TOTAL EMPIRICAL STEPS <button class="help-btn inline" onclick="openHelp('help-hero')" title="What is this number?" aria-label="Help: Total Empirical Steps" style="vertical-align:middle;">?</button></div>
     <div class="hero-number" id="step-count">--</div>
     <div class="hero-sub">every step is a real intervention on target hardware</div>
   </div>
@@ -970,7 +970,7 @@ footer a:hover { color: var(--text); }
   <!-- MODE / SITUATION / REWARD ROW -->
   <div class="mode-row mb12">
     <div class="mode-block">
-      <div class="mode-key">Cognitive Mode</div>
+      <div class="mode-key">Cognitive Mode<button class="help-btn inline" onclick="openHelp('help-mode')" title="What are Cognitive Modes?" aria-label="Help: Cognitive Mode">?</button></div>
       <div class="mode-val" id="cog-mode">--</div>
     </div>
     <div class="mode-div"></div>
@@ -1054,7 +1054,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- MILESTONES -->
-  <div class="section-label mb12" style="margin-top:4px">Milestones</div>
+  <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What are Age, Sessions, Novelty Hunger, Milestone Proximity, and Milestones?" aria-label="Help: Self Model — Digital Identity">?</button></div>
   <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
     <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
   </div>
@@ -2494,8 +2494,28 @@ setInterval(refresh, REFRESH_MS);
         <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
         <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded.
         <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
-        <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously. Targets include <code>STEP_RATE_DEFAULT</code> (pacing) and, as of v2.1, <code>CURIOSITY_STALE_STEPS</code> (how aggressively it probes for new causal edges when reward stagnates). A non-zero value means the agent has changed its own behaviour at runtime.
+        <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously via AST patching. Tunable targets (all bounded by hard min/max guards): <code>STEP_RATE_DEFAULT</code>, <code>STEP_RATE_MAX</code>, <code>STEP_RATE_MIN</code> (pacing), <code>CURIOSITY_STALE_STEPS</code>, <code>CURIOSITY_PROBE_COOLDOWN</code> (exploration aggression), <code>DISCO_INTERVAL</code>, <code>TUNE_INTERVAL</code> (scheduling), and <code>PSI_CPU/MEM/IO_ACTION_THRESH</code> (pressure sensitivity). A non-zero value means the agent has changed its own behaviour at runtime.
         <br>· <strong>Mosaic Hypotheses</strong> — cross-domain correlations discovered by the Mosaic sub-system (e.g. "humidity sensor correlates with CPU temperature"). These are environment↔system links, not action↔metric links.
+      </div>
+    </div>
+
+
+    <div class="help-entry" id="help-selfmodel">
+      <div class="help-entry-title"><span>Age / Sessions / Novelty Hunger / Milestone Proximity / Milestones</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        These fields come from Arminta's <strong>SelfModel</strong> — her persistent slow-changing identity layer. Unlike the fast metric stream, SelfModel state survives restarts and accumulates across her entire lifetime.
+        <br><br>
+        · <strong>Age</strong> — wall-clock time since Arminta's first-ever run, derived from the earliest record in <code>arminta_episodic.db</code>. This is her true age, not just uptime. <em>Born</em> date is the human-readable form of that first timestamp.
+        <br>· <strong>Sessions</strong> — how many times she has been started. Computed by scanning the episodic DB for consecutive timestamp gaps greater than 5 minutes; each gap is a new session. The <em>uptime</em> sub-label shows total accumulated wall-clock time lived across all past sessions (current session not yet included).
+        <br>· <strong>Novelty Hunger</strong> — a drive state that builds by +0.002 every step that a dream does not occur, and drops by −0.25 when a dream fires. Caps at 1.0 (100%). High novelty hunger biases the Cognitive Mode Controller toward INVESTIGATE. It is essentially a measure of how long Arminta has gone without offline consolidation.
+        <br>· <strong>Milestone Proximity</strong> — rises from 0 to 1 over the last 8% of steps before the next uncrossed step threshold (1k / 10k / 50k / 100k / 250k / 500k / 1M). The intent is to model anticipatory restlessness: irrational urgency as a goal approaches. Shown as <code>—</code> when no threshold is near. After a threshold is crossed, a 40-step <em>post-milestone deflation</em> period begins — flat affect, reduced confidence — modelling the collapse of excitement once the goal is gone ("now what?").
+        <br><br>
+        <strong>Milestones</strong> — landmark moments recorded with step number and wall-clock timestamp:
+        <br>· <code>steps_N</code> — crossed a step count threshold (1k, 10k, 50k, 100k, 250k, 500k, 1M). Thresholds already passed before a session starts are backfilled silently without triggering emotion bursts.
+        <br>· <code>first_intervention</code> — the step on which Arminta took her first real OS action.
+        <br>· <code>dreams_100</code> — reached 100 total dream cycles.
+        <br>· <code>best_single_reward</code> — the highest single-step reward ever recorded, updated whenever a new maximum is set.
+        <br>· <code>session_N</code> — start of each numbered session (filtered out of the dashboard display).
       </div>
     </div>
 
