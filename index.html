@@ -1046,6 +1046,11 @@ footer a:hover { color: var(--text); }
       <div class="stat-value" id="novelty-hunger">--</div>
       <div class="stat-sub">drive toward investigation</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-label">Milestone Proximity</div>
+      <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next step threshold">—</div>
+      <div class="stat-sub">anticipatory drive</div>
+    </div>
   </div>
 
   <!-- MILESTONES -->
@@ -1509,6 +1514,27 @@ function render(d) {
     if (nhEl) {
       nhEl.textContent = (nh * 100).toFixed(1) + '%';
       nhEl.style.color = nh > 0.65 ? 'var(--amber)' : nh > 0.3 ? 'var(--cyan)' : 'var(--dim)';
+    }
+  }
+  if (d.milestone_proximity !== undefined) {
+    const mp = +d.milestone_proximity;
+    const defl = +(d.post_milestone_deflation || 0);
+    const mpEl = document.getElementById('milestone-proximity');
+    if (mpEl) {
+      if (defl > 0) {
+        // post-milestone deflation active — show "now what?" state
+        mpEl.textContent = 'deflating (' + defl + ')';
+        mpEl.style.color = 'var(--dim)';
+        mpEl.title = 'Post-milestone deflation: goal crossed, excitement collapsed';
+      } else if (mp > 0.01) {
+        mpEl.textContent = (mp * 100).toFixed(1) + '%';
+        mpEl.style.color = mp > 0.75 ? 'var(--red)' : mp > 0.4 ? 'var(--amber)' : 'var(--cyan)';
+        mpEl.title = 'Anticipatory restlessness — approaching a step milestone';
+      } else {
+        mpEl.textContent = '—';
+        mpEl.style.color = 'var(--dim)';
+        mpEl.title = 'No milestone proximity';
+      }
     }
   }
   /* milestones */
