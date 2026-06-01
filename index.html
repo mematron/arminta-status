@@ -752,6 +752,23 @@ footer a:hover { color: var(--text); }
   vertical-align: middle;
 }
 
+/* ── DREAM THROTTLE BADGE ── */
+.dream-throttle-badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: rgba(179,157,219,0.12);
+  color: var(--purple);
+  border: 1px solid rgba(179,157,219,0.3);
+  letter-spacing: 0.1em;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 8px;
+  title: 'Dream frequency throttled — reward variance too low to consolidate';
+}
+
 /* ── HELP BUTTON ── */
 .help-btn {
   display: inline-flex;
@@ -1441,6 +1458,31 @@ function render(d) {
   setAndFlash('self-mods', fmt(d.self_mods));
   setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
 
+  /* v3: dream throttle badge — shown when reward variance is below plateau threshold */
+  const dreamsEl = document.getElementById('dreams');
+  if (dreamsEl) {
+    const dreamsCard = dreamsEl.closest('.stat-card');
+    if (dreamsCard) {
+      let throttleBadge = dreamsCard.querySelector('.dream-throttle-badge');
+      if (d.dream_throttled) {
+        if (!throttleBadge) {
+          throttleBadge = document.createElement('span');
+          throttleBadge.className = 'dream-throttle-badge';
+          throttleBadge.title = 'Dream frequency throttled 4× — reward variance below plateau threshold (nothing new to consolidate)';
+          throttleBadge.textContent = 'THROTTLED';
+          dreamsCard.appendChild(throttleBadge);
+        }
+        const varStr = d.reward_variance !== undefined ? ' var=' + d.reward_variance.toFixed(5) : '';
+        const subEl = dreamsCard.querySelector('.stat-sub');
+        if (subEl) subEl.textContent = 'throttled' + varStr;
+      } else {
+        if (throttleBadge) throttleBadge.remove();
+        const subEl = dreamsCard.querySelector('.stat-sub');
+        if (subEl) subEl.textContent = 'offline simulations';
+      }
+    }
+  }
+
   /* governor */
   const govCur = document.getElementById('gov-current');
   govCur.textContent = d.current_governor || '--';
@@ -1734,7 +1776,14 @@ function render(d) {
         + 'ε&#775; = ' + ed.toFixed(4) + ' &nbsp;·&nbsp; r&#775; = ' + rs.toFixed(4) + ' &nbsp;·&nbsp; κ = ' + cw.toFixed(3)
         + '</span>';
     }
-    metaEl.innerHTML = line1 + (line2 ? '<br>' + line2 : '');
+    // v3: show reward variance and dream throttle state
+    let line3 = '';
+    if (d.reward_variance !== undefined) {
+      const varCol = d.dream_throttled ? 'var(--purple)' : 'var(--muted)';
+      const varNote = d.dream_throttled ? ' ⟵ dream 4× throttled' : '';
+      line3 = `<span style="color:${varCol};font-size:0.62rem;letter-spacing:0.04em;">reward_var = ${d.reward_variance.toFixed(5)}${varNote}</span>`;
+    }
+    metaEl.innerHTML = line1 + (line2 ? '<br>' + line2 : '') + (line3 ? '<br>' + line3 : '');
   }
 
   /* ── MODE DISTRIBUTION DONUT ── */
@@ -2420,6 +2469,7 @@ setInterval(refresh, REFRESH_MS);
         <br>· <code>ε̇</code> — GA-evolved CMC epsilon decay rate (higher = slower exploration fade)
         <br>· <code>ṙ</code> — GA-evolved reward scale: multiplier applied to every immediate metric delta
         <br>· <code>κ</code> — GA-evolved curiosity weight: scales how aggressively curiosity probes fire (higher = sooner)
+        <br><br>A third row (v3) shows <strong>reward_var</strong> — variance of the last 100 reward signals. Below 0.0015 the agent has entered a consolidation plateau (nothing new surprises it), and the dream cycle is automatically throttled to 4× its normal minimum interval. Shown in purple with a "THROTTLED" badge on the Dreams stat card when active.
       </div>
     </div>
 
