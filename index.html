@@ -2586,14 +2586,16 @@ setInterval(refresh, REFRESH_MS);
     </div>
 
     <div class="help-entry" id="help-questions">
-      <div class="help-entry-title"><span>Open Questions / Unresolved Anomalies</span><span class="tag tag-meta">META</span></div>
+      <div class="help-entry-title"><span>Open Questions / Unresolved Anomalies</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        The left panel lists <strong>reward reversals ARMINTA cannot yet explain</strong> — cases where a metric jumped or dropped between two observation steps and no recorded action accounts for it. Each entry shows:
-        <br>· What changed (metric, direction, magnitude)
-        <br>· Which action was last tested via that observation path
-        <br>· How many times this anomaly has been revisited without resolution
-        <br><br>Red border = high priority, amber = medium, grey = low. These drive future investigation steps.
-        <br><br>The right panel shows <strong>Mosaic Hypotheses</strong> — autonomously discovered correlations between environmental sensors (e.g. ambient humidity from a smart-home API) and internal system metrics. Correlation strength shown as a bar; these are candidates for future causal investigation, not confirmed cause-and-effect.
+        The left panel lists <strong>questions LexicalCore is actively holding</strong> — anomalies that were noticed and couldn't be resolved against available data at the time they formed. Three types:
+        <br>· <em>reward_reversal</em> — the same action produced opposite reward outcomes at different times (<code>what changed between +0.190 and -0.223 via log_top_proc</code>)
+        <br>· <em>emotion_shift</em> — a mode transition during a situation produced an unexpected emotional state
+        <br>· <em>stressed_retreat</em> — a mode transition away from a stressed state followed an unexpected path
+        <br><br>Each entry shows the question text, the step it formed, how many reflection cycles it has been revisited, and which action it concerns (<em>via</em>).
+        <br><br><strong>Lifecycle:</strong> questions form in <code>LexicalCore.reflect()</code> and are held (up to 50 at once). Every 50 steps, <code>QuestionResolver</code> evaluates reward_reversal questions against the causal graph. If the action is observational (net_probe, log_*, flush_dns — these reflect ambient noise, not real harm), or if the action has confirmed global or situational harm above threshold, the question is marked resolved and purged from the list. Resolved questions graduate into the lexicon as statements with a valence tag that can influence future action selection.
+        <br><br>Border colour is display order only: <span style="color:var(--red)">red</span> = questions 1–2, <span style="color:var(--amber)">amber</span> = 3–4, grey = 5–8. It is not a priority score assigned by the agent.
+        <br><br>The right panel shows <strong>Mosaic Hypotheses</strong> — autonomously discovered correlations between environmental sensors and internal system metrics. Correlation strength shown as a bar; candidates for future causal investigation, not confirmed cause-and-effect.
         <br>· <span style="color:#39ff14">Green</span> = positive correlation (the two variables move together)
         <br>· <span style="color:#ff3d3d">Red</span> = inverse correlation (when one rises, the other tends to fall)
       </div>
