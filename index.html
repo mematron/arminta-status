@@ -1087,7 +1087,7 @@ footer a:hover { color: var(--text); }
 
   <div class="two-col mb28 causal-two-col">
     <div class="card card-pad" id="causal-panel-edges" role="tabpanel" aria-labelledby="tab-edges">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric rose · n = observations</div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">strongest effect magnitude · positive = metric fell (improved) · n = observations</div>
       <div class="edge-list" id="edge-list">
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
@@ -2534,9 +2534,10 @@ setInterval(refresh, REFRESH_MS);
       <div class="help-entry-body">
         The left panel shows the strongest confirmed cause-and-effect relationships ARMINTA has discovered. Each row is one edge: <strong>action → metric</strong>.
         <br><br>· Bar length = effect magnitude (normalised to the strongest edge)
-        <br>· <span style="color:var(--green)">Green</span> = positive effect (action raised the metric)
-        <br>· <span style="color:var(--red)">Red</span> = negative effect (action lowered the metric)
+        <br>· <span style="color:var(--green)">Green</span> = positive effect (action <em>reduced</em> the metric — an improvement for CPU, memory, latency, etc.)
+        <br>· <span style="color:var(--red)">Red</span> = negative effect (action caused the metric to rise)
         <br>· <code>n</code> = number of times this relationship has been observed
+        <br><br>Effect is computed as <code>(before − after) / |before|</code>, so a positive value means the metric was lower after the action. For the special case of <code>governor_is_performance</code> the sign is flipped so positive still means "improved".
         <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide.
       </div>
     </div>
@@ -2605,7 +2606,7 @@ setInterval(refresh, REFRESH_MS);
     <div class="help-entry" id="help-kill">
       <div class="help-entry-title"><span>Kill Ineffective &amp; Agent Log</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGKILL</code> or <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that killing it doesn't help performance.
+        <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that terminating it doesn't help performance.
         <br><br><strong>Agent Log (right)</strong> — the raw tail of ARMINTA's operational log, colour-coded by event type:
         <br>· <span style="color:#4a8080">Teal</span> — observation events (<code>[OBS]</code>)
         <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
