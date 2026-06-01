@@ -197,6 +197,7 @@ header {
 }
 .stat-value.amber  { color: var(--amber); }
 .stat-value.green  { color: var(--green); }
+.stat-value.cyan   { color: var(--cyan); }
 .stat-value.red    { color: var(--red); }
 .stat-value.purple { color: var(--purple); }
 .stat-value.pink   { color: var(--pink); }
@@ -1030,6 +1031,27 @@ footer a:hover { color: var(--text); }
       <div class="stat-value amber" id="mosaic-hyp-count">--</div>
       <div class="stat-sub">world correlations</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-label">Age</div>
+      <div class="stat-value cyan" id="arminta-age">--</div>
+      <div class="stat-sub" id="arminta-age-sub">since first run</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sessions</div>
+      <div class="stat-value" id="session-count">--</div>
+      <div class="stat-sub" id="uptime-sub">total uptime --</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Novelty Hunger</div>
+      <div class="stat-value" id="novelty-hunger">--</div>
+      <div class="stat-sub">drive toward investigation</div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="section-label mb12" style="margin-top:4px">Milestones</div>
+  <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
+    <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
   </div>
 
   <!-- GOVERNOR -->
@@ -1457,6 +1479,64 @@ function render(d) {
   setAndFlash('interventions', fmt(d.interventions));
   setAndFlash('self-mods', fmt(d.self_mods));
   setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
+
+  /* ── Digital life: age, sessions, novelty hunger, milestones ── */
+  function fmtAge(secs) {
+    secs = Math.floor(+secs || 0);
+    const d2 = Math.floor(secs / 86400), rem1 = secs % 86400;
+    const h = Math.floor(rem1 / 3600), rem2 = rem1 % 3600;
+    const m = Math.floor(rem2 / 60), s = rem2 % 60;
+    if (d2) return d2 + 'd ' + String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm';
+    if (h)  return h + 'h ' + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
+    return m + 'm ' + String(s).padStart(2,'0') + 's';
+  }
+  if (d.birth_time && d.birth_time > 0) {
+    const ageS = (Date.now() / 1000) - d.birth_time;
+    const ageEl = document.getElementById('arminta-age');
+    if (ageEl) { ageEl.textContent = fmtAge(ageS); ageEl.style.color = 'var(--cyan)'; }
+    const ageSub = document.getElementById('arminta-age-sub');
+    if (ageSub) ageSub.textContent = 'born ' + new Date(d.birth_time * 1000).toLocaleDateString();
+  }
+  if (d.session_count !== undefined) {
+    setAndFlash('session-count', d.session_count);
+    const uptimeSub = document.getElementById('uptime-sub');
+    if (uptimeSub && d.total_uptime_s !== undefined)
+      uptimeSub.textContent = 'uptime ' + fmtAge(d.total_uptime_s);
+  }
+  if (d.novelty_hunger !== undefined) {
+    const nh = +d.novelty_hunger;
+    const nhEl = document.getElementById('novelty-hunger');
+    if (nhEl) {
+      nhEl.textContent = (nh * 100).toFixed(1) + '%';
+      nhEl.style.color = nh > 0.65 ? 'var(--amber)' : nh > 0.3 ? 'var(--cyan)' : 'var(--dim)';
+    }
+  }
+  /* milestones */
+  const msWrap = document.getElementById('milestones-wrap');
+  if (msWrap && d.milestones && typeof d.milestones === 'object') {
+    const MS_LABELS = {
+      first_intervention: '🎯 First Intervention',
+      dreams_100:         '💤 100 Dreams',
+      best_single_reward: '⭐ Best Reward',
+      steps_1000:   '🟢 1k Steps',  steps_10000:  '🟢 10k Steps',
+      steps_50000:  '🟢 50k Steps', steps_100000: '🟡 100k Steps',
+      steps_250000: '🟡 250k Steps',steps_500000: '🔴 500k Steps',
+      steps_1000000:'🔴 1M Steps',
+    };
+    const keys = Object.keys(d.milestones).filter(k => !k.startsWith('session_'));
+    if (keys.length) {
+      msWrap.innerHTML = keys.map(k => {
+        const ms = d.milestones[k];
+        const label = MS_LABELS[k] || k.replace(/_/g,' ');
+        const stepStr = ms && ms.step ? ' · step ' + fmt(ms.step) : '';
+        const val = (k === 'best_single_reward' && ms && ms.value !== undefined)
+          ? ' · ' + (+ms.value).toFixed(4) : '';
+        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-size:0.7rem;color:var(--text);" title="step${stepStr}">${label}${val}</span>`;
+      }).join('');
+    } else {
+      msWrap.innerHTML = '<span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>';
+    }
+  }
 
   /* v3: dream throttle badge — shown when reward variance is below plateau threshold */
   const dreamsEl = document.getElementById('dreams');
