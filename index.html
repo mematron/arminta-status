@@ -1347,7 +1347,7 @@ footer a:hover { color: var(--text); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 180000; // 3 minutes
+const REFRESH_MS = 90000; // 90 seconds — Gist pushes every ~156s; this halves worst-case display lag
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
@@ -2169,7 +2169,7 @@ function render(d) {
     // Confidence + step
     confEl.textContent = warranted
       ? 'confidence: ' + (confidence * 100).toFixed(0) + '%'
-      : 'confidence: --';
+      : 'confidence: n/a';
     stepEl.textContent = evalStep > 0
       ? 'last evaluated: step ' + Number(evalStep).toLocaleString()
       : 'not yet evaluated';
@@ -2194,7 +2194,7 @@ function render(d) {
     dot.className = 'continuity-dot green';
     verdict.textContent = 'NOMINAL — awaiting evaluation';
     verdict.className = 'continuity-verdict green';
-    confEl.textContent = 'confidence: --';
+    confEl.textContent = 'confidence: n/a';
     stepEl.textContent = 'not yet evaluated';
     reasonsEl.innerHTML = '<li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>';
   }
