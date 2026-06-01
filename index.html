@@ -161,7 +161,6 @@ header {
   color: var(--dim);
   text-transform: uppercase;
   margin-bottom: 14px;
-  padding-left: 2px;
   border-left: 2px solid var(--border2);
   padding-left: 8px;
 }
@@ -368,7 +367,7 @@ header {
   flex-shrink: 0;
 }
 .why-value {
-  color: var(--fg);
+  color: var(--text);
   flex: 1;
 }
 .why-ctx {
@@ -386,7 +385,7 @@ header {
   color: var(--dim);
 }
 .why-cf {
-  color: var(--yellow, #e5c07b);
+  color: var(--amber);
   font-style: italic;
 }
 .why-mech {
@@ -737,22 +736,6 @@ footer a:hover { color: var(--text); }
 .mb12 { margin-bottom: 12px; }
 .mb28 { margin-bottom: 28px; }
 
-/* ── STALE BADGE ── */
-.stale-badge {
-  display: inline-block;
-  font-size: 0.58rem;
-  padding: 1px 6px;
-  border-radius: 2px;
-  background: rgba(255,179,0,0.12);
-  border: 1px solid rgba(255,179,0,0.35);
-  color: var(--amber);
-  letter-spacing: 0.1em;
-  margin-left: 8px;
-  font-family: var(--font-ui);
-  font-weight: 700;
-  vertical-align: middle;
-}
-
 /* ── DREAM THROTTLE BADGE ── */
 .dream-throttle-badge {
   display: inline-block;
@@ -767,7 +750,6 @@ footer a:hover { color: var(--text); }
   font-weight: 700;
   vertical-align: middle;
   margin-left: 8px;
-  title: 'Dream frequency throttled — reward variance too low to consolidate';
 }
 
 /* ── HELP BUTTON ── */
@@ -1136,7 +1118,7 @@ footer a:hover { color: var(--text); }
     <!-- Probe dot strip -->
     <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
     <!-- Last 3 probe results -->
-    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--mono);"></div>
+    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
   </div>
 
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
@@ -2147,7 +2129,7 @@ function render(d) {
     _mechs.forEach(m => {
       const el = document.createElement('div');
       el.className = 'why-mech';
-      el.innerHTML = `<span style="color:var(--fg)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
+      el.innerHTML = `<span style="color:var(--text)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
         + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${m.fitness}, step ${m.step})</span>`
         + `<br><span style="color:var(--dim)">${m.mechanism}</span>`;
       whyMechs.appendChild(el);
@@ -2381,7 +2363,7 @@ function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
-    const errMsgs = {
+  const errMsgs = {
     '404': 'UPLINK ERROR: data source not found (404) — check gist URL',
     '403': 'UPLINK ERROR: access denied (403) — gist may be private',
     '429': 'UPLINK ERROR: rate limited (429) — too many requests',
@@ -2415,8 +2397,11 @@ async function refresh() {
 async function manualRefresh() {
   const btn = document.getElementById('refresh-btn');
   if (btn) { btn.style.animation = 'spin 0.6s linear'; btn.disabled = true; }
-  await refresh();
-  if (btn) { btn.style.animation = ''; btn.disabled = false; }
+  try {
+    await refresh();
+  } finally {
+    if (btn) { btn.style.animation = ''; btn.disabled = false; }
+  }
 }
 
 refresh();
