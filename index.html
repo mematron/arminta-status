@@ -239,7 +239,6 @@ header {
 }
 .sit-idle             { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
 .sit-io_bound         { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
-.sit-cpu_bound        { color: var(--red);    border-color: rgba(255,61,61,0.3);   background: rgba(255,61,61,0.07); }
 .sit-compile          { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
 .sit-streaming        { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
 .sit-browser_compute  { color: var(--amber);  border-color: rgba(255,179,0,0.4);   background: rgba(255,179,0,0.08); }
@@ -1382,10 +1381,12 @@ function render(d) {
     lsEl.textContent = s;
     // Fix #18: if step_count is advancing but updated_ts is stale (Gist auth issue),
     // show SIGNAL WEAK instead of OFFLINE so the dashboard doesn't mislead.
-    if (mins <= 20 || stepAdvanced)  { pill.textContent='AGENT ACTIVE'; pill.className='status-pill active';  lsEl.className='last-seen recent'; }
-    else if(mins<=60){ pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
+    // Fix #18 (corrected): stepAdvanced separated from mins<=20 so a stale-timestamp but
+    // live agent shows SIGNAL WEAK, not AGENT ACTIVE. Dead branch at mins>60+stepAdvanced restored.
+    if (mins <= 20)      { pill.textContent='AGENT ACTIVE'; pill.className='status-pill active';  lsEl.className='last-seen recent'; }
+    else if(mins<=60)    { pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
     else if(stepAdvanced){ pill.textContent='SIGNAL WEAK';  pill.className='status-pill stale';   lsEl.className='last-seen stale'; }
-    else             { pill.textContent='AGENT OFFLINE';pill.className='status-pill offline'; lsEl.className='last-seen offline'; }
+    else                 { pill.textContent='AGENT OFFLINE';pill.className='status-pill offline'; lsEl.className='last-seen offline'; }
   } else {
     pill.textContent='AGENT ACTIVE'; pill.className='status-pill active'; lsEl.textContent='';
   }
@@ -1414,8 +1415,9 @@ function render(d) {
 
   /* situation */
   const sit = d.situation || 'unknown';
+  const sitConf = d.sit_confidence !== undefined ? ` (${(d.sit_confidence * 100).toFixed(0)}%)` : '';
   document.getElementById('situation-badge').innerHTML =
-    `<span class="sit-badge sit-${sit}">${sit.toUpperCase()}</span>`;
+    `<span class="sit-badge sit-${sit}" title="confidence${sitConf}">${sit.toUpperCase()}${sitConf}</span>`;
 
   /* reward — prefer rolling_avg_reward (150-step window); fall back to total_reward */
   const rollingR = d.rolling_avg_reward !== undefined ? d.rolling_avg_reward : null;
