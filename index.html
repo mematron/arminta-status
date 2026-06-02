@@ -1034,7 +1034,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- MILESTONES -->
-  <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What are Age, Sessions, Novelty Hunger, Milestone Proximity, and Milestones?" aria-label="Help: Self Model — Digital Identity">?</button></div>
+  <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="openHelp('help-milestones')" title="What are Milestones?" aria-label="Help: Milestones">?</button></div>
   <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
     <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
   </div>
@@ -1114,7 +1114,7 @@ footer a:hover { color: var(--text); }
   <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
   <div class="card card-pad mb28" id="net-probe-card">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — round-robin across 3 targets</div>
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
       <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
     </div>
     <!-- Probe dot strip -->
@@ -2562,16 +2562,41 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>Sessions</strong> — how many times she has been started. Computed by scanning the episodic DB for consecutive timestamp gaps greater than 5 minutes; each gap is a new session. The <em>uptime</em> sub-label shows total accumulated wall-clock time lived across all past sessions (current session not yet included).
         <br>· <strong>Novelty Hunger</strong> — a drive state that builds by +0.002 every step that a dream does not occur, and drops by −0.25 when a dream fires. Caps at 1.0 (100%). High novelty hunger biases the Cognitive Mode Controller toward INVESTIGATE. It is essentially a measure of how long Arminta has gone without offline consolidation.
         <br>· <strong>Milestone Proximity</strong> — rises from 0 to 1 over the last 8% of steps before the next uncrossed step threshold (1k / 10k / 50k / 100k / 250k / 500k / 1M). The intent is to model anticipatory restlessness: irrational urgency as a goal approaches. Shown as <code>—</code> when no threshold is near. After a threshold is crossed, a 40-step <em>post-milestone deflation</em> period begins — flat affect, reduced confidence — modelling the collapse of excitement once the goal is gone ("now what?"). Once all step thresholds are passed, non-step milestones (hypotheses, self-mods, web pages, web symbols) continue driving novelty hunger.
+
         <br><br>
-        <strong>Milestones</strong> — landmark moments recorded with step number and wall-clock timestamp:
-        <br>· <code>steps_N</code> — crossed a step count threshold (1k, 10k, 50k, 100k, 250k, 500k, 1M). Thresholds already passed before a session starts are backfilled silently without triggering emotion bursts.
-        <br>· <code>hypotheses_N</code> — HypothesisEngine has generated N total hypotheses (100, 500, 1k, 5k, 10k).
-        <br>· <code>self_mods_N</code> — Arminta has performed N self-modifications (50, 100, 200, 500).
-        <br>· <code>web_pages_N</code> / <code>web_symbols_N</code> — WebLearner has read N pages or absorbed N new symbols.
-        <br>· <code>first_intervention</code> — the step on which Arminta took her first real OS action.
-        <br>· <code>dreams_100</code> — reached 100 total dream cycles.
-        <br>· <code>best_single_reward</code> — the highest single-step reward ever recorded, updated whenever a new maximum is set.
-        <br>· <code>session_N</code> — start of each numbered session (filtered out of the dashboard display).
+        <strong>Milestones</strong> — see the <a href="#" onclick="openHelp('help-milestones');return false;" style="color:var(--cyan);">Milestones entry</a> for the full list of landmark types.
+      </div>
+    </div>
+
+
+    <div class="help-entry" id="help-milestones">
+      <div class="help-entry-title"><span>Milestones</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        Landmark moments in Arminta's life, each recorded with step number and wall-clock timestamp. Displayed as coloured chips in the Milestones strip — opacity 0.5 = backfilled (already passed before this session started, recorded silently with no emotion burst).
+        <br><br>
+        <strong>Step thresholds</strong> <span style="color:var(--green)">●</span><span style="color:var(--amber)">●</span><span style="color:var(--red)">●</span>
+        <br>· <code>steps_1000</code> / <code>steps_10000</code> / <code>steps_50000</code> — early milestones (green dot)
+        <br>· <code>steps_100000</code> / <code>steps_250000</code> — mid milestones (amber dot)
+        <br>· <code>steps_500000</code> / <code>steps_1000000</code> — late milestones (red dot)
+        <br><br>
+        <strong>Hypotheses</strong> <span style="color:#a78bfa">●</span><span style="color:#7c3aed">●</span>
+        <br>· <code>hypotheses_100</code> / <code>_500</code> / <code>_1000</code> — purple; HypothesisEngine total generated
+        <br>· <code>hypotheses_5000</code> / <code>_10000</code> — deep purple; significant causal theory volume
+        <br><br>
+        <strong>Self-Modifications</strong> <span style="color:#fb923c">●</span><span style="color:#ea580c">●</span>
+        <br>· <code>self_mods_50</code> / <code>_100</code> — orange; Arminta has rewritten her own parameters
+        <br>· <code>self_mods_200</code> / <code>_500</code> — deep orange; substantial autonomous self-tuning
+        <br><br>
+        <strong>Web Learning</strong> <span style="color:#34d399">●</span><span style="color:#10b981">●</span> / <span style="color:#38bdf8">●</span><span style="color:#0ea5e9">●</span>
+        <br>· <code>web_pages_100</code> / <code>_250</code> / <code>_500</code> / <code>_1000</code> — green; pages read by WebLearner
+        <br>· <code>web_symbols_100</code> / <code>_500</code> / <code>_1000</code> / <code>_2500</code> — blue; unique vocabulary items absorbed from external sources
+        <br><br>
+        <strong>Special</strong> <span style="color:#4ade80">●</span><span style="color:#67e8f9">●</span><span style="color:#fbbf24">●</span>
+        <br>· <code>first_intervention</code> — step of Arminta's first real OS action (green dot)
+        <br>· <code>dreams_100</code> — reached 100 offline dream cycles (cyan dot)
+        <br>· <code>best_single_reward</code> — highest single-step reward ever; updates whenever a new max is set (amber dot, shows r= value on hover)
+        <br><br>
+        <code>session_N</code> milestones (start of each numbered session) exist in the data but are filtered out of the display.
       </div>
     </div>
 
@@ -2628,11 +2653,12 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-netprobe">
       <div class="help-entry-title"><span>Network Health Probes</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        ARMINTA periodically fires lightweight probes to three targets resolved dynamically from the actual system network configuration — not hardcoded vendors. Targets are re-read on every probe cycle so they stay current if the network changes.
-        <br><br>· <strong>gateway</strong> — the default route's first-hop IP, read from <code>ip route show default</code>. An HTTP request to the router's LAN address; confirms the local path is up.
+        ARMINTA periodically fires lightweight probes to up to four targets resolved dynamically from the actual system network configuration — not hardcoded vendors. Targets are re-read on every probe cycle so they stay current if the network changes.
+        <br><br>· <strong>gateway</strong> — the default route's first-hop IP, read from <code>ip route show default</code>. Probed via ICMP ping (not HTTP — routers don't reliably serve HTTP on their LAN address). Confirms the local first-hop is reachable.
         <br>· <strong>dns</strong> — the first nameserver in <code>/etc/resolv.conf</code>, probed in one of two ways depending on what it is:
         <br>&nbsp;&nbsp;&nbsp;&nbsp;- Known public resolvers (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9 9.9.9.9) — probed via their DNS-over-HTTPS endpoints; measures real resolver RTT.
         <br>&nbsp;&nbsp;&nbsp;&nbsp;- Local/unknown resolvers (router DNS, Pi-hole, corporate nameserver, etc.) — probed via a TCP socket connect to port 53, <em>unless</em> the address is loopback (127.x) or RFC-1918 private (10.x, 192.168.x, 172.16–31.x). Loopback resolvers like systemd-resolved (127.0.0.53) always answer in 0ms regardless of real network state, so probing them gives no useful signal. Those cases fall through to the portal probe instead.
+        <br>· <strong>cloudflare</strong> — a direct HTTPS probe to <code>1.1.1.1/cdn-cgi/trace</code> (IP literal, no DNS needed). Distinct from the dns probe: gateway fail = router problem; cloudflare fail (gateway ok) = ISP/WAN problem; portal fail (cloudflare ok) = Firefox endpoint down.
         <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability regardless of upstream DNS.
         <br><br>Probes fire on two triggers:
         <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%
@@ -2753,7 +2779,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <strong>WebLearner</strong> — autonomous web exploration, triggering every ~400 steps. Query generation uses two paths:
         <br>· <em>Concept-curiosity</em> (primary) — selects symbols from LexicalCore with high weight but sparse co-occurrence context: things observed frequently but understood poorly. Translates through an internal action→concept table (e.g. <code>renice_chrome</code> → <em>nice process priority Unix</em>) into a searchable query. A 30% stochastic pool sample ensures exploration beyond the single top-weight symbol.
         <br>· <em>Question-term translation</em> (fallback) — when the symbol table is sparse, extracts tokens from the oldest unresolved open question instead.
-        <br><br>Sources are restricted to a whitelist of structured knowledge domains: Wikipedia, MDN Web Docs, Linux man pages, Wiktionary, arXiv, and a handful of performance-analysis references directly relevant to what Arminta does. A hard rate cap of 8 pages/hour prevents runaway fetching. Reward is proportional to genuinely new symbols absorbed (information gain), decayed by repeat visits to the same domain.
+        <br><br>Sources are restricted to a whitelist of structured knowledge domains: Wikipedia, Wiktionary, arXiv, MDN Web Docs, linux.die.net (Linux command/system references), Plato Stanford Encyclopedia of Philosophy, and Wolfram MathWorld. A hard rate cap of 8 pages/hour prevents runaway fetching. Reward is proportional to genuinely new symbols absorbed (information gain), decayed by repeat visits to the same domain.
         <br><br>
         <strong>QuestionResolver</strong> — runs after each WebLearner cycle. Checks whether newly absorbed text answers any of LexicalCore's open questions via token overlap. Resolved questions graduate into the lexicon as confirmed statements with a valence tag (positive or negative, based on the reward context in which they arose).
         <br><br>
