@@ -1330,6 +1330,17 @@ function setEl(id, val) {
   if (el) el.textContent = val;
 }
 
+/* Format a Unix timestamp as "X ago" — module scope so it's not re-created per render() call */
+function _smartAge(ts) {
+  if (!ts) return null;
+  const secs = Math.floor(Date.now() / 1000) - ts;
+  if (secs < 0)   return null;
+  if (secs < 120) return secs + 's ago';
+  const mins = Math.floor(secs / 60);
+  if (mins < 120) return mins + 'm ago';
+  return (secs / 3600).toFixed(1) + 'h ago';
+}
+
 /* ── charts (singletons) ── */
 let sparkChart, circChart;
 
@@ -1692,8 +1703,8 @@ function render(d) {
     const clampedRH = rh.map(v => Math.max(-2, Math.min(2, +v)));
     // Compute 10-step rolling average
     const rollingAvg = clampedRH.map((_, i) => {
-      const window = clampedRH.slice(Math.max(0, i - 9), i + 1);
-      return +(window.reduce((a, x) => a + x, 0) / window.length).toFixed(4);
+      const wSlice = clampedRH.slice(Math.max(0, i - 9), i + 1);
+      return +(wSlice.reduce((a, x) => a + x, 0) / wSlice.length).toFixed(4);
     });
     const barColors = clampedRH.map(v => v >= 0 ? 'rgba(57,255,20,0.5)' : 'rgba(255,61,61,0.5)');
     sparkChart = new Chart(document.getElementById('sparkChart'), {
@@ -1803,10 +1814,16 @@ function render(d) {
       const col  = h.correlation >= 0 ? '#39ff14' : '#ff3d3d';
       const sign = h.correlation >= 0 ? '+' : '−';
       const relLabel = h.correlation >= 0 ? 'co-moves' : 'inverse';
+      // Escape source/target — process names can contain < > & if custom sandbox actions fire
+      const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      const src = esc(h.source);
+      const tgt = esc(h.target);
+      const srcTag = h.source && h.source.startsWith('wttr_') ? '<span class="hyp-source-tag">weather</span>'
+                   : h.source && h.source.startsWith('hass_') ? '<span class="hyp-source-tag">home</span>' : '';
       hypList.innerHTML += `
         <div class="hyp-item">
           <div class="hyp-top">
-            <div class="hyp-label" title="${h.source} — autonomously discovered environmental variable">${h.source} → ${h.target}${h.source && h.source.startsWith('wttr_') ? '<span class=\"hyp-source-tag\">weather</span>' : h.source && h.source.startsWith('hass_') ? '<span class=\"hyp-source-tag\">home</span>' : ''}</div>
+            <div class="hyp-label" title="${src} — autonomously discovered environmental variable">${src} → ${tgt}${srcTag}</div>
             <div class="hyp-corr" style="color:${col}" title="${relLabel}">${sign}${absC.toFixed(3)}</div>
           </div>
           <div class="hyp-bar-wrap"><div class="hyp-bar" style="width:${pct}%;background:${col}"></div></div>
@@ -2166,18 +2183,6 @@ function render(d) {
   const smartDevice  = document.getElementById('smart-device');
   const smartMetrics = document.getElementById('smart-metrics');
 
-  /* Format a Unix timestamp as "X ago" or absolute if old */
-  function _smartAge(ts) {
-    if (!ts) return null;
-    const secs = Math.floor(Date.now() / 1000) - ts;
-    if (secs < 0)   return null;
-    if (secs < 120) return secs + 's ago';
-    const mins = Math.floor(secs / 60);
-    if (mins < 120) return mins + 'm ago';
-    const hrs = (secs / 3600).toFixed(1);
-    return hrs + 'h ago';
-  }
-
   if (sh && typeof sh === 'object') {
     const ok = !!sh.ok;
     const unavail = !!sh.unavailable;
@@ -2399,10 +2404,23 @@ function showError(msg) {
 }
 
 /* ── fetch + loop ── */
+let _fetchAbortController = null;
+
 async function fetchData() {
-  const res = await fetch(GIST_URL + '?_=' + Date.now());
-  if (!res.ok) throw new Error('fetch failed ' + res.status);
-  return res.json();
+  // Abort any in-flight fetch before starting a new one
+  if (_fetchAbortController) { try { _fetchAbortController.abort(); } catch(_) {} }
+  _fetchAbortController = new AbortController();
+  const timeoutId = setTimeout(() => _fetchAbortController.abort(), 12000); // 12s hard timeout
+  try {
+    const res = await fetch(GIST_URL + '?_=' + Date.now(), { signal: _fetchAbortController.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error('fetch failed ' + res.status);
+    return res.json();
+  } catch(e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') throw new Error('fetch timeout / aborted');
+    throw e;
+  }
 }
 
 async function refresh() {
@@ -2412,6 +2430,9 @@ async function refresh() {
     document.getElementById('error-banner').style.display = 'none';
   } catch(e) {
     showError(e.message);
+  } finally {
+    // Chain next refresh with setTimeout so overlapping calls can never stack
+    setTimeout(refresh, REFRESH_MS);
   }
 }
 
@@ -2420,14 +2441,17 @@ async function manualRefresh() {
   const btn = document.getElementById('refresh-btn');
   if (btn) { btn.style.animation = 'spin 0.6s linear'; btn.disabled = true; }
   try {
-    await refresh();
+    const data = await fetchData();
+    render(data);
+    document.getElementById('error-banner').style.display = 'none';
+  } catch(e) {
+    showError(e.message);
   } finally {
     if (btn) { btn.style.animation = ''; btn.disabled = false; }
   }
 }
 
-refresh();
-setInterval(refresh, REFRESH_MS);
+refresh(); // first call — subsequent calls chained via setTimeout inside refresh()
 </script>
 <!-- ── HELP OVERLAY ── -->
 <div id="help-overlay" onclick="if(event.target===this)closeHelp()"></div>
