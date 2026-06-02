@@ -1028,7 +1028,7 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="stat-card">
       <div class="stat-label">Milestone Proximity</div>
-      <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next step threshold">—</div>
+      <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
       <div class="stat-sub">anticipatory drive</div>
     </div>
   </div>
@@ -1534,7 +1534,7 @@ function render(d) {
       } else if (mp > 0.01) {
         mpEl.textContent = (mp * 100).toFixed(1) + '%';
         mpEl.style.color = mp > 0.75 ? 'var(--red)' : mp > 0.4 ? 'var(--amber)' : 'var(--cyan)';
-        mpEl.title = 'Anticipatory restlessness — approaching a step milestone';
+        mpEl.title = 'Anticipatory restlessness — approaching a milestone';
       } else {
         mpEl.textContent = '—';
         mpEl.style.color = 'var(--dim)';
@@ -1557,10 +1557,32 @@ function render(d) {
       steps_250000:  { label: '250k Steps', dot: '#fbbf24' },
       steps_500000:  { label: '500k Steps', dot: '#f87171' },
       steps_1000000: { label: '1M Steps',   dot: '#f87171' },
+      // non-step milestones (v3)
+      hypotheses_100:   { label: '100 Hypotheses',   dot: '#a78bfa' },
+      hypotheses_500:   { label: '500 Hypotheses',   dot: '#a78bfa' },
+      hypotheses_1000:  { label: '1k Hypotheses',    dot: '#a78bfa' },
+      hypotheses_5000:  { label: '5k Hypotheses',    dot: '#7c3aed' },
+      hypotheses_10000: { label: '10k Hypotheses',   dot: '#7c3aed' },
+      self_mods_50:    { label: '50 Self-Mods',   dot: '#fb923c' },
+      self_mods_100:   { label: '100 Self-Mods',  dot: '#fb923c' },
+      self_mods_200:   { label: '200 Self-Mods',  dot: '#ea580c' },
+      self_mods_500:   { label: '500 Self-Mods',  dot: '#ea580c' },
+      web_pages_100:   { label: '100 Pages Read',  dot: '#34d399' },
+      web_pages_250:   { label: '250 Pages Read',  dot: '#34d399' },
+      web_pages_500:   { label: '500 Pages Read',  dot: '#10b981' },
+      web_pages_1000:  { label: '1k Pages Read',   dot: '#10b981' },
+      web_symbols_100:  { label: '100 Symbols',  dot: '#38bdf8' },
+      web_symbols_500:  { label: '500 Symbols',  dot: '#38bdf8' },
+      web_symbols_1000: { label: '1k Symbols',   dot: '#0ea5e9' },
+      web_symbols_2500: { label: '2.5k Symbols', dot: '#0ea5e9' },
     };
     const MS_ORDER = ['steps_1000','steps_10000','steps_50000','steps_100000',
                       'steps_250000','steps_500000','steps_1000000',
-                      'first_intervention','dreams_100','best_single_reward'];
+                      'first_intervention','dreams_100','best_single_reward',
+                      'hypotheses_100','hypotheses_500','hypotheses_1000','hypotheses_5000','hypotheses_10000',
+                      'self_mods_50','self_mods_100','self_mods_200','self_mods_500',
+                      'web_pages_100','web_pages_250','web_pages_500','web_pages_1000',
+                      'web_symbols_100','web_symbols_500','web_symbols_1000','web_symbols_2500'];
     const keys = Object.keys(d.milestones)
       .filter(k => !k.startsWith('session_'))
       .sort((a,b) => {
@@ -2539,10 +2561,13 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         · <strong>Age</strong> — wall-clock time since Arminta's first-ever run, derived from the earliest record in <code>arminta_episodic.db</code>. This is her true age, not just uptime. <em>Born</em> date is the human-readable form of that first timestamp.
         <br>· <strong>Sessions</strong> — how many times she has been started. Computed by scanning the episodic DB for consecutive timestamp gaps greater than 5 minutes; each gap is a new session. The <em>uptime</em> sub-label shows total accumulated wall-clock time lived across all past sessions (current session not yet included).
         <br>· <strong>Novelty Hunger</strong> — a drive state that builds by +0.002 every step that a dream does not occur, and drops by −0.25 when a dream fires. Caps at 1.0 (100%). High novelty hunger biases the Cognitive Mode Controller toward INVESTIGATE. It is essentially a measure of how long Arminta has gone without offline consolidation.
-        <br>· <strong>Milestone Proximity</strong> — rises from 0 to 1 over the last 8% of steps before the next uncrossed step threshold (1k / 10k / 50k / 100k / 250k / 500k / 1M). The intent is to model anticipatory restlessness: irrational urgency as a goal approaches. Shown as <code>—</code> when no threshold is near. After a threshold is crossed, a 40-step <em>post-milestone deflation</em> period begins — flat affect, reduced confidence — modelling the collapse of excitement once the goal is gone ("now what?").
+        <br>· <strong>Milestone Proximity</strong> — rises from 0 to 1 over the last 8% of steps before the next uncrossed step threshold (1k / 10k / 50k / 100k / 250k / 500k / 1M). The intent is to model anticipatory restlessness: irrational urgency as a goal approaches. Shown as <code>—</code> when no threshold is near. After a threshold is crossed, a 40-step <em>post-milestone deflation</em> period begins — flat affect, reduced confidence — modelling the collapse of excitement once the goal is gone ("now what?"). Once all step thresholds are passed, non-step milestones (hypotheses, self-mods, web pages, web symbols) continue driving novelty hunger.
         <br><br>
         <strong>Milestones</strong> — landmark moments recorded with step number and wall-clock timestamp:
         <br>· <code>steps_N</code> — crossed a step count threshold (1k, 10k, 50k, 100k, 250k, 500k, 1M). Thresholds already passed before a session starts are backfilled silently without triggering emotion bursts.
+        <br>· <code>hypotheses_N</code> — HypothesisEngine has generated N total hypotheses (100, 500, 1k, 5k, 10k).
+        <br>· <code>self_mods_N</code> — Arminta has performed N self-modifications (50, 100, 200, 500).
+        <br>· <code>web_pages_N</code> / <code>web_symbols_N</code> — WebLearner has read N pages or absorbed N new symbols.
         <br>· <code>first_intervention</code> — the step on which Arminta took her first real OS action.
         <br>· <code>dreams_100</code> — reached 100 total dream cycles.
         <br>· <code>best_single_reward</code> — the highest single-step reward ever recorded, updated whenever a new maximum is set.
