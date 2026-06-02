@@ -345,9 +345,9 @@ header {
 .why-panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
   padding: 12px 14px;
   font-size: 0.72rem;
+  margin-bottom: 28px;
 }
 .why-row {
   display: flex;
@@ -404,7 +404,6 @@ header {
   border: 1px solid var(--border);
   padding: 16px 20px;
   background: var(--surface);
-  margin-bottom: 12px;
 }
 .smart-panel.smart-ok   { border-color: var(--green-dim); }
 .smart-panel.smart-warn { border-color: rgba(255,61,61,0.5); background: rgba(255,61,61,0.03); }
@@ -1243,7 +1242,7 @@ footer a:hover { color: var(--text); }
 
   <!-- DRIVE HEALTH (S.M.A.R.T.) -->
   <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
-  <div class="smart-panel" id="smart-panel">
+  <div class="smart-panel mb28" id="smart-panel">
     <div class="smart-status-row">
       <div class="smart-dot" id="smart-dot"></div>
       <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
@@ -1668,7 +1667,7 @@ function render(d) {
   /* ── CAUSAL EDGE BARS ── */
   const edges = d.top_causal_edges || [];
   const edgeList = document.getElementById('edge-list');
-  if (!edgeList) return;
+  if (!edgeList) { /* skip */ } else {
   edgeList.innerHTML = '';
   if (edges.length) {
     const maxE = Math.max(...edges.map(e => Math.abs(e.effect)), 0.0001);
@@ -1687,11 +1686,12 @@ function render(d) {
   } else {
     edgeList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no edge data</div>';
   }
+  } // end edgeList guard
 
   /* ── ACTION REWARD BARS (custom HTML — no label truncation) ── */
   const arData = d.action_rewards || [];
   const rewList = document.getElementById('rew-list');
-  if (!rewList) return;
+  if (!rewList) { /* element missing — skip reward bars but continue rendering */ } else {
   rewList.innerHTML = '';
   if (arData.length) {
     const vals = arData.map(r => +r.mean_reward);
@@ -1717,6 +1717,7 @@ function render(d) {
   } else {
     rewList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no reward data</div>';
   }
+  } // end rewList guard
 
   /* ── REWARD SPARKLINE ── */
   const rh = d.reward_history || [];
