@@ -1385,31 +1385,6 @@ body.help-open {
     <div id="why-mechanisms" style="margin-top:6px"></div>
   </div>
 
-  <!-- DRIVE HEALTH (S.M.A.R.T.) -->
-  <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
-  <div class="smart-panel mb28" id="smart-panel">
-    <div class="smart-status-row">
-      <div class="smart-dot" id="smart-dot"></div>
-      <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
-      <div class="smart-device" id="smart-device"></div>
-    </div>
-    <div class="smart-metrics" id="smart-metrics"></div>
-  </div>
-
-  <!-- CONTINUITY ADVISOR -->
-  <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
-  <div class="continuity-panel advisory-green" id="continuity-panel">
-    <div class="continuity-status-row">
-      <div class="continuity-dot green" id="continuity-dot"></div>
-      <div class="continuity-verdict green" id="continuity-verdict">NOMINAL</div>
-      <div class="continuity-confidence" id="continuity-confidence">confidence: --</div>
-      <div class="continuity-step" id="continuity-step">last evaluated: --</div>
-    </div>
-    <ul class="continuity-reasons" id="continuity-reasons">
-      <li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>
-    </ul>
-  </div>
-
   <!-- WEB LEARNER -->
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
@@ -1447,6 +1422,32 @@ body.help-open {
   <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
     Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
   </div>
+
+  <!-- DRIVE HEALTH (S.M.A.R.T.) -->
+  <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
+  <div class="smart-panel mb28" id="smart-panel">
+    <div class="smart-status-row">
+      <div class="smart-dot" id="smart-dot"></div>
+      <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
+      <div class="smart-device" id="smart-device"></div>
+    </div>
+    <div class="smart-metrics" id="smart-metrics"></div>
+  </div>
+
+  <!-- CONTINUITY ADVISOR -->
+  <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
+  <div class="continuity-panel advisory-green mb28" id="continuity-panel">
+    <div class="continuity-status-row">
+      <div class="continuity-dot green" id="continuity-dot"></div>
+      <div class="continuity-verdict green" id="continuity-verdict">NOMINAL</div>
+      <div class="continuity-confidence" id="continuity-confidence">confidence: --</div>
+      <div class="continuity-step" id="continuity-step">last evaluated: --</div>
+    </div>
+    <ul class="continuity-reasons" id="continuity-reasons">
+      <li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>
+    </ul>
+  </div>
+
   <footer>
     <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
