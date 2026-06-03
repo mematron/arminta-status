@@ -1130,6 +1130,7 @@ footer a:hover { color: var(--text); }
         <span><span style="color:var(--cyan)">●</span> metric node</span>
         <span id="d3-confound-label"></span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+          <button onclick="resetGraphView()" title="Reset zoom and pan" style="background:none;border:1px solid var(--border2);border-radius:4px;color:var(--dim);font-family:var(--font-mono);font-size:0.6rem;padding:2px 8px;cursor:pointer;letter-spacing:0.05em;transition:color 0.2s,border-color 0.2s;" onmouseover="this.style.color='var(--cyan)';this.style.borderColor='var(--cyan)'" onmouseout="this.style.color='var(--dim)';this.style.borderColor='var(--border2)'">RESET VIEW</button>
           <label for="d3-sit-filter" style="color:var(--dim);font-size:0.6rem;letter-spacing:0.05em;">FILTER SIT</label>
           <select id="d3-sit-filter" onchange="renderD3CausalGraph()" style="background:var(--surface3,#1a2330);color:var(--fg);border:1px solid var(--border,#243040);border-radius:4px;font-size:0.6rem;padding:2px 6px;font-family:var(--font-mono);">
             <option value="all">ALL</option>
@@ -3007,6 +3008,7 @@ window.addEventListener('load', _desktopAutoRender);
 
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
 let _d3Simulation = null;
+let _d3Zoom = null;
 function renderD3CausalGraph() {
   if (typeof d3 === 'undefined') return;
   const svg = d3.select('#d3-causal-svg');
@@ -3069,8 +3071,8 @@ function renderD3CausalGraph() {
     .force('center', d3.forceCenter(W / 2, H / 2))
     .force('collision', d3.forceCollide().radius(d => radius(d) + 10));
 
-  const zoom = d3.zoom().scaleExtent([0.3, 3]).on('zoom', e => g.attr('transform', e.transform));
-  svg.attr('viewBox', `0 0 ${W} ${H}`).call(zoom);
+  _d3Zoom = d3.zoom().scaleExtent([0.3, 3]).on('zoom', e => g.attr('transform', e.transform));
+  svg.attr('viewBox', `0 0 ${W} ${H}`).call(_d3Zoom);
 
   const g = svg.append('g');
 
@@ -3140,6 +3142,12 @@ function renderD3CausalGraph() {
       confLabel.title = '';
     }
   }
+}
+
+function resetGraphView() {
+  const svg = d3.select('#d3-causal-svg');
+  if (!_d3Zoom || svg.empty()) return;
+  svg.transition().duration(400).call(_d3Zoom.transform, d3.zoomIdentity);
 }
 
 /* ── [20] STACKED REWARD TIMELINE ── */
