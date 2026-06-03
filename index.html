@@ -2985,6 +2985,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+// Desktop: auto-render graph + timeline after deferred scripts finish loading
+window.addEventListener('load', function() {
+  if (!_isCausalMobile()) {
+    renderD3CausalGraph();
+    renderTimeline();
+  }
+});
 
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
 let _d3Simulation = null;
@@ -3041,7 +3048,7 @@ function renderD3CausalGraph() {
   const radius = d => Math.max(8, Math.min(22, 8 + Math.sqrt(d.count || 1) * 2));
 
   const linkColor = eff => eff > 0 ? '#39ff14' : '#ff3d3d';
-  const linkWidth = eff => Math.max(1, Math.min(5, Math.abs(eff) * 6));
+  const linkWidth = eff => Math.max(0.5, Math.min(2, Math.abs(eff) * 3));
 
   if (_d3Simulation) _d3Simulation.stop();
   _d3Simulation = d3.forceSimulation(nodes)
@@ -3142,7 +3149,8 @@ function renderTimeline() {
     : `${total} steps`;
 
   const ctx = canvas.getContext('2d');
-  const W = canvas.parentElement.clientWidth - 32 || 640;
+  const parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+  const W = (parentW > 64 ? parentW - 32 : 0) || 640;
   const H = 420;
   canvas.width  = W;
   canvas.height = H;
