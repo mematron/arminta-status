@@ -478,6 +478,11 @@ header {
   .causal-two-col > [id^="causal-panel-"] { display: none; }
   .causal-two-col > .causal-panel-visible { display: block; }
 }
+/* Desktop: graph + timeline span full width */
+@media(min-width: 721px) {
+  #causal-panel-graph,
+  #causal-panel-timeline { grid-column: 1 / -1; }
+}
 
 /* ── VALUE FLASH ON UPDATE ── */
 @keyframes valflash {
@@ -2943,13 +2948,19 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
 <script>
 /* ── CAUSAL TAB SWITCHER ── */
 const _ALL_CAUSAL_PANELS = ['edges','reward','graph','timeline'];
+function _isCausalMobile() { return window.innerWidth <= 720; }
 function switchCausalTab(which) {
   _ALL_CAUSAL_PANELS.forEach(id => {
     const panel = document.getElementById('causal-panel-' + id);
     const tab   = document.getElementById('tab-' + id);
     if (!panel || !tab) return;
     const active = (id === which);
-    panel.style.display = active ? '' : 'none';
+    // Only manipulate display on mobile — desktop shows all panels via CSS grid
+    if (_isCausalMobile()) {
+      panel.style.display = active ? '' : 'none';
+    } else {
+      panel.style.display = '';
+    }
     panel.classList.toggle('causal-panel-visible', active);
     tab.classList.toggle('active', active);
     tab.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -2960,11 +2971,19 @@ function switchCausalTab(which) {
 document.addEventListener('DOMContentLoaded', function() {
   const ep = document.getElementById('causal-panel-edges');
   if (ep) { ep.classList.add('causal-panel-visible'); ep.style.display = ''; }
-  // Hide non-default panels
-  ['reward','graph','timeline'].forEach(id => {
-    const p = document.getElementById('causal-panel-' + id);
-    if (p) p.style.display = 'none';
-  });
+  // On mobile only: hide non-default panels so tab switcher controls them
+  if (_isCausalMobile()) {
+    ['reward','graph','timeline'].forEach(id => {
+      const p = document.getElementById('causal-panel-' + id);
+      if (p) p.style.display = 'none';
+    });
+  } else {
+    // Desktop: ensure all panels are visible (clear any stale inline styles)
+    ['reward','graph','timeline'].forEach(id => {
+      const p = document.getElementById('causal-panel-' + id);
+      if (p) p.style.display = '';
+    });
+  }
 });
 
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
