@@ -2477,10 +2477,10 @@ function showError(msg) {
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
   const errMsgs = {
-    '404': 'UPLINK ERROR: data source not found (404) — check gist URL',
-    '403': 'UPLINK ERROR: access denied (403) — gist may be private',
+    '404': 'UPLINK ERROR: data unavailable (404)',
+    '403': 'UPLINK ERROR: access denied (403)',
     '429': 'UPLINK ERROR: rate limited (429) — too many requests',
-    '500': 'UPLINK ERROR: server error (500) — gist service issue',
+    '500': 'UPLINK ERROR: server error (500)',
     '0':   'UPLINK ERROR: network unreachable — check connection',
   };
   const code = (msg.match(/\d{3}/) || [''])[0];
@@ -3035,7 +3035,7 @@ function renderD3CausalGraph() {
   if (!edges.length) {
     svg.append('text').attr('x','50%').attr('y','50%')
        .attr('text-anchor','middle').attr('fill','#5a7a9a').attr('font-size','14')
-       .text('No causal edge data yet — agent is still in bootstrap phase');
+       .text('No causal data yet — agent is still learning');
     return;
   }
   // Build node + link lists
@@ -3135,9 +3135,9 @@ function renderD3CausalGraph() {
       confLabel.textContent = `confound rate: ${(cr * 100).toFixed(1)}%`;
       confLabel.style.color = cr > 0.2 ? 'var(--red)' : 'var(--dim)';
     } else {
-      confLabel.textContent = 'confound rate: not in payload';
+      confLabel.textContent = '';
       confLabel.style.color = 'var(--muted)';
-      confLabel.title = 'Add confound_rate to update_gist_stats() in arminta_v4.py to enable this';
+      confLabel.title = '';
     }
   }
 }
@@ -3173,12 +3173,12 @@ function renderTimeline() {
     ctx.font = '13px monospace';
     ctx.textAlign = 'center';
     if (!window._armintaTaggedRewardsPresent) {
-      ctx.fillText('tagged_reward_history not in Gist payload', W / 2, H / 2 - 12);
+      ctx.fillText('Reward timeline unavailable', W / 2, H / 2 - 12);
       ctx.font = '11px monospace';
       ctx.fillStyle = '#3a4a5a';
-      ctx.fillText('Add tagged_reward_history to update_gist_stats() in arminta_v4.py', W / 2, H / 2 + 12);
+      ctx.fillText('Collecting data…', W / 2, H / 2 + 12);
     } else {
-      ctx.fillText('No tagged reward history yet — agent is still collecting data', W / 2, H / 2);
+      ctx.fillText('No reward history yet — agent is still collecting data', W / 2, H / 2);
     }
     return;
   }
@@ -3247,7 +3247,7 @@ function renderSitDist(sitDist) {
   const container = document.getElementById('sit-dist-bars');
   if (!container) return;
   if (!sitDist || !Object.keys(sitDist).length) {
-    container.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no sit_dist in payload — add to update_gist_stats()</div>';
+    container.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">situation data unavailable</div>';
     return;
   }
   const SIT_COLORS = {
