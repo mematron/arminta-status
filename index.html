@@ -967,7 +967,6 @@ body.help-open {
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
       <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
-      <button class="help-btn" id="refresh-btn" onclick="manualRefresh()" title="Refresh data now" aria-label="Refresh data now" style="font-size:0.8rem;">↻</button>
       <div>
         <div class="last-updated" id="last-updated">--</div>
         <div class="last-seen" id="last-seen"></div>
@@ -996,11 +995,14 @@ body.help-open {
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Rolling Avg Reward <span title="Mean reward per step over the last 150 steps. Positive = agent is improving system performance. More meaningful than the cumulative total at 300k+ steps." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
+      <div class="mode-key">Rolling Avg Reward<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward')" title="What is Rolling Avg Reward?" aria-label="Help: Rolling Avg Reward">?</button></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
       <!-- [02] RewardVector decomposition: immediate · durable · health -->
-      <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;"></div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:5px;">
+        <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;flex:1;"></div>
+        <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward-vector')" title="What is the Reward Vector?" aria-label="Help: Reward Vector">?</button>
+      </div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
@@ -1075,22 +1077,22 @@ body.help-open {
       <div class="stat-sub">world correlations</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Age</div>
+      <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
       <div class="stat-value cyan" id="arminta-age">--</div>
       <div class="stat-sub" id="arminta-age-sub">since first run</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Sessions</div>
+      <div class="stat-label">Sessions<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions / SelfModel">?</button></div>
       <div class="stat-value" id="session-count">--</div>
       <div class="stat-sub" id="uptime-sub">total uptime --</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Novelty Hunger</div>
+      <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger / SelfModel">?</button></div>
       <div class="stat-value" id="novelty-hunger">--</div>
       <div class="stat-sub">drive toward investigation</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Milestone Proximity</div>
+      <div class="stat-label">Milestone Proximity<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Milestone Proximity?" aria-label="Help: Milestone Proximity / SelfModel">?</button></div>
       <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
       <div class="stat-sub">anticipatory drive</div>
     </div>
@@ -2677,20 +2679,6 @@ async function refresh() {
 }
 
 /* ── manual refresh ── */
-async function manualRefresh() {
-  const btn = document.getElementById('refresh-btn');
-  if (btn) { btn.style.animation = 'spin 0.6s linear'; btn.disabled = true; }
-  try {
-    const data = await fetchData();
-    render(data);
-    document.getElementById('error-banner').style.display = 'none';
-  } catch(e) {
-    showError(e.message);
-  } finally {
-    if (btn) { btn.style.animation = ''; btn.disabled = false; }
-  }
-}
-
 refresh(); // first call — subsequent calls chained via setTimeout inside refresh()
 </script>
 <!-- ── HELP OVERLAY ── -->
