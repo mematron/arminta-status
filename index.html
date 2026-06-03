@@ -929,6 +929,7 @@ footer a:hover { color: var(--text); }
       <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
+      <button class="help-btn" onclick="openHelp('help-header')" title="What do these status indicators mean?" aria-label="Help: Status Indicators">?</button>
       <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
       <button class="help-btn" id="refresh-btn" onclick="manualRefresh()" title="Refresh data now" aria-label="Refresh data now" style="font-size:0.8rem;">↻</button>
       <div>
@@ -959,13 +960,13 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Rolling Avg Reward <span title="Mean reward per step over the last 150 steps. Positive = agent is improving system performance. More meaningful than the cumulative total at 300k+ steps." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
+      <div class="mode-key">Rolling Avg Reward <button class="help-btn inline" onclick="openHelp('help-mode')" title="What is Rolling Avg Reward?" aria-label="Help: Rolling Avg Reward">?</button></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Error Steps (200-step window)</div>
+      <div class="mode-key">Error Steps (200-step window)<button class="help-btn inline" onclick="openHelp('help-mode')" title="What are Error Steps?" aria-label="Help: Error Steps">?</button></div>
       <div class="mode-val" id="error-steps" style="font-size:1.3rem; color:var(--dim)">--</div>
     </div>
   </div>
@@ -1011,22 +1012,22 @@ footer a:hover { color: var(--text); }
       <div class="stat-sub">world correlations</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Age</div>
+      <div class="stat-label">Age<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Arminta's Age?" aria-label="Help: Age" style="margin-left:4px;">?</button></div>
       <div class="stat-value cyan" id="arminta-age">--</div>
       <div class="stat-sub" id="arminta-age-sub">since first run</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Sessions</div>
+      <div class="stat-label">Sessions<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions" style="margin-left:4px;">?</button></div>
       <div class="stat-value" id="session-count">--</div>
       <div class="stat-sub" id="uptime-sub">total uptime --</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Novelty Hunger</div>
+      <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger" style="margin-left:4px;">?</button></div>
       <div class="stat-value" id="novelty-hunger">--</div>
       <div class="stat-sub">drive toward investigation</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Milestone Proximity</div>
+      <div class="stat-label">Milestone Proximity<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Milestone Proximity?" aria-label="Help: Milestone Proximity" style="margin-left:4px;">?</button></div>
       <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
       <div class="stat-sub">anticipatory drive</div>
     </div>
@@ -2512,6 +2513,17 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
   <div class="help-shortcut">Press <kbd>?</kbd> to toggle · <kbd>Esc</kbd> to close · click <kbd>?</kbd> on any section to jump to its entry</div>
   <div class="help-panel-body" id="help-panel-body">
 
+    <div class="help-entry" id="help-header">
+      <div class="help-entry-title"><span>Agent Status &amp; Telemetry</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The header shows the real-time connectivity status between this dashboard and the ARMINTA agent.
+        <br><br>· <strong>Last Updated</strong> — the wall-clock time the dashboard last received a telemetry packet.
+        <br>· <strong>Last Seen</strong> — how long ago the agent actually wrote that data. <code>just now</code> (green) is nominal; <code>stale</code> (amber) or <code>offline</code> (red) indicates the agent loop has slowed down or stopped.
+        <br>· <strong>Agent Status Pill</strong> — <code>ACTIVE</code> means the loop is running; <code>OFFLINE</code> means no heartbeat has been detected for over 5 minutes.
+        <br>· <strong>Refresh (↻)</strong> — manually force a fetch of the latest telemetry from the remote Gist.
+      </div>
+    </div>
+
     <div class="help-entry" id="help-hero">
       <div class="help-entry-title"><span>Total Empirical Steps</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
@@ -2529,8 +2541,8 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <code>DREAM</code> — running offline counterfactual simulations (no real actions)
         <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making, running a lexical reflection pass over recent history, and rewriting internal parameters via AST self-modification if warranted
         <br><br><strong>Situation</strong> — what the host system is currently doing (idle, IO-bound, CPU-bound, compiling, browsing, streaming). ARMINTA uses this as context when choosing actions.
-        <br><br><strong>Cumulative Reward</strong> — the running score since boot. As of v2.1 the per-step reward is mean-centred against a slow EMA baseline, so this number reflects accumulated performance <em>relative to the machine's recent ambient baseline</em>, not an absolute zero. Watch the <strong>Rolling Avg</strong> (150-step window) for the meaningful health signal — positive means recent actions are beating baseline, negative means they are not.
-        <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error. Should stay near zero.
+        <br><br><strong>Rolling Avg Reward</strong> — the mean reward per step over the last 150 steps. This is the primary health signal: positive means the agent is currently improving system performance relative to the machine's recent ambient baseline; negative means recent actions are net-harmful.
+        <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error (e.g., a command failed or returned a non-zero exit code). In a stable system, this should stay near zero. If it climbs, the agent may be attempting incompatible actions for the current OS environment.
       </div>
     </div>
 
@@ -2571,7 +2583,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         Six counters that track the size of ARMINTA's learned world-model:
         <br><br>· <strong>Causal Edges</strong> — confirmed directed relationships in the interventional graph. Each edge says "action X reliably changes metric Y by amount Z."
-        <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
+        <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing. If the system enters a "consolidation plateau" (where new data doesn't change the model much), a <code>THROTTLED</code> badge appears and the cycle slows down to save resources.
         <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded.
         <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
         <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously via AST patching. Tunable targets (all bounded by hard min/max guards): <code>STEP_RATE_DEFAULT</code>, <code>STEP_RATE_MAX</code>, <code>STEP_RATE_MIN</code> (pacing), <code>CURIOSITY_STALE_STEPS</code>, <code>CURIOSITY_PROBE_COOLDOWN</code> (exploration aggression), <code>DISCO_INTERVAL</code>, <code>TUNE_INTERVAL</code> (scheduling), and <code>PSI_CPU/MEM/IO_ACTION_THRESH</code> (pressure sensitivity). A non-zero value means the agent has changed its own behaviour at runtime.
@@ -2635,6 +2647,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>Saved Governor</strong> — what was set before ARMINTA's last switch; used to restore state if needed.
         <br>· <strong>Override</strong> — a manual lock preventing ARMINTA from switching governors. "none" means ARMINTA has full control.
         <br>· <strong>Idle Steps</strong> — steps since the last action. Counts up while ARMINTA observes; resets on any intervention.
+        <br>· <strong>Relax Dwell</strong> — a 120-step countdown that begins after the agent escalates the CPU to <code>performance</code> mode. To prevent "governor thrashing," ARMINTA is forbidden from relaxing the governor back to <code>powersave</code> until this dwell period expires.
         <br>· <strong>Bootstrap Phase</strong> — if YES, ARMINTA is still in its early data-collection phase and takes more exploratory actions than usual.
         <br>· <strong>HW IRQ</strong> — tracks whether <code>renice_ksoftirqd</code> has permanently given up on an IRQ storm. When kernel softirq threads are reniced repeatedly with no effect (hardware-level interrupt flood that can't be suppressed in software), ARMINTA sets this flag to <code>STANDING DOWN</code> and stops attempting that action. <code>ok</code> means no persistent IRQ storm has been detected.
       </div>
