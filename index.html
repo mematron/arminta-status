@@ -3724,13 +3724,17 @@ function toggleHelp() {
 function openHelp(targetId) {
   document.getElementById('help-overlay').classList.add('open');
   document.getElementById('help-panel').classList.add('open');
+  const body = document.getElementById('help-panel-body');
   if (targetId) {
     setTimeout(() => {
       const el = document.getElementById(targetId);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
+      if (el && body) {
+        // Scroll within the panel body — scrollIntoView moves the page on fixed panels
+        body.scrollTop = el.offsetTop - 12;
+      }
+    }, 320);
   } else {
-    document.getElementById('help-panel-body').scrollTop = 0;
+    if (body) body.scrollTop = 0;
   }
 }
 function closeHelp() {
