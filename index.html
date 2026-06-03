@@ -2985,13 +2985,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-// Desktop: auto-render graph + timeline after deferred scripts finish loading
-window.addEventListener('load', function() {
-  if (!_isCausalMobile()) {
-    renderD3CausalGraph();
-    renderTimeline();
+// Desktop: render each panel once it has real dimensions (ResizeObserver fires
+// after layout, unlike window.load which can beat the CSS grid paint).
+function _desktopAutoRender() {
+  if (_isCausalMobile()) return;
+  function watchPanel(id, renderFn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.clientWidth > 64) { renderFn(); return; }
+    const ro = new ResizeObserver((entries, obs) => {
+      if (el.clientWidth > 64) { obs.disconnect(); renderFn(); }
+    });
+    ro.observe(el);
+    // Fallback: try after 800ms in case ResizeObserver misses the initial paint
+    setTimeout(() => { if (el.clientWidth > 64) renderFn(); }, 800);
   }
-});
+  watchPanel('causal-panel-graph',    renderD3CausalGraph);
+  watchPanel('causal-panel-timeline', renderTimeline);
+}
+window.addEventListener('load', _desktopAutoRender);
 
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
 let _d3Simulation = null;
