@@ -258,6 +258,24 @@ header {
 .emotion-name .val { color: var(--text); }
 .emotion-bar-bg { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .emotion-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+/* [23] SomaticConfidenceModel panel */
+.scm-section { border: 1px solid var(--border); padding: 16px 20px; background: var(--surface); margin-bottom: 12px; }
+.scm-phase { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; font-family: var(--font-mono); }
+.scm-phase.bootstrap { color: var(--dim);   background: rgba(138,158,180,0.08); border: 1px solid rgba(138,158,180,0.2); }
+.scm-phase.learning  { color: var(--amber); background: var(--amber-dim);       border: 1px solid rgba(255,179,0,0.25); }
+.scm-phase.mature    { color: var(--green); background: var(--green-bg);        border: 1px solid var(--green-dim); }
+.scm-signal-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.scm-signal-row:last-child { margin-bottom: 0; }
+.scm-emotion-name { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; width: 90px; flex-shrink: 0; }
+.scm-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.scm-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease, background 0.5s ease; }
+.scm-weight-val { font-family: var(--font-mono); font-size: 0.65rem; color: var(--dim); width: 32px; text-align: right; flex-shrink: 0; }
+.scm-spidey-log { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.scm-spidey-entry { font-family: var(--font-mono); font-size: 0.62rem; color: var(--green); letter-spacing: 0.04em; padding: 3px 0; border-bottom: 1px solid rgba(57,255,20,0.06); display: flex; gap: 10px; align-items: baseline; }
+.scm-spidey-entry:last-child { border-bottom: none; }
+.scm-spidey-step { color: var(--dim); flex-shrink: 0; }
+.scm-spidey-pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; margin-right: 2px; animation: scm-pulse 2s ease-in-out infinite; }
+@keyframes scm-pulse { 0%,100%{opacity:1;box-shadow:0 0 6px var(--green)} 50%{opacity:0.4;box-shadow:0 0 2px var(--green)} }
 .eb-calm      { background: var(--cyan); }
 .eb-curious   { background: var(--amber); }
 .eb-focused   { background: var(--green); }
@@ -996,6 +1014,24 @@ footer a:hover { color: var(--text); }
     <div class="emotion-grid" id="emotion-grid"></div>
   </div>
 
+  <!-- [23] SOMATIC CONFIDENCE MODEL -->
+  <div class="scm-section mb12">
+    <div class="section-label" style="margin-bottom:12px;">
+      Somatic Confidence
+      <span id="scm-phase-badge" class="scm-phase bootstrap" style="margin-left:8px;">BOOTSTRAP</span>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">
+      signal reliability per situation · earned trust · <span id="scm-situation-label" style="color:var(--text);">--</span>
+    </div>
+    <div id="scm-signal-list"></div>
+    <div class="scm-spidey-log" id="scm-spidey-log" style="display:none;">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;">
+        <span class="scm-spidey-pulse"></span> Spidey Sense Events
+      </div>
+      <div id="scm-spidey-entries"></div>
+    </div>
+  </div>
+
   <!-- CORE STATS -->
   <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="openHelp('help-cognitive')" title="What are Cognitive Metrics?" aria-label="Help: Cognitive Metrics">?</button></div>
   <div class="stat-grid mb28">
@@ -1566,6 +1602,76 @@ function render(d) {
     const pct = Math.min(100, (val / 5.0) * 100).toFixed(1);
     grid.innerHTML += `<div class="emotion-item"><div class="emotion-name"><span>${name}</span><span class="val">${val.toFixed ? val.toFixed(2) : val}</span></div><div class="emotion-bar-bg"><div class="emotion-bar-fill eb-${name}" style="width:${pct}%"></div></div></div>`;
   });
+
+  /* [23] Somatic Confidence Model */
+  (function renderSCM() {
+    const scmTop     = d.scm_top || [];
+    const scmSpidey  = d.scm_spidey_events || [];
+    const sit        = (d.situation || 'idle').toLowerCase();
+    const domColors  = { calm:'#00e5ff', curious:'#ffb300', focused:'#39ff14', confident:'#69f0ae',
+                         stressed:'#ff3d3d', frustrated:'#ff6e6e', bored:'#5a7a9a', apprehensive:'#b39ddb' };
+
+    // Situation label
+    const sitLabel = document.getElementById('scm-situation-label');
+    if (sitLabel) sitLabel.textContent = sit.toUpperCase();
+
+    // Phase badge: derive from highest weight in scm_top
+    const maxWeight = scmTop.length ? Math.max(...scmTop.map(([,w]) => +w)) : 0;
+    const phaseBadge = document.getElementById('scm-phase-badge');
+    if (phaseBadge) {
+      if (maxWeight === 0) {
+        phaseBadge.textContent = 'BOOTSTRAP';
+        phaseBadge.className = 'scm-phase bootstrap';
+      } else if (maxWeight < 0.6) {
+        phaseBadge.textContent = 'LEARNING';
+        phaseBadge.className = 'scm-phase learning';
+      } else {
+        phaseBadge.textContent = 'MATURE';
+        phaseBadge.className = 'scm-phase mature';
+      }
+    }
+
+    // Signal reliability bars
+    const list = document.getElementById('scm-signal-list');
+    if (list) {
+      if (scmTop.length === 0) {
+        list.innerHTML = '<div style="font-size:0.65rem;color:var(--dim);font-family:var(--font-mono);">accumulating observations…</div>';
+      } else {
+        list.innerHTML = scmTop.map(([emo, weight]) => {
+          const w = +weight;
+          const pct = (w * 100).toFixed(1);
+          const col = w >= 0.6 ? 'var(--green)' : w >= 0.3 ? 'var(--amber)' : 'var(--muted)';
+          const emoCol = domColors[emo] || 'var(--dim)';
+          return `<div class="scm-signal-row">
+            <div class="scm-emotion-name" style="color:${emoCol}">${emo}</div>
+            <div class="scm-bar-bg"><div class="scm-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+            <div class="scm-weight-val">${w.toFixed(2)}</div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // Spidey sense event log
+    const spideyLog = document.getElementById('scm-spidey-log');
+    const spideyEntries = document.getElementById('scm-spidey-entries');
+    if (spideyLog && spideyEntries) {
+      if (scmSpidey.length === 0) {
+        spideyLog.style.display = 'none';
+      } else {
+        spideyLog.style.display = 'block';
+        spideyEntries.innerHTML = [...scmSpidey].reverse().map(ev => {
+          const emoCol = domColors[ev.emotion] || 'var(--green)';
+          return `<div class="scm-spidey-entry">
+            <span class="scm-spidey-step">step ${ev.step}</span>
+            <span style="color:${emoCol};font-weight:700">${ev.emotion}</span>
+            <span style="color:var(--dim)">@${ev.situation}</span>
+            <span>p=${ev.precision}</span>
+            <span style="color:var(--dim)">i=${ev.intensity}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+  })();
 
   /* stat cards — flash on change */
   function setAndFlash(id, newVal) {
