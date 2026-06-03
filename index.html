@@ -6,6 +6,7 @@
 <title>ARMINTA — Live Agent Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" defer></script>
 <style>
 :root {
   --bg:        #080c10;
@@ -541,6 +542,7 @@ button:focus-visible, a:focus-visible {
 
 /* ── CAUSAL EDGE BARS ── */
 .edge-list { display: flex; flex-direction: column; gap: 9px; }
+.edge-ci { font-size: 0.58rem; color: var(--dim); font-family: var(--font-mono); letter-spacing: 0.03em; margin-top: 2px; padding-left: 2px; opacity: 0.75; }
 .edge-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; flex-wrap: nowrap; }
 .edge-label {
   width: clamp(120px, 28%, 200px);
@@ -959,14 +961,20 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Rolling Avg Reward <button class="help-btn inline" onclick="openHelp('help-mode')" title="What is Rolling Avg Reward?" aria-label="Help: Rolling Avg Reward">?</button></div>
+      <div class="mode-key">Rolling Avg Reward <span title="Mean reward per step over the last 150 steps. Positive = agent is improving system performance. More meaningful than the cumulative total at 300k+ steps." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Error Steps (200-step window)<button class="help-btn inline" onclick="openHelp('help-mode')" title="What are Error Steps?" aria-label="Help: Error Steps">?</button></div>
+      <div class="mode-key">Error Steps (200-step window)</div>
       <div class="mode-val" id="error-steps" style="font-size:1.3rem; color:var(--dim)">--</div>
+    </div>
+    <div class="mode-div"></div>
+    <div class="mode-block">
+      <div class="mode-key">Confound Rate <span title="Fraction of intervention windows flagged as externally confounded. High values mean causal attribution is noisy." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
+      <div class="mode-val" id="confound-rate-val" style="font-size:1.3rem; color:var(--dim)">--</div>
+      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="confound-rate-sub">causal noise ratio</div>
     </div>
   </div>
 
@@ -1011,22 +1019,22 @@ footer a:hover { color: var(--text); }
       <div class="stat-sub">world correlations</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Age<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Arminta's Age?" aria-label="Help: Age" style="margin-left:4px;">?</button></div>
+      <div class="stat-label">Age</div>
       <div class="stat-value cyan" id="arminta-age">--</div>
       <div class="stat-sub" id="arminta-age-sub">since first run</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Sessions<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions" style="margin-left:4px;">?</button></div>
+      <div class="stat-label">Sessions</div>
       <div class="stat-value" id="session-count">--</div>
       <div class="stat-sub" id="uptime-sub">total uptime --</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger" style="margin-left:4px;">?</button></div>
+      <div class="stat-label">Novelty Hunger</div>
       <div class="stat-value" id="novelty-hunger">--</div>
       <div class="stat-sub">drive toward investigation</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Milestone Proximity<button class="help-btn inline" onclick="openHelp('help-selfmodel')" title="What is Milestone Proximity?" aria-label="Help: Milestone Proximity" style="margin-left:4px;">?</button></div>
+      <div class="stat-label">Milestone Proximity</div>
       <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
       <div class="stat-sub">anticipatory drive</div>
     </div>
@@ -1076,9 +1084,9 @@ footer a:hover { color: var(--text); }
   <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
     <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
     <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.25</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Dilution Kill</div><div class="thresh-val" id="thresh-dilu-kill">--</div><div class="thresh-default">default 0.50</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 3000 KB/s</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.60 · floor 0.25</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Kill</div><div class="thresh-val" id="thresh-dilu-kill">--</div><div class="thresh-default">default 0.85 · floor 0.50</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 15000 KB/s · floor 3000</div></div>
   </div>
 
   <!-- CAUSAL EDGES + REWARD CHART (2-col / tab on mobile) -->
@@ -1088,6 +1096,8 @@ footer a:hover { color: var(--text); }
   <div class="causal-tabs" id="causal-tabs" role="tablist" aria-label="Causal graph panels">
     <button class="causal-tab active" role="tab" aria-selected="true"  aria-controls="causal-panel-edges"  id="tab-edges"  onclick="switchCausalTab('edges')">EDGES</button>
     <button class="causal-tab"        role="tab" aria-selected="false" aria-controls="causal-panel-reward" id="tab-reward" onclick="switchCausalTab('reward')">REWARDS</button>
+    <button class="causal-tab"        role="tab" aria-selected="false" aria-controls="causal-panel-graph"  id="tab-graph"  onclick="switchCausalTab('graph')">GRAPH ✦</button>
+    <button class="causal-tab"        role="tab" aria-selected="false" aria-controls="causal-panel-timeline" id="tab-timeline" onclick="switchCausalTab('timeline')">TIMELINE</button>
   </div>
 
   <div class="two-col mb28 causal-two-col">
@@ -1103,13 +1113,77 @@ footer a:hover { color: var(--text); }
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
     </div>
+    <!-- [20] D3 Force-Directed Causal Graph Panel -->
+    <div class="card card-pad" id="causal-panel-graph" role="tabpanel" aria-labelledby="tab-graph" style="display:none;min-height:480px;">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">
+        Force-directed causal graph · node size = intervention count · edge colour = effect sign · drag to explore
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:0.6rem;color:var(--dim);flex-wrap:wrap;align-items:center;">
+        <span><span style="color:var(--green)">▬</span> positive effect</span>
+        <span><span style="color:var(--red)">▬</span> negative / harmful</span>
+        <span><span style="color:var(--amber)">●</span> action node</span>
+        <span><span style="color:var(--cyan)">●</span> metric node</span>
+        <span id="d3-confound-label"></span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+          <label for="d3-sit-filter" style="color:var(--dim);font-size:0.6rem;letter-spacing:0.05em;">FILTER SIT</label>
+          <select id="d3-sit-filter" onchange="renderD3CausalGraph()" style="background:var(--surface3,#1a2330);color:var(--fg);border:1px solid var(--border,#243040);border-radius:4px;font-size:0.6rem;padding:2px 6px;font-family:var(--font-mono);">
+            <option value="all">ALL</option>
+            <option value="idle">idle</option>
+            <option value="compile">compile</option>
+            <option value="memory_pressure">memory_pressure</option>
+            <option value="io_bound">io_bound</option>
+            <option value="cpu_bound">cpu_bound</option>
+            <option value="streaming">streaming</option>
+            <option value="browser_compute">browser_compute</option>
+            <option value="irq_storm">irq_storm</option>
+            <option value="thermal_stress">thermal_stress</option>
+            <option value="network_saturated">network_saturated</option>
+          </select>
+        </span>
+      </div>
+      <svg id="d3-causal-svg" width="100%" style="height:420px;background:var(--surface2);border-radius:6px;"></svg>
+    </div>
+    <!-- [20] Reward Timeline Panel -->
+    <div class="card card-pad" id="causal-panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" style="display:none;min-height:480px;">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">
+        Stacked reward timeline by situation · last 150 steps
+      </div>
+      <canvas id="timeline-chart" style="width:100%;height:360px;"></canvas>
+      <!-- [20] Timeline scrubber -->
+      <div style="padding:8px 4px 4px;display:flex;align-items:center;gap:12px;">
+        <label for="timeline-scrubber" style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;white-space:nowrap;">WINDOW</label>
+        <input type="range" id="timeline-scrubber" min="0" max="0" value="0" step="1"
+               style="flex:1;accent-color:var(--cyan,#00e5ff);"
+               oninput="onTimelineScrub(this.value)"
+               title="Drag to scrub through reward history">
+        <div id="timeline-scrub-label" style="font-size:0.6rem;color:var(--dim);font-family:var(--font-mono);min-width:80px;text-align:right;">-- / --</div>
+      </div>
+    </div>
   </div>
 
-  <!-- REWARD HISTORY SPARKLINE -->
+  <!-- SITUATION DISTRIBUTION [15] -->
+  <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="openHelp('help-situation')" title="What do situation labels mean?" aria-label="Help: Situation Distribution">?</button></div>
+  <div class="card card-pad mb28" id="sit-dist-card">
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">fuzzy blend of active situation weights · bars sum to 100%</div>
+    <div id="sit-dist-bars" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
+      <div style="color:var(--dim);font-size:0.7rem">no data</div>
+    </div>
+  </div>
+
+  <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
   <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?" aria-label="Help: Reward History">?</button></div>
-  <div class="card mb28" style="padding:16px 8px 28px;">
-    <div class="chart-wrap" style="height:210px;">
+  <div class="card mb28" style="padding:16px 8px 4px;">
+    <div style="font-size:0.6rem;color:var(--cyan);letter-spacing:0.05em;margin-bottom:4px;padding:0 8px;">RAW REWARD</div>
+    <div class="chart-wrap" style="height:100px;">
       <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
+    </div>
+    <div style="font-size:0.6rem;color:var(--amber);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">10-STEP ROLLING AVG</div>
+    <div class="chart-wrap" style="height:80px;">
+      <canvas id="sparkRollingChart" role="img" aria-label="10-step rolling average reward"></canvas>
+    </div>
+    <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">REWARD VARIANCE (100-step window) <span id="dream-throttle-badge" style="display:none;margin-left:8px;color:var(--muted,#3a4a5a);font-size:0.55rem;">DREAM THROTTLED</span></div>
+    <div class="chart-wrap" style="height:70px;margin-bottom:16px;">
+      <canvas id="sparkVarianceChart" role="img" aria-label="Reward variance sparkline"></canvas>
     </div>
   </div>
 
@@ -1345,11 +1419,11 @@ function _smartAge(ts) {
 }
 
 /* ── charts (singletons) ── */
-let sparkChart, circChart;
+let sparkChart, sparkRollingChart, sparkVarianceChart, circChart;
 
 function destroyCharts() {
-  [sparkChart, circChart].forEach(c => { if (c) c.destroy(); });
-  sparkChart = circChart = null;
+  [sparkChart, sparkRollingChart, sparkVarianceChart, circChart].forEach(c => { if (c) c.destroy(); });
+  sparkChart = sparkRollingChart = sparkVarianceChart = circChart = null;
   // FIX-E: also destroy donut so it doesn't leak on error-path resets
   if (window._modeDonutChart) { window._modeDonutChart.destroy(); window._modeDonutChart = null; }
 }
@@ -1646,7 +1720,7 @@ function render(d) {
   setEl('gov-idle', d.governor_idle_steps !== undefined ? d.governor_idle_steps : '--');
   // Dwell countdown: steps remaining before relax_governor is eligible
   if (d.governor_perf_set_step !== undefined && d.step_count !== undefined) {
-    const _dwellSteps = 120;
+    const _dwellSteps = 90; // matches GOVERNOR_IDLE_STEPS_REQ in arminta_v4.py
     const _stepsSincePerf = (d.step_count || 0) - (d.governor_perf_set_step || 0);
     const _dwellRemain = Math.max(0, _dwellSteps - _stepsSincePerf);
     const _dwellEl = document.getElementById('gov-dwell');
@@ -1688,6 +1762,29 @@ function render(d) {
 
   /* ── CAUSAL EDGE BARS ── */
   const edges = d.top_causal_edges || [];
+  // [20] Store globally for D3 graph and timeline renderers
+  window._armintaEdgeData           = edges;
+  window._armintaTaggedRewards      = (d.tagged_reward_history || []).map(r =>
+    Array.isArray(r) ? {reward: r[0], situation: r[1]} : r);
+  window._armintaTaggedRewardsPresent = ('tagged_reward_history' in d);
+  window._armintaConfoundRate         = d.confound_rate || 0;
+  window._armintaConfoundRatePresent  = ('confound_rate' in d);
+  window._armintaSitDist              = d.sit_dist || {};  // [15] situation distribution
+  // [07] confound rate mode-row display
+  (function() {
+    const crEl = document.getElementById('confound-rate-val');
+    const crSub = document.getElementById('confound-rate-sub');
+    if (!crEl) return;
+    if ('confound_rate' in d) {
+      const cr = d.confound_rate || 0;
+      crEl.textContent = (cr * 100).toFixed(1) + '%';
+      crEl.style.color = cr > 0.3 ? 'var(--red)' : cr > 0.1 ? 'var(--amber)' : 'var(--dim)';
+      if (crSub) crSub.textContent = cr > 0.3 ? 'HIGH — causal noise' : cr > 0.1 ? 'moderate' : 'low';
+    } else {
+      crEl.textContent = '--';
+      crEl.style.color = 'var(--dim)';
+    }
+  })();
   const edgeList = document.getElementById('edge-list');
   if (!edgeList) { /* skip */ } else {
   edgeList.innerHTML = '';
@@ -1697,12 +1794,22 @@ function render(d) {
       const pct = (Math.abs(e.effect) / maxE * 100).toFixed(1);
       const col = e.effect >= 0 ? '#39ff14' : '#ff3d3d';
       const sign = e.effect >= 0 ? '+' : '';
+      // [18] Bayesian credible interval display
+      let ciHtml = '';
+      if (e.ci_lo !== undefined && e.ci_hi !== undefined) {
+        const ciRange = (e.ci_hi - e.ci_lo).toFixed(3);
+        const confPct = e.confidence !== undefined ? ` · conf ${(e.confidence*100).toFixed(0)}%` : '';
+        const loS = e.ci_lo >= 0 ? '+' : '';
+        const hiS = e.ci_hi >= 0 ? '+' : '';
+        ciHtml = `<div class="edge-ci" title="90% Bayesian credible interval${confPct}">CI90 [${loS}${e.ci_lo.toFixed(3)}, ${hiS}${e.ci_hi.toFixed(3)}] ±${ciRange}</div>`;
+      }
       edgeList.innerHTML += `
         <div class="edge-row">
           <div class="edge-label" title="${e.action} → ${e.metric}">${e.action.replace(/_/g,' ')} → ${e.metric.replace(/_/g,' ')}</div>
           <div class="edge-track"><div class="edge-fill" style="width:${pct}%;background:${col}"></div></div>
           <div class="edge-val" style="color:${col}">${sign}${e.effect.toFixed(3)}</div>
           <div class="edge-n">n=${e.n}</div>
+          ${ciHtml}
         </div>`;
     });
   } else {
@@ -1741,89 +1848,8 @@ function render(d) {
   }
   } // end rewList guard
 
-  /* ── REWARD SPARKLINE ── */
-  const rh = d.reward_history || [];
-  if (sparkChart) { sparkChart.destroy(); sparkChart = null; }
-  if (rh.length) {
-    const clampedRH = rh.map(v => Math.max(-2, Math.min(2, +v)));
-    // Compute 10-step rolling average
-    const rollingAvg = clampedRH.map((_, i) => {
-      const wSlice = clampedRH.slice(Math.max(0, i - 9), i + 1);
-      return +(wSlice.reduce((a, x) => a + x, 0) / wSlice.length).toFixed(4);
-    });
-    const barColors = clampedRH.map(v => v >= 0 ? 'rgba(57,255,20,0.5)' : 'rgba(255,61,61,0.5)');
-    sparkChart = new Chart(document.getElementById('sparkChart'), {
-      type: 'bar',
-      data: {
-        labels: clampedRH.map((_, i) => i),
-        datasets: [
-          {
-            type: 'bar',
-            data: clampedRH,
-            backgroundColor: barColors,
-            borderWidth: 0,
-            barPercentage: 0.85,
-            order: 2,
-            clip: true
-          },
-          {
-            type: 'line',
-            data: rollingAvg,
-            borderColor: 'rgba(0,229,255,0.8)',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0.4,
-            fill: false,
-            order: 1,
-            label: '10-step avg',
-            clip: false
-          }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        layout: { padding: { bottom: 12 } },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            filter: item => item.datasetIndex === 0,
-            callbacks: {
-              title: ctx => 'step −' + (clampedRH.length - ctx[0].dataIndex),
-              label: ctx => 'reward: ' + (rh[ctx.dataIndex] >= 0 ? '+' : '') + (+rh[ctx.dataIndex]).toFixed(4) + '  avg: ' + (rollingAvg[ctx.dataIndex] >= 0 ? '+' : '') + rollingAvg[ctx.dataIndex].toFixed(4)
-            }
-          }
-        },
-        scales: {
-          x: { display: false },
-          y: (() => {
-            const allVals = [...clampedRH, ...rollingAvg.filter(v => v !== null)];
-            const sorted = [...allVals].sort((a,b) => a - b);
-            const p05 = sorted[Math.floor(sorted.length * 0.05)];
-            const p95 = sorted[Math.floor(sorted.length * 0.95)];
-            const pad = Math.max(Math.abs(p95 - p05) * 0.25, 0.05);
-            // FIX-D: use symmetric percentile bounds so baseline-subtracted
-            // rewards don't clip at yMin when the distribution shifts negative.
-            const yMin = p05 - pad;
-            const yMax = p95 + pad;
-            const range = yMax - yMin;
-            const prec = range < 0.05 ? 4 : range < 0.5 ? 3 : range < 2 ? 2 : 1;
-            return {
-              min: yMin, max: yMax,
-              ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 10 }, maxTicksLimit: 5,
-                callback: v => Math.abs(v) < Math.pow(10, -prec) / 2 ? '0' : v.toFixed(prec)
-              },
-              grid: {
-                color: ctx => Math.abs(ctx.tick.value) < (range * 0.02) ? 'rgba(200,216,232,0.3)' : 'rgba(26,35,50,0.6)',
-                lineWidth: ctx => Math.abs(ctx.tick.value) < (range * 0.02) ? 2 : 1
-              }
-            };
-          })()
-        }
-      }
-    });
-  }
+  /* ── REWARD SPARKLINES — delegated to renderStackedSparklines() ── */
+  // called at end of render() after sit_dist
 
   /* ── OPEN QUESTIONS ── */
   // FIX: RETIRED_ACTIONS filter removed — kill_extension_renderers is now suppressed
@@ -2432,6 +2458,12 @@ function render(d) {
     wlEmpty.style.display = 'block';
   }
 
+  // [15] Situation distribution bars
+  renderSitDist(d.sit_dist);
+
+  // [02] Three stacked sparklines
+  renderStackedSparklines(d);
+
 }
 
 /* ── error ── */
@@ -2512,17 +2544,6 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
   <div class="help-shortcut">Press <kbd>?</kbd> to toggle · <kbd>Esc</kbd> to close · click <kbd>?</kbd> on any section to jump to its entry</div>
   <div class="help-panel-body" id="help-panel-body">
 
-    <div class="help-entry" id="help-header">
-      <div class="help-entry-title"><span>Agent Status &amp; Telemetry</span><span class="tag tag-live">LIVE</span></div>
-      <div class="help-entry-body">
-        The header shows the real-time connectivity status between this dashboard and the ARMINTA agent.
-        <br><br>· <strong>Last Updated</strong> — the wall-clock time the dashboard last received a telemetry packet.
-        <br>· <strong>Last Seen</strong> — how long ago the agent actually wrote that data. <code>just now</code> (green) is nominal; <code>stale</code> (amber) or <code>offline</code> (red) indicates the agent loop has slowed down or stopped.
-        <br>· <strong>Agent Status Pill</strong> — <code>ACTIVE</code> means the loop is running; <code>OFFLINE</code> means no heartbeat has been detected for over 5 minutes.
-        <br>· <strong>Refresh (↻)</strong> — manually force a fetch of the latest telemetry from the remote Gist.
-      </div>
-    </div>
-
     <div class="help-entry" id="help-hero">
       <div class="help-entry-title"><span>Total Empirical Steps</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
@@ -2540,8 +2561,8 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <code>DREAM</code> — running offline counterfactual simulations (no real actions)
         <br>· <code>SELF_ASSESS</code> — reviewing its own decision-making, running a lexical reflection pass over recent history, and rewriting internal parameters via AST self-modification if warranted
         <br><br><strong>Situation</strong> — what the host system is currently doing (idle, IO-bound, CPU-bound, compiling, browsing, streaming). ARMINTA uses this as context when choosing actions.
-        <br><br><strong>Rolling Avg Reward</strong> — the mean reward per step over the last 150 steps. This is the primary health signal: positive means the agent is currently improving system performance relative to the machine's recent ambient baseline; negative means recent actions are net-harmful.
-        <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error (e.g., a command failed or returned a non-zero exit code). In a stable system, this should stay near zero. If it climbs, the agent may be attempting incompatible actions for the current OS environment.
+        <br><br><strong>Cumulative Reward</strong> — the running score since boot. As of v2.1 the per-step reward is mean-centred against a slow EMA baseline, so this number reflects accumulated performance <em>relative to the machine's recent ambient baseline</em>, not an absolute zero. Watch the <strong>Rolling Avg</strong> (150-step window) for the meaningful health signal — positive means recent actions are beating baseline, negative means they are not.
+        <br><br><strong>Error Steps</strong> — how many of the last 200 steps produced an error. Should stay near zero.
       </div>
     </div>
 
@@ -2582,7 +2603,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         Six counters that track the size of ARMINTA's learned world-model:
         <br><br>· <strong>Causal Edges</strong> — confirmed directed relationships in the interventional graph. Each edge says "action X reliably changes metric Y by amount Z."
-        <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing. If the system enters a "consolidation plateau" (where new data doesn't change the model much), a <code>THROTTLED</code> badge appears and the cycle slows down to save resources.
+        <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
         <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded.
         <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
         <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously via AST patching. Tunable targets (all bounded by hard min/max guards): <code>STEP_RATE_DEFAULT</code>, <code>STEP_RATE_MAX</code>, <code>STEP_RATE_MIN</code> (pacing), <code>CURIOSITY_STALE_STEPS</code>, <code>CURIOSITY_PROBE_COOLDOWN</code> (exploration aggression), <code>DISCO_INTERVAL</code>, <code>TUNE_INTERVAL</code> (scheduling), and <code>PSI_CPU/MEM/IO_ACTION_THRESH</code> (pressure sensitivity). A non-zero value means the agent has changed its own behaviour at runtime.
@@ -2646,7 +2667,6 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>Saved Governor</strong> — what was set before ARMINTA's last switch; used to restore state if needed.
         <br>· <strong>Override</strong> — a manual lock preventing ARMINTA from switching governors. "none" means ARMINTA has full control.
         <br>· <strong>Idle Steps</strong> — steps since the last action. Counts up while ARMINTA observes; resets on any intervention.
-        <br>· <strong>Relax Dwell</strong> — a 120-step countdown that begins after the agent escalates the CPU to <code>performance</code> mode. To prevent "governor thrashing," ARMINTA is forbidden from relaxing the governor back to <code>powersave</code> until this dwell period expires.
         <br>· <strong>Bootstrap Phase</strong> — if YES, ARMINTA is still in its early data-collection phase and takes more exploratory actions than usual.
         <br>· <strong>HW IRQ</strong> — tracks whether <code>renice_ksoftirqd</code> has permanently given up on an IRQ storm. When kernel softirq threads are reniced repeatedly with no effect (hardware-level interrupt flood that can't be suppressed in software), ARMINTA sets this flag to <code>STANDING DOWN</code> and stops attempting that action. <code>ok</code> means no persistent IRQ storm has been detected.
       </div>
@@ -2656,12 +2676,12 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Adaptive Thresholds</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
         These thresholds are <strong>learned, not hardcoded</strong> — ARMINTA adjusts them based on what it observes about normal system behaviour.
-        <br><br>· <strong>CPU Warn</strong> — CPU % that triggers a "high CPU" observation. Shown in amber if it has drifted below the default (meaning ARMINTA has learned the system usually runs lighter than expected).
-        <br>· <strong>MEM Warn</strong> — RAM % threshold for memory pressure observations.
-        <br>· <strong>Dilution Log</strong> — when causal evidence for a relationship drops below this score, ARMINTA logs a warning that the edge may be weakening.
-        <br>· <strong>Dilution Kill</strong> — if evidence drops below this harder threshold, the causal edge is removed from the graph entirely.
-        <br>· <strong>Net Warn</strong> — network throughput (KB/s) at which ARMINTA flags high network activity.
-        <br><br>Deviations from defaults mean the agent has updated its beliefs about what "normal" looks like on this machine.
+        <br><br>· <strong>CPU Warn</strong> — CPU % that triggers a "high CPU" observation. Shown in amber if it has drifted below the default (meaning ARMINTA has learned the system usually runs lighter than expected). Default 70%, adaptive floor 30%.
+        <br>· <strong>MEM Warn</strong> — RAM % threshold for memory pressure observations. Default 80%, adaptive floor 55%.
+        <br>· <strong>Dilution Log</strong> — per-process CPU dilution ratio above which ARMINTA logs the top hog. Default 0.60, adaptive floor 0.25. The displayed "floor" is the minimum the adaptive tuner will ever set it to, regardless of observed distribution.
+        <br>· <strong>Dilution Kill</strong> — harder threshold: if a repeat offender exceeds this AND has logged hits within the window, SIGTERM is escalated. Default 0.85, adaptive floor 0.50. Always stays at least 0.10 above Dilution Log.
+        <br>· <strong>Net Warn</strong> — network throughput (KB/s) at which ARMINTA flags high network activity. Default 15000 KB/s (≈120 Mbps), adaptive floor 3000 KB/s.
+        <br><br>Deviations from defaults mean the agent has updated its beliefs about what "normal" looks like on this machine. Values shown in the cards are the <em>current active</em> values after adaptive tuning.
       </div>
     </div>
 
@@ -2837,30 +2857,498 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
 </div><!-- /help-panel -->
 
 <script>
-/* ── CAUSAL TAB SWITCHER (mobile) ── */
+/* ── CAUSAL TAB SWITCHER ── */
+const _ALL_CAUSAL_PANELS = ['edges','reward','graph','timeline'];
 function switchCausalTab(which) {
-  const edgesPanel  = document.getElementById('causal-panel-edges');
-  const rewardPanel = document.getElementById('causal-panel-reward');
-  const edgesTab    = document.getElementById('tab-edges');
-  const rewardTab   = document.getElementById('tab-reward');
-  if (!edgesPanel || !rewardPanel) return;
-  if (which === 'edges') {
-    edgesPanel.classList.add('causal-panel-visible');
-    rewardPanel.classList.remove('causal-panel-visible');
-    edgesTab.classList.add('active');     edgesTab.setAttribute('aria-selected','true');
-    rewardTab.classList.remove('active'); rewardTab.setAttribute('aria-selected','false');
-  } else {
-    rewardPanel.classList.add('causal-panel-visible');
-    edgesPanel.classList.remove('causal-panel-visible');
-    rewardTab.classList.add('active');    rewardTab.setAttribute('aria-selected','true');
-    edgesTab.classList.remove('active');  edgesTab.setAttribute('aria-selected','false');
-  }
+  _ALL_CAUSAL_PANELS.forEach(id => {
+    const panel = document.getElementById('causal-panel-' + id);
+    const tab   = document.getElementById('tab-' + id);
+    if (!panel || !tab) return;
+    const active = (id === which);
+    panel.style.display = active ? '' : 'none';
+    panel.classList.toggle('causal-panel-visible', active);
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  if (which === 'graph')    renderD3CausalGraph();
+  if (which === 'timeline') renderTimeline();
 }
-// Initialise — edges panel visible by default
 document.addEventListener('DOMContentLoaded', function() {
   const ep = document.getElementById('causal-panel-edges');
-  if (ep) ep.classList.add('causal-panel-visible');
+  if (ep) { ep.classList.add('causal-panel-visible'); ep.style.display = ''; }
+  // Hide non-default panels
+  ['reward','graph','timeline'].forEach(id => {
+    const p = document.getElementById('causal-panel-' + id);
+    if (p) p.style.display = 'none';
+  });
 });
+
+/* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
+let _d3Simulation = null;
+function renderD3CausalGraph() {
+  if (typeof d3 === 'undefined') return;
+  const svg = d3.select('#d3-causal-svg');
+  svg.selectAll('*').remove();
+
+  // Pull edge data from the DOM edge list (already parsed by main dashboard JS)
+  const edgeItems = document.querySelectorAll('#edge-list .edge-item, #edge-list [data-action]');
+  let edges = window._armintaEdgeData || [];
+
+  // [20] Situation filter — filter edges by tagged_reward_history situation distribution
+  const sitFilter = document.getElementById('d3-sit-filter');
+  const selectedSit = sitFilter ? sitFilter.value : 'all';
+  if (selectedSit !== 'all' && window._armintaTaggedRewards && window._armintaTaggedRewards.length) {
+    // Build set of (action, metric) pairs that appear in the tagged history for selected situation
+    // Approximate: show edges that were active during that situation by checking tagged history
+    // For a robust filter: use situation-specific tagged rewards to infer which action slots were active
+    // Since we don't have per-edge situation tags, we filter by top-weight situation match
+    const sitWeight = (window._armintaSitDist || {})[selectedSit] || 0;
+    if (sitWeight < 0.05) {
+      // Situation not active — dim all edges but don't hide (agent may have learned from it)
+      edges = edges.map(e => ({...e, _dimmed: true}));
+    }
+    // If sit_dist has good weight for this situation, show edges normally
+  }
+
+  if (!edges.length) {
+    svg.append('text').attr('x','50%').attr('y','50%')
+       .attr('text-anchor','middle').attr('fill','#5a7a9a').attr('font-size','14')
+       .text('No causal edge data yet — agent is still in bootstrap phase');
+    return;
+  }
+  // Build node + link lists
+  const nodeMap = {};
+  const links = [];
+  edges.forEach(e => {
+    if (!nodeMap[e.action]) nodeMap[e.action] = {id: e.action, type: 'action', count: 0, totalEff: 0};
+    if (!nodeMap[e.metric]) nodeMap[e.metric] = {id: e.metric, type: 'metric', count: 0, totalEff: 0};
+    nodeMap[e.action].count += e.n || 1;
+    nodeMap[e.action].totalEff += Math.abs(e.effect || 0);
+    links.push({source: e.action, target: e.metric,
+                effect: e.effect || 0, n: e.n || 1,
+                conf: e.confidence || 0.5});
+  });
+  const nodes = Object.values(nodeMap);
+
+  const svgEl = document.getElementById('d3-causal-svg');
+  const W = svgEl.clientWidth || 700;
+  const H = 420;
+
+  const color = d => d.type === 'action' ? '#ffb300' : '#00e5ff';
+  const radius = d => Math.max(8, Math.min(22, 8 + Math.sqrt(d.count || 1) * 2));
+
+  const linkColor = eff => eff > 0 ? '#39ff14' : '#ff3d3d';
+  const linkWidth = eff => Math.max(1, Math.min(5, Math.abs(eff) * 6));
+
+  if (_d3Simulation) _d3Simulation.stop();
+  _d3Simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(90).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(-220))
+    .force('center', d3.forceCenter(W / 2, H / 2))
+    .force('collision', d3.forceCollide().radius(d => radius(d) + 10));
+
+  const zoom = d3.zoom().scaleExtent([0.3, 3]).on('zoom', e => g.attr('transform', e.transform));
+  svg.attr('viewBox', `0 0 ${W} ${H}`).call(zoom);
+
+  const g = svg.append('g');
+
+  // Arrow markers
+  svg.append('defs').selectAll('marker')
+    .data(['pos','neg'])
+    .join('marker')
+    .attr('id', d => 'arrow-' + d)
+    .attr('viewBox', '0 -5 10 10').attr('refX', 24).attr('refY', 0)
+    .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+    .append('path').attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', d => d === 'pos' ? '#39ff14' : '#ff3d3d').attr('opacity', 0.7);
+
+  const link = g.append('g').selectAll('line')
+    .data(links).join('line')
+    .attr('stroke', d => linkColor(d.effect))
+    .attr('stroke-width', d => linkWidth(d.effect))
+    .attr('stroke-opacity', d => (d.source._dimmed || d.target._dimmed) ? 0.12 : 0.4 + d.conf * 0.5)
+    .attr('marker-end', d => `url(#arrow-${d.effect >= 0 ? 'pos' : 'neg'})`);
+
+  const node = g.append('g').selectAll('circle')
+    .data(nodes).join('circle')
+    .attr('r', d => radius(d))
+    .attr('fill', color)
+    .attr('fill-opacity', 0.85)
+    .attr('stroke', d => d.type === 'action' ? '#fff3' : '#0ff3')
+    .attr('stroke-width', 1.5)
+    .attr('cursor', 'grab')
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) _d3Simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end',   (e, d) => { if (!e.active) _d3Simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+  node.append('title').text(d => `${d.id} (${d.type}) n=${d.count}`);
+
+  const label = g.append('g').selectAll('text')
+    .data(nodes).join('text')
+    .attr('font-size', 9).attr('fill', '#d8e8f4').attr('text-anchor', 'middle')
+    .attr('dy', d => radius(d) + 11).attr('pointer-events', 'none')
+    .text(d => d.id.length > 14 ? d.id.slice(0, 13) + '…' : d.id);
+
+  // Tooltip on hover
+  const tip = svg.append('text').attr('x', 10).attr('y', 16)
+    .attr('font-size', 10).attr('fill', '#ffb300').attr('font-family', 'monospace');
+  node.on('mouseover', (e, d) => {
+      const outLinks = links.filter(l => (l.source.id || l.source) === d.id);
+      tip.text(outLinks.map(l => `→${l.target.id||l.target} ${l.effect > 0 ? '+' : ''}${(l.effect*100).toFixed(1)}% n=${l.n}`).join('  '));
+    }).on('mouseout', () => tip.text(''));
+
+  _d3Simulation.on('tick', () => {
+    link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    node.attr('cx', d => d.x).attr('cy', d => d.y);
+    label.attr('x', d => d.x).attr('y', d => d.y);
+  });
+
+  // Confound rate badge — only meaningful when Python sends confound_rate in the payload
+  const confLabel = document.getElementById('d3-confound-label');
+  if (confLabel) {
+    if (window._armintaConfoundRatePresent) {
+      const cr = window._armintaConfoundRate || 0;
+      confLabel.textContent = `confound rate: ${(cr * 100).toFixed(1)}%`;
+      confLabel.style.color = cr > 0.2 ? 'var(--red)' : 'var(--dim)';
+    } else {
+      confLabel.textContent = 'confound rate: not in payload';
+      confLabel.style.color = 'var(--muted)';
+      confLabel.title = 'Add confound_rate to update_gist_stats() in arminta_v4.py to enable this';
+    }
+  }
+}
+
+/* ── [20] STACKED REWARD TIMELINE ── */
+function renderTimeline() {
+  const canvas = document.getElementById('timeline-chart');
+  if (!canvas) return;
+  const fullHist = window._armintaTaggedRewards || [];
+  _initTimelineScrubber();
+  // Slice to scrubbed window
+  const total = fullHist.length;
+  const scrubber = document.getElementById('timeline-scrubber');
+  const rawOffset = scrubber ? parseInt(scrubber.value) || 0 : 0;
+  const startIdx = total <= TIMELINE_WINDOW ? 0 : rawOffset;
+  const hist = fullHist.slice(startIdx, startIdx + TIMELINE_WINDOW);
+  // Update scrub label
+  const lbl = document.getElementById('timeline-scrub-label');
+  if (lbl) lbl.textContent = total > TIMELINE_WINDOW
+    ? `[${startIdx}–${Math.min(total, startIdx+TIMELINE_WINDOW)-1}] / ${total}`
+    : `${total} steps`;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 32 || 640;
+  const H = 420;
+  canvas.width  = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!hist.length) {
+    ctx.fillStyle = '#5a7a9a';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    if (!window._armintaTaggedRewardsPresent) {
+      ctx.fillText('tagged_reward_history not in Gist payload', W / 2, H / 2 - 12);
+      ctx.font = '11px monospace';
+      ctx.fillStyle = '#3a4a5a';
+      ctx.fillText('Add tagged_reward_history to update_gist_stats() in arminta_v4.py', W / 2, H / 2 + 12);
+    } else {
+      ctx.fillText('No tagged reward history yet — agent is still collecting data', W / 2, H / 2);
+    }
+    return;
+  }
+
+  const SIT_COLORS = {
+    idle:             '#5a7a9a',
+    compile:          '#ffb300',
+    memory_pressure:  '#ff3d3d',
+    io_bound:         '#b39ddb',
+    cpu_bound:        '#ff80ab',
+    streaming:        '#00e5ff',
+    browser_compute:  '#39ff14',
+    irq_storm:        '#ff6600',
+    thermal_stress:   '#ff0055',
+    network_saturated:'#00bcd4',
+    unknown:          '#3a4a5a',
+  };
+
+  const PAD = {top: 20, right: 20, bottom: 40, left: 52};
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top  - PAD.bottom;
+  const n = hist.length;
+  const maxR = Math.max(...hist.map(h => Math.abs(h.reward || 0)), 0.01);
+
+  // Zero line
+  const zeroY = PAD.top + plotH / 2;
+  ctx.strokeStyle = '#243040'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, zeroY); ctx.lineTo(W - PAD.right, zeroY); ctx.stroke();
+
+  // Bars
+  const barW = Math.max(1, plotW / n - 0.5);
+  hist.forEach((h, i) => {
+    const x = PAD.left + (i / n) * plotW;
+    const r = h.reward || 0;
+    const sit = h.situation || 'unknown';
+    const col = SIT_COLORS[sit] || SIT_COLORS.unknown;
+    const barH = (Math.abs(r) / maxR) * (plotH / 2);
+    ctx.fillStyle = col + (r >= 0 ? 'cc' : '88');
+    if (r >= 0) {
+      ctx.fillRect(x, zeroY - barH, barW, barH);
+    } else {
+      ctx.fillRect(x, zeroY, barW, barH);
+    }
+  });
+
+  // Y-axis labels
+  ctx.fillStyle = '#5a7a9a'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+  [maxR, 0, -maxR].forEach((v, i) => {
+    const y = PAD.top + [0, plotH/2, plotH][i];
+    ctx.fillText(v.toFixed(3), PAD.left - 4, y + 3);
+  });
+
+  // Legend
+  let lx = PAD.left;
+  Object.entries(SIT_COLORS).forEach(([sit, col]) => {
+    if (lx > W - 60) return;
+    ctx.fillStyle = col; ctx.fillRect(lx, H - 16, 8, 8);
+    ctx.fillStyle = '#8a9eb4'; ctx.font = '8px monospace'; ctx.textAlign = 'left';
+    ctx.fillText(sit.slice(0,6), lx + 10, H - 8);
+    lx += sit.slice(0,6).length * 5 + 18;
+  });
+}
+
+/* ── [15] SITUATION DISTRIBUTION BARS ─────────────────────────────────────── */
+function renderSitDist(sitDist) {
+  const container = document.getElementById('sit-dist-bars');
+  if (!container) return;
+  if (!sitDist || !Object.keys(sitDist).length) {
+    container.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no sit_dist in payload — add to update_gist_stats()</div>';
+    return;
+  }
+  const SIT_COLORS = {
+    idle:'#5a7a9a', compile:'#ffb300', memory_pressure:'#ff3d3d',
+    io_bound:'#b39ddb', cpu_bound:'#ff80ab', streaming:'#00e5ff',
+    browser_compute:'#39ff14', irq_storm:'#ff6600', thermal_stress:'#ff0055',
+    network_saturated:'#00bcd4', unknown:'#3a4a5a',
+  };
+  const entries = Object.entries(sitDist).sort((a,b) => b[1]-a[1]).filter(([,v]) => v > 0.005);
+  container.innerHTML = entries.map(([sit, weight]) => {
+    const pct = (weight * 100).toFixed(1);
+    const col = SIT_COLORS[sit] || '#5a7a9a';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:96px;font-size:0.62rem;color:var(--dim);font-family:var(--font-mono);text-align:right;flex-shrink:0;">${sit}</div>
+      <div style="flex:1;height:12px;background:var(--surface2,#131c28);border-radius:2px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${col};opacity:0.8;border-radius:2px;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="width:38px;font-size:0.62rem;color:${col};font-family:var(--font-mono);flex-shrink:0;">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── [02] THREE STACKED SPARKLINES ─────────────────────────────────────────── */
+function _makeSparkYScale(vals) {
+  const sorted = [...vals].sort((a,b) => a-b);
+  const p05 = sorted[Math.floor(sorted.length * 0.05)] ?? sorted[0];
+  const p95 = sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length-1];
+  const pad = Math.max(Math.abs(p95 - p05) * 0.25, 0.001);
+  const yMin = p05 - pad, yMax = p95 + pad;
+  const range = yMax - yMin;
+  const prec = range < 0.005 ? 5 : range < 0.05 ? 4 : range < 0.5 ? 3 : range < 2 ? 2 : 1;
+  return { min: yMin, max: yMax, range, prec };
+}
+
+function renderStackedSparklines(d) {
+  const rh = d.reward_history || [];
+
+  // ── Spark 1: raw reward bars ──────────────────────────────────────────────
+  if (sparkChart) { sparkChart.destroy(); sparkChart = null; }
+  if (rh.length) {
+    const clamped = rh.map(v => Math.max(-2, Math.min(2, +v)));
+    const ysc = _makeSparkYScale(clamped);
+    sparkChart = new Chart(document.getElementById('sparkChart'), {
+      type: 'bar',
+      data: {
+        labels: clamped.map((_,i) => i),
+        datasets: [{
+          type: 'bar',
+          data: clamped,
+          backgroundColor: clamped.map(v => v >= 0 ? 'rgba(57,255,20,0.55)' : 'rgba(255,61,61,0.55)'),
+          borderWidth: 0, barPercentage: 0.9, order: 1, clip: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              title: ctx => 'step −' + (clamped.length - ctx[0].dataIndex),
+              label: ctx => 'reward: ' + (rh[ctx.dataIndex] >= 0 ? '+' : '') + (+rh[ctx.dataIndex]).toFixed(5)
+            }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            min: ysc.min, max: ysc.max,
+            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 9 }, maxTicksLimit: 4,
+              callback: v => Math.abs(v) < Math.pow(10,-ysc.prec)/2 ? '0' : v.toFixed(ysc.prec) },
+            grid: { color: 'rgba(26,35,50,0.8)', lineWidth: 1 }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Spark 2: 10-step rolling average ─────────────────────────────────────
+  if (sparkRollingChart) { sparkRollingChart.destroy(); sparkRollingChart = null; }
+  if (rh.length) {
+    const clamped = rh.map(v => Math.max(-2, Math.min(2, +v)));
+    const rolling = clamped.map((_,i) => {
+      const sl = clamped.slice(Math.max(0, i-9), i+1);
+      return +(sl.reduce((a,x) => a+x, 0) / sl.length).toFixed(5);
+    });
+    const ysc = _makeSparkYScale(rolling);
+    sparkRollingChart = new Chart(document.getElementById('sparkRollingChart'), {
+      type: 'line',
+      data: {
+        labels: rolling.map((_,i) => i),
+        datasets: [{
+          data: rolling,
+          borderColor: 'rgba(255,179,0,0.9)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.35,
+          fill: { target: 'origin', above: 'rgba(255,179,0,0.08)', below: 'rgba(255,61,61,0.08)' },
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              title: ctx => 'step −' + (rolling.length - ctx[0].dataIndex),
+              label: ctx => '10-step avg: ' + (rolling[ctx.dataIndex] >= 0 ? '+' : '') + rolling[ctx.dataIndex].toFixed(5)
+            }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            min: ysc.min, max: ysc.max,
+            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 9 }, maxTicksLimit: 4,
+              callback: v => v.toFixed(ysc.prec) },
+            grid: { color: 'rgba(26,35,50,0.8)', lineWidth: 1 }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Spark 3: reward variance (100-step rolling window) ────────────────────
+  if (sparkVarianceChart) { sparkVarianceChart.destroy(); sparkVarianceChart = null; }
+  // Dream throttle badge
+  const badge = document.getElementById('dream-throttle-badge');
+  if (badge) badge.style.display = (d.dream_throttled) ? 'inline' : 'none';
+  if (rh.length >= 10) {
+    const VWIN = 20;
+    const varSeries = rh.map((_,i) => {
+      if (i < VWIN - 1) return null;
+      const sl = rh.slice(i - VWIN + 1, i + 1).map(Number);
+      const mean = sl.reduce((a,x) => a+x, 0) / sl.length;
+      return +sl.reduce((a,x) => a + (x-mean)**2, 0) / sl.length;
+    }).filter(v => v !== null);
+    const ysc = _makeSparkYScale(varSeries);
+    const varLabels = rh.slice(VWIN - 1).map((_,i) => i);
+    sparkVarianceChart = new Chart(document.getElementById('sparkVarianceChart'), {
+      type: 'line',
+      data: {
+        labels: varLabels,
+        datasets: [{
+          data: varSeries,
+          borderColor: 'rgba(90,106,122,0.7)',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: 0.2,
+          fill: { target: 'origin', above: 'rgba(90,106,122,0.12)' },
+          backgroundColor: 'rgba(90,106,122,0.12)',
+        },
+        // Throttle threshold line at 0.0015
+        {
+          data: varLabels.map(() => 0.0015),
+          borderColor: 'rgba(255,179,0,0.4)',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          label: 'throttle floor',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              title: ctx => 'step −' + (varSeries.length - ctx[0].dataIndex),
+              label: ctx => ctx.datasetIndex === 0
+                ? 'variance: ' + varSeries[ctx.dataIndex].toFixed(6)
+                : 'dream floor: 0.0015'
+            }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            min: 0,
+            ticks: { color: 'rgba(90,106,122,0.8)', font: { size: 9 }, maxTicksLimit: 3,
+              callback: v => v.toFixed(4) },
+            grid: { color: 'rgba(26,35,50,0.8)', lineWidth: 1 }
+          }
+        }
+      }
+    });
+  }
+}
+
+/* ── [20] TIMELINE SCRUBBER ─────────────────────────────────────────────────── */
+const TIMELINE_WINDOW = 150;
+let _timelineOffset = 0; // 0 = show latest
+
+function onTimelineScrub(val) {
+  _timelineOffset = parseInt(val) || 0;
+  renderTimeline();
+}
+
+function _initTimelineScrubber() {
+  const hist = window._armintaTaggedRewards || [];
+  const scrubber = document.getElementById('timeline-scrubber');
+  const label    = document.getElementById('timeline-scrub-label');
+  if (!scrubber || !label) return;
+  const total = hist.length;
+  if (total <= TIMELINE_WINDOW) {
+    scrubber.max = 0;
+    scrubber.value = 0;
+    _timelineOffset = 0;
+    label.textContent = `${total} / ${total}`;
+    return;
+  }
+  const maxOffset = total - TIMELINE_WINDOW;
+  scrubber.max   = maxOffset;
+  if (_timelineOffset === 0) scrubber.value = maxOffset; // default: latest
+  label.textContent = `${Math.min(total, TIMELINE_WINDOW)} / ${total}`;
+}
+
 
 function toggleHelp() {
   const overlay = document.getElementById('help-overlay');
