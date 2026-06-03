@@ -548,6 +548,10 @@ button:focus-visible, a:focus-visible {
 /* ── CAUSAL EDGE BARS ── */
 .edge-list { display: flex; flex-direction: column; gap: 9px; }
 .edge-ci { font-size: 0.58rem; color: var(--dim); font-family: var(--font-mono); letter-spacing: 0.03em; margin-top: 2px; padding-left: 2px; opacity: 0.75; }
+/* [02] reward vector decomposition row */
+.rv-label { color: var(--dim); font-size: 0.55rem; letter-spacing: 0.08em; margin-right: 2px; }
+.rv-val   { font-size: 0.65rem; font-family: var(--font-mono); margin-right: 2px; }
+.rv-sep   { color: var(--border2); font-size: 0.65rem; margin: 0 3px; }
 .edge-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; flex-wrap: nowrap; }
 .edge-label {
   width: clamp(120px, 28%, 200px);
@@ -969,6 +973,8 @@ footer a:hover { color: var(--text); }
       <div class="mode-key">Rolling Avg Reward <span title="Mean reward per step over the last 150 steps. Positive = agent is improving system performance. More meaningful than the cumulative total at 300k+ steps." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
       <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
+      <!-- [02] RewardVector decomposition: immediate · durable · health -->
+      <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;"></div>
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
@@ -1126,6 +1132,8 @@ footer a:hover { color: var(--text); }
       <div style="display:flex;gap:12px;margin-bottom:8px;font-size:0.6rem;color:var(--dim);flex-wrap:wrap;align-items:center;">
         <span><span style="color:var(--green)">▬</span> positive effect</span>
         <span><span style="color:var(--red)">▬</span> negative / harmful</span>
+        <span><span style="color:var(--amber)">╌</span> CI spans zero (uncertain)</span>
+        <span>width ∝ uncertainty (wider = less confident, width prop uncertainty)</span>
         <span><span style="color:var(--amber)">●</span> action node</span>
         <span><span style="color:var(--cyan)">●</span> metric node</span>
         <span id="d3-confound-label"></span>
@@ -1789,6 +1797,28 @@ function render(d) {
     } else {
       crEl.textContent = '--';
       crEl.style.color = 'var(--dim)';
+    }
+  })();
+
+  // [02] RewardVector decomposition display
+  (function() {
+    const rv = d.reward_vector;
+    const el = document.getElementById('reward-vector-row');
+    if (!el) return;
+    if (rv) {
+      const fmt = v => (v >= 0 ? '+' : '') + v.toFixed(4);
+      const immC = rv.immediate >= 0 ? '#39ff14' : '#ff3d3d';
+      const durC = rv.durable   >= 0 ? '#00e5ff' : '#ff3d3d';
+      const heaC = rv.health    >= 0 ? '#b39ddb' : '#ff3d3d';
+      el.innerHTML =
+        `<span class="rv-label">IMM</span><span class="rv-val" style="color:${immC}">${fmt(rv.immediate)}</span>` +
+        `<span class="rv-sep">·</span>` +
+        `<span class="rv-label">DUR</span><span class="rv-val" style="color:${durC}">${fmt(rv.durable)}</span>` +
+        `<span class="rv-sep">·</span>` +
+        `<span class="rv-label">HLT</span><span class="rv-val" style="color:${heaC}">${fmt(rv.health)}</span>`;
+      el.title = `Reward decomposition — Immediate: ${fmt(rv.immediate)}  Durable: ${fmt(rv.durable)}  Health: ${fmt(rv.health)}  Total: ${fmt(rv.total)}`;
+    } else {
+      el.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">no action this step</span>';
     }
   })();
   const edgeList = document.getElementById('edge-list');
@@ -3062,7 +3092,32 @@ function renderD3CausalGraph() {
   const radius = d => Math.max(8, Math.min(22, 8 + Math.sqrt(d.count || 1) * 2));
 
   const linkColor = eff => eff > 0 ? '#39ff14' : '#ff3d3d';
-  const linkWidth = eff => Math.max(0.5, Math.min(2, Math.abs(eff) * 3));
+  // [20] CI-aware edge width:
+  // - Base width from effect magnitude (was the old linkWidth)
+  // - Confidence NARROWS the band: high confidence → thin, precise line
+  //   low confidence (wide CI) → thicker, blurrier stroke
+  // - CI zero-crossing (uncertain direction) → amber dashed style
+  const linkBaseWidth  = eff  => Math.max(0.5, Math.min(3.0, Math.abs(eff) * 4));
+  const linkCIWidth    = link => {
+    const base = linkBaseWidth(link.effect);
+    // conf in [0,1]; low conf → up to 2.5× wider to signal uncertainty
+    const uncertaintyScale = 1.0 + (1.0 - (link.conf || 0.5)) * 1.5;
+    return Math.min(6, base * uncertaintyScale);
+  };
+  const linkCIColor    = link => {
+    // CI crosses zero → amber (uncertain direction)
+    if (link.ci_lo !== undefined && link.ci_hi !== undefined) {
+      if (link.ci_lo < 0 && link.ci_hi > 0) return '#ffb300';
+    }
+    return linkColor(link.effect);
+  };
+  const linkDash = link => {
+    // Dashed when CI spans zero (proposal: visual flag for zero-crossing)
+    if (link.ci_lo !== undefined && link.ci_hi !== undefined) {
+      if (link.ci_lo < 0 && link.ci_hi > 0) return '4,3';
+    }
+    return null;
+  };
 
   if (_d3Simulation) _d3Simulation.stop();
   _d3Simulation = d3.forceSimulation(nodes)
@@ -3088,9 +3143,10 @@ function renderD3CausalGraph() {
 
   const link = g.append('g').selectAll('line')
     .data(links).join('line')
-    .attr('stroke', d => linkColor(d.effect))
-    .attr('stroke-width', d => linkWidth(d.effect))
-    .attr('stroke-opacity', d => (d.source._dimmed || d.target._dimmed) ? 0.12 : 0.4 + d.conf * 0.5)
+    .attr('stroke', d => linkCIColor(d))
+    .attr('stroke-width', d => linkCIWidth(d))
+    .attr('stroke-dasharray', d => linkDash(d))
+    .attr('stroke-opacity', d => (d.source._dimmed || d.target._dimmed) ? 0.12 : 0.4 + (d.conf || 0.5) * 0.5)
     .attr('marker-end', d => `url(#arrow-${d.effect >= 0 ? 'pos' : 'neg'})`);
 
   const node = g.append('g').selectAll('circle')
@@ -3119,7 +3175,14 @@ function renderD3CausalGraph() {
     .attr('font-size', 10).attr('fill', '#ffb300').attr('font-family', 'monospace');
   node.on('mouseover', (e, d) => {
       const outLinks = links.filter(l => (l.source.id || l.source) === d.id);
-      tip.text(outLinks.map(l => `→${l.target.id||l.target} ${l.effect > 0 ? '+' : ''}${(l.effect*100).toFixed(1)}% n=${l.n}`).join('  '));
+      tip.text(outLinks.map(l => {
+        const effStr = `${l.effect > 0 ? '+' : ''}${(l.effect*100).toFixed(1)}%`;
+        const ciStr  = (l.ci_lo !== undefined && l.ci_hi !== undefined)
+          ? ` CI[${l.ci_lo > 0 ? '+' : ''}${l.ci_lo.toFixed(3)},${l.ci_hi > 0 ? '+' : ''}${l.ci_hi.toFixed(3)}]`
+          : '';
+        const confStr = l.conf !== undefined ? ` c=${(l.conf*100).toFixed(0)}%` : '';
+        return `→${l.target.id||l.target} ${effStr}${ciStr}${confStr} n=${l.n}`;
+      }).join('  '));
     }).on('mouseout', () => tip.text(''));
 
   _d3Simulation.on('tick', () => {
