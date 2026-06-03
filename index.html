@@ -972,7 +972,7 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="mode-div"></div>
     <div class="mode-block">
-      <div class="mode-key">Confound Rate <span title="Fraction of intervention windows flagged as externally confounded. High values mean causal attribution is noisy." style="cursor:help;color:var(--dim);font-size:0.65rem;">ⓘ</span></div>
+      <div class="mode-key">Confound Rate<button class="help-btn inline" onclick="openHelp('help-confound')" title="What is Confound Rate?" aria-label="Help: Confound Rate">?</button></div>
       <div class="mode-val" id="confound-rate-val" style="font-size:1.3rem; color:var(--dim)">--</div>
       <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="confound-rate-sub">causal noise ratio</div>
     </div>
@@ -1162,7 +1162,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- SITUATION DISTRIBUTION [15] -->
-  <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="openHelp('help-situation')" title="What do situation labels mean?" aria-label="Help: Situation Distribution">?</button></div>
+  <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="openHelp('help-sitdist')" title="What is the Situation Distribution?" aria-label="Help: Situation Distribution">?</button></div>
   <div class="card card-pad mb28" id="sit-dist-card">
     <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">fuzzy blend of active situation weights · bars sum to 100%</div>
     <div id="sit-dist-bars" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
@@ -1171,7 +1171,7 @@ footer a:hover { color: var(--text); }
   </div>
 
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
-  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-reward')" title="What is Reward History?" aria-label="Help: Reward History">?</button></div>
+  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="openHelp('help-sparklines')" title="What are the three reward sparklines?" aria-label="Help: Reward History Sparklines">?</button></div>
   <div class="card mb28" style="padding:16px 8px 4px;">
     <div style="font-size:0.6rem;color:var(--cyan);letter-spacing:0.05em;margin-bottom:4px;padding:0 8px;">RAW REWARD</div>
     <div class="chart-wrap" style="height:100px;">
@@ -2693,8 +2693,11 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <span style="color:var(--green)">Green</span> = positive effect (action <em>reduced</em> the metric — an improvement for CPU, memory, latency, etc.)
         <br>· <span style="color:var(--red)">Red</span> = negative effect (action caused the metric to rise)
         <br>· <code>n</code> = number of times this relationship has been observed
+        <br>· <code>CI90</code> line — 90% Bayesian credible interval; see <a href="#" onclick="openHelp('help-bayes-ci');return false;" style="color:var(--cyan);">Bayesian Credible Intervals</a> for details
         <br><br>Effect is computed as <code>(before − after) / |before|</code>, so a positive value means the metric was lower after the action. For the special case of <code>governor_is_performance</code> the sign is flipped so positive still means "improved".
         <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide.
+        <br><br>The <strong>GRAPH ✦</strong> tab shows a force-directed graph of the same edges. Use the <strong>FILTER SIT</strong> dropdown to see which edges are relevant to a specific workload situation — see <a href="#" onclick="openHelp('help-d3-filter');return false;" style="color:var(--cyan);">D3 Graph Situation Filter</a>.
+        <br>The <strong>TIMELINE</strong> tab shows reward bars colour-coded by situation over the last 150 steps. Use the scrubber to scroll back through history — see <a href="#" onclick="openHelp('help-timeline-scrubber');return false;" style="color:var(--cyan);">Timeline Scrubber</a>.
       </div>
     </div>
 
@@ -2702,9 +2705,10 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Reward History</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
         <strong>Rolling Avg Reward</strong> — the mean reward per step over the last 150 steps. This is the meaningful health signal: positive means the agent is currently improving system performance; negative means recent actions are net-harmful. At 300k+ steps, the cumulative total is mathematically dominated by history and converges to a meaningless constant — the 150-step window is what matters.
-        <br><br>The <strong>reward sparkline</strong> below shows per-step reward as a bar chart over the same 150-step window. The cyan line is a 10-step rolling average overlay.
-        <br><br>· <span style="color:var(--green)">Green bars</span> — that action improved system performance (positive reward)
-        <br>· <span style="color:var(--red)">Red bars</span> — that action hurt performance (negative reward)
+        <br><br>The reward section now shows <strong>three stacked sparklines</strong> — see <a href="#" onclick="openHelp('help-sparklines');return false;" style="color:var(--cyan);">Reward History — Three Sparklines</a> for a full breakdown. In brief:
+        <br>· <strong>RAW REWARD</strong> — per-step bars, green/red by sign
+        <br>· <strong>10-STEP ROLLING AVG</strong> — smoothed trend
+        <br>· <strong>REWARD VARIANCE</strong> — volatility with dream throttle floor marker
         <br><br>A healthy agent should trend toward more green over time as it learns. Clusters of red indicate exploration or a bad hypothesis being tested.
       </div>
     </div>
@@ -2850,6 +2854,86 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>Lexicon Size</strong> — distinct symbols currently active in LexicalCore's weight table
         <br>· <strong>Concepts Mapped</strong> — distinct action/state symbols looked up at least once (suppresses re-querying the same concept)
         <br><br>The session log shows each fetch/learn cycle: query generated → article retrieved → symbols absorbed (with sample) → reward impact. Log colours: <span style="color:var(--cyan)">cyan</span> = fetch, <span style="color:var(--green)">green</span> = learn (new symbols), <span style="color:var(--amber)">amber</span> = concept/skip, <span style="color:var(--purple)">purple</span> = reward delta.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-confound">
+      <div class="help-entry-title"><span>Confound Rate</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The fraction of intervention windows where external confounders were detected — meaning Arminta fired an action but the metric change that followed was probably caused by something else, not her action.
+        <br><br>Confound detection fires during each 0.3s post-intervention snapshot. If the system metric moved in a direction inconsistent with the intervention's known causal signature, and other non-controlled metrics also shifted simultaneously, the window is flagged as confounded and excluded from causal edge weight updates.
+        <br><br>· <strong>Low (under 10%)</strong> — causal attribution is clean; edges are trustworthy
+        <br>· <strong>Moderate (10–30%)</strong> — some ambient noise; edges still meaningful but wider uncertainty
+        <br>· <strong>High (above 30%)</strong> — heavy environmental interference; edge weights are unreliable until conditions settle
+        <br><br>A persistently high confound rate during a particular situation (e.g. <code>streaming</code> or <code>irq_storm</code>) is expected — those workloads produce rapid simultaneous metric changes that are hard to attribute. The confound rate is displayed in the mode row and also as a badge on the D3 force graph.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-sitdist">
+      <div class="help-entry-title"><span>Situation Distribution</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        A fuzzy blend of the last 50 steps' situation weights — not a hard single-label, but a proportional view of how much each workload type was active in the recent window.
+        <br><br>Arminta classifies every step into one of nine named situations based on metric history (not just snapshots). Because workloads overlap — a compile session can also be thermal-stressed — the weights can sum to more than 100% when multiple situations co-occur.
+        <br><br>· <strong>idle</strong> — low CPU, low memory churn, no active workload
+        <br>· <strong>compile</strong> — sustained CPU bursts typical of build tools (make, gcc, cargo, webpack)
+        <br>· <strong>memory_pressure</strong> — high RSS, swap activity, or PSI memory stalls
+        <br>· <strong>io_bound</strong> — high iowait, disk read/write saturation, PSI IO pressure
+        <br>· <strong>cpu_bound</strong> — sustained single/multi-core saturation without significant IO
+        <br>· <strong>streaming</strong> — significant network throughput + browser renderer pressure + moderate CPU
+        <br>· <strong>browser_compute</strong> — browser pegging cores (high dilution, renderer pressure) with minimal network
+        <br>· <strong>irq_storm</strong> — high hardware interrupt rate overwhelming softirq processing
+        <br>· <strong>thermal_stress</strong> — CPU temperature above safe range; throttling likely or imminent
+        <br>· <strong>network_saturated</strong> — near-saturation of the interface's observed bandwidth ceiling
+        <br><br>This distribution panel is what feeds the <strong>FILTER SIT</strong> dropdown on the D3 causal graph — selecting a situation shows which edges were learned under those conditions.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-sparklines">
+      <div class="help-entry-title"><span>Reward History — Three Sparklines</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The Reward History section now shows three stacked charts over the same 150-step window, each isolating a different signal:
+        <br><br>
+        <strong>RAW REWARD</strong> — per-step reward as bars. <span style="color:var(--green)">Green</span> = positive (performance improved), <span style="color:var(--red)">red</span> = negative (performance degraded). Spiky clusters are normal during investigation bursts.
+        <br><br>
+        <strong>10-STEP ROLLING AVG</strong> — a smoothed trend line showing whether recent performance is net-positive or net-negative. More useful than individual bars for spotting drift. A persistent positive trend means Arminta is converging on good policy; a negative slope means something changed.
+        <br><br>
+        <strong>REWARD VARIANCE</strong> — how volatile rewards have been over a 20-step rolling window. The dashed amber line marks the <strong>dream throttle floor (0.0015)</strong>: when variance drops below it, the agent has entered a consolidation plateau — it's no longer discovering new cause-and-effect patterns, so the DreamCycle's minimum fire interval is automatically lengthened to 4× normal to conserve compute. The <strong>DREAM THROTTLED</strong> badge lights up when this is active.
+        <br><br>A healthy trajectory: variance starts high (exploration), drops as policy converges, and the throttle badge engages only during genuine plateaus.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-bayes-ci">
+      <div class="help-entry-title"><span>Bayesian Credible Intervals on Causal Edges</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        Below each causal edge bar in the EDGES panel, a <code>CI90</code> line shows the <strong>90% Bayesian credible interval</strong> for that edge's effect estimate.
+        <br><br>Each edge is backed by a <code>BayesianEdge</code> tracker that maintains an online Welford running mean and variance as new intervention observations arrive. The credible interval is computed as:
+        <br><code>μ ± 1.645 × √(σ² / n)</code>
+        <br>where μ is the posterior mean effect, σ² is the running variance, and n is the observation count.
+        <br><br>· <strong>Narrow interval</strong> — many consistent observations; the edge effect is well-established
+        <br>· <strong>Wide interval</strong> — few observations or high variance; treat the effect estimate with caution
+        <br>· <strong>Interval crossing zero</strong> — the direction of effect is not yet settled; this edge should not drive hard policy decisions
+        <br><br>The <code>±range</code> value is the full width of the interval (hi − lo). A range under 0.05 on a normalised effect score is generally trustworthy. Intervals are only shown once an edge has at least 4 observations (the same minimum required for edge display).
+        <br><br>The <strong>conf</strong> percentage is a calibrated confidence score derived from the edge's variance-to-sample-count ratio — 90%+ means high certainty, under 50% means the estimate is still noisy.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-timeline-scrubber">
+      <div class="help-entry-title"><span>Timeline Scrubber</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The <strong>TIMELINE</strong> tab shows reward bars colour-coded by situation over a 150-step window. When Arminta has accumulated more than 150 steps of tagged history, the <strong>WINDOW</strong> scrubber appears below the chart.
+        <br><br>Drag left to scrub back through history; drag right to return to the latest window. The step range label (e.g. <code>[300–449] / 600</code>) shows which slice is currently displayed.
+        <br><br>By default the scrubber snaps to the latest window on each data refresh. Dragging it to any earlier position freezes the view at that slice — useful for comparing a past situation type distribution against the current one, or for reviewing a reward cluster that happened during a specific workload phase.
+        <br><br>Bar colours match the Situation Distribution panel: each situation has a fixed colour so you can visually track when workload type transitions happen and how they correlate with reward polarity.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-d3-filter">
+      <div class="help-entry-title"><span>D3 Graph — Situation Filter</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        The <strong>FILTER SIT</strong> dropdown in the GRAPH ✦ tab filters the force-directed causal graph by situation.
+        <br><br>Selecting a situation compares it against the current <code>sit_dist</code> payload. If that situation has less than 5% weight in the recent distribution (meaning the agent has not been in that workload type lately), all edges are <strong>dimmed</strong> — not hidden — to indicate that the learned relationships may not be currently relevant. If the situation is active (≥5% weight), edges render at full opacity.
+        <br><br>This is useful for understanding which cause-and-effect relationships were learned under specific conditions. For example: edges learned during <code>compile</code> may show that <code>set_cpu_performance → cpu</code> has a large positive effect — but that same edge might be neutral or even harmful during <code>streaming</code> where thermal constraints dominate.
+        <br><br>The filter does not hide edges entirely because Arminta's global edge table merges observations across all situations. Situation-specific weights are tracked separately in <code>SituationModel</code> and are used by <code>best_action_for()</code> during live decisions — what you see in ALL mode is the global aggregate.
       </div>
     </div>
 
