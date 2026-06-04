@@ -2749,6 +2749,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>HLT (Health)</strong> — reward from hardware health signals: NVMe temperature, drive spare percentage, PSI stall ratios. Penalises actions that improve performance but at a hardware cost.
         <br><br>The total reward used for learning is the sum of all three. Seeing IMM negative but DUR positive means the action caused short-term pain but long-term gain — normal during INVESTIGATE mode. Seeing HLT negative persistently is a warning sign that the agent is over-stressing the hardware.
       </div>
+    </div>
     <div class="help-entry" id="help-situation">
       <div class="help-entry-title"><span>Situation Classification</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
