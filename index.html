@@ -1018,23 +1018,6 @@ body.help-open {
   </div>
 
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
-  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sparklines')" title="What are the three reward sparklines?" aria-label="Help: Reward History Sparklines">?</button></div>
-  <div class="card mb28" style="padding:16px 8px 4px;">
-    <div style="font-size:0.6rem;color:var(--cyan);letter-spacing:0.05em;margin-bottom:4px;padding:0 8px;">RAW REWARD</div>
-    <div class="chart-wrap" style="height:100px;">
-      <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
-    </div>
-    <div style="font-size:0.6rem;color:var(--amber);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">10-STEP ROLLING AVG</div>
-    <div class="chart-wrap" style="height:80px;">
-      <canvas id="sparkRollingChart" role="img" aria-label="10-step rolling average reward"></canvas>
-    </div>
-    <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">REWARD VARIANCE (100-step window) <span id="dream-throttle-badge" style="display:none;margin-left:8px;color:var(--muted,#3a4a5a);font-size:0.55rem;">DREAM THROTTLED</span></div>
-    <div class="chart-wrap" style="height:70px;margin-bottom:16px;">
-      <canvas id="sparkVarianceChart" role="img" aria-label="Reward variance sparkline"></canvas>
-    </div>
-  </div>
-
-  <!-- CONTINUITY ADVISOR -->
   <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
   <div class="continuity-panel advisory-green mb28" id="continuity-panel">
     <div class="continuity-status-row">
@@ -1075,87 +1058,15 @@ body.help-open {
   </div>
 
   <!-- CORE STATS -->
-  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cognitive')" title="What are Cognitive Metrics?" aria-label="Help: Cognitive Metrics">?</button></div>
-  <div class="stat-grid mb28">
-    <div class="stat-card">
-      <div class="stat-label">Causal Edges</div>
-      <div class="stat-value green" id="causal-edges">--</div>
-      <div class="stat-sub">interventional graph</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Dreams</div>
-      <div class="stat-value purple" id="dreams">--</div>
-      <div class="stat-sub">offline simulations</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Hypotheses</div>
-      <div class="stat-value amber" id="hypotheses">--</div>
-      <div class="stat-sub">generated &amp; tested</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Interventions</div>
-      <div class="stat-value" id="interventions">--</div>
-      <div class="stat-sub">real OS actions taken</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Self-Modifications</div>
-      <div class="stat-value pink" id="self-mods">--</div>
-      <div class="stat-sub">autonomous rewrites</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Mosaic Hypotheses</div>
-      <div class="stat-value amber" id="mosaic-hyp-count">--</div>
-      <div class="stat-sub">world correlations</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
-      <div class="stat-value cyan" id="arminta-age">--</div>
-      <div class="stat-sub" id="arminta-age-sub">since first run</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Sessions<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions / SelfModel">?</button></div>
-      <div class="stat-value" id="session-count">--</div>
-      <div class="stat-sub" id="uptime-sub">total uptime --</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger / SelfModel">?</button></div>
-      <div class="stat-value" id="novelty-hunger">--</div>
-      <div class="stat-sub">drive toward investigation</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Milestone Proximity<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Milestone Proximity?" aria-label="Help: Milestone Proximity / SelfModel">?</button></div>
-      <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
-      <div class="stat-sub">anticipatory drive</div>
+  <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sitdist')" title="What is the Situation Distribution?" aria-label="Help: Situation Distribution">?</button></div>
+  <div class="card card-pad mb28" id="sit-dist-card">
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">fuzzy blend of active situation weights · bars sum to 100%</div>
+    <div id="sit-dist-bars" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
+      <div style="color:var(--dim);font-size:0.7rem">no data</div>
     </div>
   </div>
 
-  <!-- MILESTONES -->
-  <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-milestones')" title="What are Milestones?" aria-label="Help: Milestones">?</button></div>
-  <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
-    <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
-  </div>
-
-  <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
-  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-kill')" title="What is Kill Ineffective?" aria-label="Help: Kill Ineffective">?</button></div>
-  <div class="two-col mb28">
-    <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
-      <div class="ki-list" id="ki-list">
-        <div style="color:var(--dim);font-size:0.7rem">none flagged</div>
-      </div>
-    </div>
-    <div>
-      <div class="log-header">
-        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
-        <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
-      </div>
-      <div class="log-wrap" id="log-wrap">
-        <div class="log-line">awaiting data...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CAUSAL REASONING / WHY PANEL -->
+  <!-- CAUSAL EDGES + REWARD CHART (2-col / tab on mobile) -->
   <div class="section-label mb12">Causal Reasoning<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-why')" title="Why did Arminta do that?" aria-label="Help: Causal Reasoning">?</button></div>
   <div class="why-panel" id="why-panel">
     <div class="why-row">
@@ -1178,15 +1089,6 @@ body.help-open {
   </div>
 
   <!-- SITUATION DISTRIBUTION [15] -->
-  <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sitdist')" title="What is the Situation Distribution?" aria-label="Help: Situation Distribution">?</button></div>
-  <div class="card card-pad mb28" id="sit-dist-card">
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">fuzzy blend of active situation weights · bars sum to 100%</div>
-    <div id="sit-dist-bars" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
-      <div style="color:var(--dim);font-size:0.7rem">no data</div>
-    </div>
-  </div>
-
-  <!-- CAUSAL EDGES + REWARD CHART (2-col / tab on mobile) -->
   <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-causal')" title="What is the Causal Graph?" aria-label="Help: Causal Graph">?</button></div>
 
   <!-- Tab switcher — hidden on desktop, shown on mobile -->
@@ -1268,19 +1170,84 @@ body.help-open {
   </div>
 
   <!-- NETWORK HEALTH PROBES -->
-  <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
-  <div class="card card-pad mb28" id="net-probe-card">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
-      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
+  <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sparklines')" title="What are the three reward sparklines?" aria-label="Help: Reward History Sparklines">?</button></div>
+  <div class="card mb28" style="padding:16px 8px 4px;">
+    <div style="font-size:0.6rem;color:var(--cyan);letter-spacing:0.05em;margin-bottom:4px;padding:0 8px;">RAW REWARD</div>
+    <div class="chart-wrap" style="height:100px;">
+      <canvas id="sparkChart" role="img" aria-label="Recent reward history sparkline"></canvas>
     </div>
-    <!-- Probe dot strip -->
-    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
-    <!-- Last 3 probe results -->
-    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
+    <div style="font-size:0.6rem;color:var(--amber);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">10-STEP ROLLING AVG</div>
+    <div class="chart-wrap" style="height:80px;">
+      <canvas id="sparkRollingChart" role="img" aria-label="10-step rolling average reward"></canvas>
+    </div>
+    <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">REWARD VARIANCE (100-step window) <span id="dream-throttle-badge" style="display:none;margin-left:8px;color:var(--muted,#3a4a5a);font-size:0.55rem;">DREAM THROTTLED</span></div>
+    <div class="chart-wrap" style="height:70px;margin-bottom:16px;">
+      <canvas id="sparkVarianceChart" role="img" aria-label="Reward variance sparkline"></canvas>
+    </div>
   </div>
 
-  <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
+  <!-- CONTINUITY ADVISOR -->
+  <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cognitive')" title="What are Cognitive Metrics?" aria-label="Help: Cognitive Metrics">?</button></div>
+  <div class="stat-grid mb28">
+    <div class="stat-card">
+      <div class="stat-label">Causal Edges</div>
+      <div class="stat-value green" id="causal-edges">--</div>
+      <div class="stat-sub">interventional graph</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dreams</div>
+      <div class="stat-value purple" id="dreams">--</div>
+      <div class="stat-sub">offline simulations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hypotheses</div>
+      <div class="stat-value amber" id="hypotheses">--</div>
+      <div class="stat-sub">generated &amp; tested</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Interventions</div>
+      <div class="stat-value" id="interventions">--</div>
+      <div class="stat-sub">real OS actions taken</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Self-Modifications</div>
+      <div class="stat-value pink" id="self-mods">--</div>
+      <div class="stat-sub">autonomous rewrites</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mosaic Hypotheses</div>
+      <div class="stat-value amber" id="mosaic-hyp-count">--</div>
+      <div class="stat-sub">world correlations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
+      <div class="stat-value cyan" id="arminta-age">--</div>
+      <div class="stat-sub" id="arminta-age-sub">since first run</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sessions<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions / SelfModel">?</button></div>
+      <div class="stat-value" id="session-count">--</div>
+      <div class="stat-sub" id="uptime-sub">total uptime --</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger / SelfModel">?</button></div>
+      <div class="stat-value" id="novelty-hunger">--</div>
+      <div class="stat-sub">drive toward investigation</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Milestone Proximity<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Milestone Proximity?" aria-label="Help: Milestone Proximity / SelfModel">?</button></div>
+      <div class="stat-value" id="milestone-proximity" title="Anticipatory restlessness toward next milestone">—</div>
+      <div class="stat-sub">anticipatory drive</div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-milestones')" title="What are Milestones?" aria-label="Help: Milestones">?</button></div>
+  <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
+    <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
+  </div>
+
+  <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
   <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button></div>
   <div class="two-col mb28">
     <div class="card card-pad">
@@ -1400,6 +1367,39 @@ body.help-open {
   </div>
 
   <!-- WEB LEARNER -->
+  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-kill')" title="What is Kill Ineffective?" aria-label="Help: Kill Ineffective">?</button></div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
+      <div class="ki-list" id="ki-list">
+        <div style="color:var(--dim);font-size:0.7rem">none flagged</div>
+      </div>
+    </div>
+    <div>
+      <div class="log-header">
+        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
+        <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
+      </div>
+      <div class="log-wrap" id="log-wrap">
+        <div class="log-line">awaiting data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAUSAL REASONING / WHY PANEL -->
+  <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
+  <div class="card card-pad mb28" id="net-probe-card">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
+      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
+    </div>
+    <!-- Probe dot strip -->
+    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
+    <!-- Last 3 probe results -->
+    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
+  </div>
+
+  <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
