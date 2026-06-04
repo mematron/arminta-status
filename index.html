@@ -1113,7 +1113,13 @@ body.help-open {
       </div>
     </div>
     <!-- [20] D3 Force-Directed Causal Graph Panel -->
-    <div class="card card-pad" id="causal-panel-graph" role="tabpanel" aria-labelledby="tab-graph" style="display:none;min-height:480px;">
+    <div class="card card-pad" id="causal-panel-graph" role="tabpanel" aria-labelledby="tab-graph" style="display:none;min-height:480px;position:relative;">
+      <!-- Bootstrap overlay: shown while causal graph is in warm-up phase -->
+      <div id="graph-bootstrap-overlay" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(8,12,16,0.82);border-radius:6px;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;pointer-events:none;">
+        <div style="font-size:1.1rem;color:var(--amber);font-family:var(--font-ui);font-weight:700;letter-spacing:0.12em;">BOOTSTRAP PHASE</div>
+        <div style="font-size:0.72rem;color:var(--dim);letter-spacing:0.08em;max-width:280px;">Collecting baseline causal data — graph-override and edge scoring begin after 60 steps</div>
+        <div id="graph-bootstrap-remaining" style="font-size:0.85rem;color:var(--amber);font-family:var(--font-ui);font-weight:700;">-- steps remaining</div>
+      </div>
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">
         Force-directed causal graph · node size = intervention count · edge colour = effect sign · drag to explore
       </div>
@@ -1218,6 +1224,11 @@ body.help-open {
       <div class="stat-label">Mosaic Hypotheses</div>
       <div class="stat-value amber" id="mosaic-hyp-count">--</div>
       <div class="stat-sub">world correlations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Quarantine</div>
+      <div class="stat-value" id="quarantine-pending" style="color:var(--amber)">--</div>
+      <div class="stat-sub">pending / <span id="quarantine-promoted" style="color:var(--green)">--</span> promoted</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
@@ -1459,7 +1470,7 @@ body.help-open {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const REFRESH_MS = 90000; // 90 seconds — Gist pushes every ~156s; this halves worst-case display lag
+const REFRESH_MS = 75000; // 75 seconds — matches Gist push interval (~75s at 30 steps × 2.5s/step)
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
@@ -1706,6 +1717,9 @@ function render(d) {
   setAndFlash('interventions', fmt(d.interventions));
   setAndFlash('self-mods', fmt(d.self_mods));
   setAndFlash('mosaic-hyp-count', d.mosaic_hypotheses ? d.mosaic_hypotheses.length : '--');
+  // [08] quarantine pipeline
+  if (d.quarantine_pending !== undefined)  setAndFlash('quarantine-pending',  d.quarantine_pending);
+  if (d.quarantine_promoted !== undefined) setAndFlash('quarantine-promoted', d.quarantine_promoted);
 
   /* ── Digital life: age, sessions, novelty hunger, milestones ── */
   function fmtAge(secs) {
@@ -1879,6 +1893,20 @@ function render(d) {
   const bootEl = document.getElementById('bootstrap');
   bootEl.textContent = d.bootstrap_phase ? 'YES' : 'no';
   bootEl.style.color = d.bootstrap_phase ? 'var(--amber)' : 'var(--dim)';
+  // Show/hide D3 graph bootstrap overlay
+  const _bsOverlay = document.getElementById('graph-bootstrap-overlay');
+  if (_bsOverlay) {
+    if (d.bootstrap_phase) {
+      _bsOverlay.style.display = 'flex';
+      const _remEl = document.getElementById('graph-bootstrap-remaining');
+      if (_remEl) {
+        const _rem = d.bootstrap_remaining !== undefined ? d.bootstrap_remaining : '?';
+        _remEl.textContent = _rem + ' steps remaining';
+      }
+    } else {
+      _bsOverlay.style.display = 'none';
+    }
+  }
 
   const irqGaveUp = document.getElementById('irq-gave-up');
   if (irqGaveUp) {
