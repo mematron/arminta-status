@@ -1106,6 +1106,10 @@ body.help-open {
       <div class="edge-list" id="edge-list">
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
+      <div id="lag-overrides-panel" style="margin-top:14px;display:none;">
+        <div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:6px;text-transform:uppercase;">Adaptive Lag Overrides</div>
+        <div id="lag-overrides-list" style="font-size:0.62rem;color:var(--purple);line-height:1.7;"></div>
+      </div>
     </div>
     <div class="card card-pad" id="causal-panel-reward" role="tabpanel" aria-labelledby="tab-reward">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">mean reward per action (last 30 executions) · centered axis</div>
@@ -1228,9 +1232,19 @@ body.help-open {
       <div class="stat-sub">world correlations</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Quarantine</div>
+      <div class="stat-label">Quarantine<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-quarantine')" title="What is Quarantine?" aria-label="Help: Action Quarantine">?</button></div>
       <div class="stat-value" id="quarantine-pending" style="color:var(--amber)">--</div>
       <div class="stat-sub">pending / <span id="quarantine-promoted" style="color:var(--green)">--</span> promoted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Slow-Effect Queue<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-slow-effect')" title="What is the Slow-Effect Queue?" aria-label="Help: Slow-Effect Queue">?</button></div>
+      <div class="stat-value" id="pending-obs-count" style="color:var(--cyan)">--</div>
+      <div class="stat-sub">delayed causal obs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lag Overrides<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-lag-overrides')" title="What are Lag Overrides?" aria-label="Help: Adaptive Lag Overrides">?</button></div>
+      <div class="stat-value" id="lag-override-count" style="color:var(--purple)">--</div>
+      <div class="stat-sub">adaptive lag pairs</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
@@ -1401,7 +1415,7 @@ body.help-open {
 
   <!-- CAUSAL REASONING / WHY PANEL -->
   <!-- SYSTEM SIGNALS -->
-  <div class="section-label mb12" style="margin-top:28px;">System Signals</div>
+  <div class="section-label mb12" style="margin-top:28px;">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
   <div class="card card-pad mb28" id="sys-signals-card">
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">CORE MAX %</div><div id="sig-cpu-core-max" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">hottest single core</div></div>
@@ -1732,6 +1746,20 @@ function render(d) {
   // [08] quarantine pipeline
   if (d.quarantine_pending !== undefined)  setAndFlash('quarantine-pending',  d.quarantine_pending);
   if (d.quarantine_promoted !== undefined) setAndFlash('quarantine-promoted', d.quarantine_promoted);
+
+  // slow-effect queue + adaptive lag overrides
+  if (d.pending_obs_count !== undefined) setAndFlash('pending-obs-count', d.pending_obs_count);
+  if (d.lag_override_count !== undefined) setAndFlash('lag-override-count', d.lag_override_count);
+  const lagPanel = document.getElementById('lag-overrides-panel');
+  const lagList  = document.getElementById('lag-overrides-list');
+  if (lagPanel && lagList && Array.isArray(d.lag_override_top) && d.lag_override_top.length) {
+    lagPanel.style.display = '';
+    lagList.innerHTML = d.lag_override_top
+      .map(x => `<span style="color:var(--dim)">${x.pair}</span> → lag <span style="color:var(--purple);font-weight:700">${x.lag}</span>`)
+      .join('<br>');
+  } else if (lagPanel) {
+    lagPanel.style.display = 'none';
+  }
 
   /* ── Digital life: age, sessions, novelty hunger, milestones ── */
   function fmtAge(secs) {
@@ -2228,6 +2256,22 @@ function render(d) {
       line3 = `<span style="color:${varCol};font-size:0.62rem;letter-spacing:0.04em;">reward_var = ${d.reward_variance.toFixed(5)}${varNote}</span>`;
     }
     metaEl.innerHTML = line1 + (line2 ? '<br>' + line2 : '') + (line3 ? '<br>' + line3 : '');
+    // epsilon drift warning: flag if ε > 0.08 after 50k steps (bug-regression sentinel)
+    let epWarnEl = document.getElementById('cmc-epsilon-warn');
+    if (!epWarnEl) {
+      epWarnEl = document.createElement('div');
+      epWarnEl.id = 'cmc-epsilon-warn';
+      epWarnEl.style.cssText = 'margin-top:6px;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;display:none;';
+      metaEl.parentNode.insertBefore(epWarnEl, metaEl.nextSibling);
+    }
+    const stepCount = d.step_count || 0;
+    if (stepCount > 50000 && cmcMeta.epsilon > 0.08) {
+      epWarnEl.style.display = '';
+      epWarnEl.style.color = 'var(--amber)';
+      epWarnEl.textContent = '⚠ EPSILON DRIFT — ε > 0.08 after 50k steps (check GA decay)';
+    } else {
+      epWarnEl.style.display = 'none';
+    }
   }
 
   /* ── MODE DISTRIBUTION DONUT ── */
@@ -3171,6 +3215,46 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br>The filter does not hide edges entirely because Arminta's global edge table merges observations across all situations. Situation-specific weights are tracked separately in <code>SituationModel</code> and are used by <code>best_action_for()</code> during live decisions — what you see in ALL mode is the global aggregate.
       </div>
     </div>
+
+      <div class="help-entry" id="help-system-signals">
+      <div class="help-entry-title"><span>System Signals</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        Three hardware metrics that sit outside the main cognitive loop but feed into causal edge learning as contextual signals. Arminta reads them every step and includes them in the metric snapshot used for causal graph updates.
+        <br><br>· <strong>CORE MAX %</strong> — the highest CPU utilisation across all individual cores at the moment of sampling, rather than the blended average. A high core-max with a low average-CPU means a single-threaded bottleneck. This is the metric most relevant to interactive latency, not throughput.
+        <br>· <strong>WIFI PHY Mbps</strong> — the 802.11 negotiated physical-layer TX rate reported by the wireless driver. This reflects link quality and antenna proximity, not actual throughput. A drop here (e.g. from 300 to 54 Mbps) tells Arminta that the radio environment has degraded, even if no bytes are currently being sent.
+        <br>· <strong>DISK LAT ms</strong> — IO queue wait time in milliseconds, derived from the kernel block layer. Sustained values above ~10ms indicate storage pressure; above 50ms typically means the IO scheduler is saturated. Arminta uses this to detect when disk-bound actions (memory compaction, log flushes) are causing more harm than good.
+        <br><br>These three signals are included in the causal context window so that edges learned under poor WiFi or high disk latency are tagged correctly and not confused with edges learned under idle conditions.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-quarantine">
+      <div class="help-entry-title"><span>Action Quarantine</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        When Arminta's shell-learning subsystem proposes a new action it has never executed before, the action is not immediately added to the live action space. Instead it enters <strong>quarantine</strong> — a probationary period during which it can only be selected at low frequency and its outcomes are tracked but not yet trusted.
+        <br><br>· <strong>Pending</strong> (amber) — actions currently in quarantine. Each candidate has a <code>trust_score</code> built from observed reward outcomes. The quarantine hold period is risk-scaled: low-risk actions (read-only probes, log queries) leave quarantine after far fewer confirming steps than high-risk actions (process signals, governor changes, sysctl writes).
+        <br>· <strong>Promoted</strong> (green) — actions that crossed the <code>0.75</code> trust threshold and graduated into the live action set. Once promoted, an action is treated identically to a built-in action and can accumulate full causal edges.
+        <br><br>Actions that fail to reach the trust threshold within their hold window are discarded and do not enter the live set. This prevents shell-learned noise from polluting the causal graph with spurious edges before their safety is confirmed.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-slow-effect">
+      <div class="help-entry-title"><span>Slow-Effect Queue</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        Some actions have effects that do not appear immediately. For example, <code>compact_memory</code> or <code>flush_dns</code> may take several seconds before the benefit shows up in CPU or memory metrics. If Arminta measured the reward only at the next step (0.3s later), she would see nothing and wrongly conclude the action was neutral.
+        <br><br>The slow-effect queue holds <strong>delayed causal observations</strong> — scheduled re-checks of metric state at three future offsets after an action fires (<code>+8</code>, <code>+30</code>, and <code>+120</code> steps). When those checkpoints arrive, the multi-snapshot blender averages the results and submits a weighted edge update to the causal graph.
+        <br><br>The counter shown here is the number of pending delayed observations currently waiting to mature. A non-zero value during or after a burst of maintenance actions is normal. A value that grows unboundedly without draining indicates the queue drain logic is stalled (check the agent log for <code>[SLOW]</code> entries).
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-lag-overrides">
+      <div class="help-entry-title"><span>Adaptive Lag Overrides</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        By default, the causal graph compares metric state at <code>lag=1</code> (one step after an action fires, ~0.3s). For most fast OS actions this is correct. But for some action–metric pairs, the real effect consistently appears at a later step.
+        <br><br>Arminta's adaptive lag system monitors each <code>(action, metric)</code> pair across its observation history. When enough samples accumulate, it computes which lag offset produces the highest absolute effect magnitude. If lag 2, 3, or higher consistently outperforms lag 1 by a statistically significant margin, that pair is recorded as a <strong>lag override</strong> — future observations for that pair are measured at the learned offset instead.
+        <br><br>The count shown here is the number of active overrides. The table in the EDGES panel lists the top pairs and their learned lag values. Overrides are reverted automatically if lag=1 re-establishes dominance as more data accumulates. A growing list of overrides typically indicates that Arminta is operating in a regime with non-trivial system latency (heavy IO, thermal throttling, swap pressure) where cause and effect are temporally separated.
+      </div>
+    </div>
+
 
   </div><!-- /help-panel-body -->
 </div><!-- /help-panel -->
