@@ -224,9 +224,10 @@ header {
 .mode-SELF_ASSESS { color: var(--pink); }
 .mode-unknown     { color: var(--dim); }
 .mode-div { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
-.reward-pos     { color: var(--green); }
-.reward-neg     { color: var(--amber); }   /* amber not red — below baseline, not catastrophic */
-.reward-neutral { color: var(--dim); }     /* within normal band of baseline */
+.reward-pos        { color: var(--green); }  /* beating baseline AND positive */
+.reward-recovering { color: var(--cyan); }   /* beating baseline but still negative */
+.reward-neg        { color: var(--amber); }  /* worse than baseline */
+.reward-neutral    { color: var(--dim); }    /* within normal band */
 
 /* ── SITUATION BADGE ── */
 .sit-badge {
@@ -2035,13 +2036,20 @@ function render(d) {
     const _baseline = d.reward_baseline !== undefined ? d.reward_baseline : null;
     let rewardClass = 'cockpit-val';  // neutral default
     if (_baseline !== null) {
-      const deviation = rVal - _baseline;
-      const threshold = Math.max(Math.abs(_baseline) * 0.20, 0.0005);
-      if (deviation > threshold)       rewardClass = 'cockpit-val reward-pos';
-      else if (deviation < -threshold) rewardClass = 'cockpit-val reward-neg';
-      else                             rewardClass = 'cockpit-val reward-neutral';
+      const deviation  = rVal - _baseline;
+      const threshold  = Math.max(Math.abs(_baseline) * 0.20, 0.0005);
+      const improving  = deviation > threshold;   // meaningfully beating baseline
+      const degrading  = deviation < -threshold;  // meaningfully worse than baseline
+      // Green only when beating baseline AND actually positive
+      // Cyan when beating baseline but still negative (recovering)
+      // Neutral when within the band
+      // Amber when degrading
+      if      (improving && rVal >= 0)  rewardClass = 'cockpit-val reward-pos';
+      else if (improving && rVal <  0)  rewardClass = 'cockpit-val reward-recovering';
+      else if (degrading)               rewardClass = 'cockpit-val reward-neg';
+      else                              rewardClass = 'cockpit-val reward-neutral';
     } else {
-      // No baseline — fall back to a wide dead-band around zero
+      // No baseline — wide dead-band around zero
       const absTol = 0.002;
       if      (rVal >  absTol) rewardClass = 'cockpit-val reward-pos';
       else if (rVal < -absTol) rewardClass = 'cockpit-val reward-neg';
