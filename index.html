@@ -978,6 +978,7 @@ body.help-open {
   padding-left: 16px;
   margin-left: 4px;
 }
+
 .header-step-label {
   font-size: 0.55rem;
   letter-spacing: 0.25em;
@@ -1213,9 +1214,7 @@ body.help-open {
     border-right: none;
     border-top: 1px solid var(--border);
   }
-  .header-step-badge {
-    display: none; /* step count shown in cockpit on tablet */
-  }
+  /* header-step-badge stays visible on tablet */
 }
 
 /* ── Mobile (≤600px) — single column cockpit, smaller header ── */
@@ -1246,10 +1245,7 @@ body.help-open {
     padding: 12px;
     font-size: 0.58rem;
   }
-  /* Header step badge hidden on small screens — cockpit has it */
-  .header-step-badge {
-    display: none;
-  }
+  /* Header step badge visible on mobile too */
   /* Stat grid single column */
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1272,12 +1268,7 @@ body.help-open {
   }
 }
 
-/* ── Ensure cockpit step badge shows on wide screens only ── */
-@media (min-width: 901px) {
-  .header-step-badge {
-    display: flex;
-  }
-}
+/* ── Step badge always visible ── */
 
 </style>
 </head>
