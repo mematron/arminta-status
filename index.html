@@ -3996,8 +3996,36 @@ function renderD3CausalGraph() {
 
 function resetGraphView() {
   const svg = d3.select('#d3-causal-svg');
-  if (!_d3Zoom || svg.empty()) return;
-  svg.transition().duration(400).call(_d3Zoom.transform, d3.zoomIdentity);
+  if (!_d3Zoom || svg.empty() || !_d3Simulation) return;
+
+  const svgEl = document.getElementById('d3-causal-svg');
+  const W = svgEl.clientWidth  || 700;
+  const H = svgEl.clientHeight || 420;
+  const PAD = 48; // padding around the cluster
+
+  // Get bounding box of all current node positions
+  const nodes = _d3Simulation.nodes();
+  if (!nodes.length) {
+    svg.transition().duration(400).call(_d3Zoom.transform, d3.zoomIdentity);
+    return;
+  }
+
+  const xs = nodes.map(d => d.x), ys = nodes.map(d => d.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const bw = Math.max(x1 - x0, 1), bh = Math.max(y1 - y0, 1);
+
+  // Scale to fit with padding, then centre
+  const scale = Math.min(
+    (W - PAD * 2) / bw,
+    (H - PAD * 2) / bh,
+    2   // don't over-zoom in on tiny graphs
+  );
+  const tx = W / 2 - scale * (x0 + bw / 2);
+  const ty = H / 2 - scale * (y0 + bh / 2);
+
+  svg.transition().duration(450)
+     .call(_d3Zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
 }
 
 /* ── [20] TIMELINE — Chart.js implementation ──────────────────────────────── */
