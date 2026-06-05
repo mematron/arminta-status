@@ -224,8 +224,9 @@ header {
 .mode-SELF_ASSESS { color: var(--pink); }
 .mode-unknown     { color: var(--dim); }
 .mode-div { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
-.reward-pos { color: var(--green); }
-.reward-neg { color: var(--red); }
+.reward-pos     { color: var(--green); }
+.reward-neg     { color: var(--amber); }   /* amber not red — below baseline, not catastrophic */
+.reward-neutral { color: var(--dim); }     /* within normal band of baseline */
 
 /* ── SITUATION BADGE ── */
 .sit-badge {
@@ -365,28 +366,38 @@ header {
 .why-panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  padding: 12px 14px;
+  padding: 0;
   font-size: 0.72rem;
   margin-bottom: 28px;
+  overflow: hidden;
 }
 .why-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin-bottom: 6px;
-  line-height: 1.5;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.6;
 }
+.why-row:last-child { border-bottom: none; }
 .why-label {
-  color: var(--cyan);
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
+  color: var(--dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  min-width: 80px;
+  width: 90px;
+  min-width: 90px;
   flex-shrink: 0;
+  padding: 9px 10px 9px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
 }
 .why-value {
   color: var(--text);
   flex: 1;
+  padding: 9px 14px;
 }
 .why-ctx {
   display: flex;
@@ -1284,7 +1295,7 @@ body.help-open {
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
       <div class="header-step-badge">
-        <div class="header-step-label">Steps <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hero')" title="What is this number?" aria-label="Help: Total Empirical Steps" style="vertical-align:middle;">?</button></div>
+        <div class="header-step-label">Steps</div>
         <div class="header-step-val" id="step-count">--</div>
         <div style="font-size:0.55rem;color:var(--dim);letter-spacing:0.05em;">empirical interventions</div>
       </div>
@@ -1324,7 +1335,7 @@ body.help-open {
           <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.6rem;flex:1;"></div>
           <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward-vector')" title="What is the Reward Vector?" aria-label="Help: Reward Vector">?</button>
         </div>
-        <div class="cockpit-spark" id="cockpit-spark"></div>
+
       </div>
 
       <!-- Error Steps -->
@@ -1367,15 +1378,15 @@ body.help-open {
   </div>
 
   <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
-  <div class="card card-pad mb28" id="net-probe-card">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
-      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
+  <div class="card mb28" id="net-probe-card" style="padding:12px 16px;">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <!-- dot strip -->
+      <div id="net-probe-strip" style="display:flex;gap:3px;flex-wrap:wrap;flex:1;min-width:80px;align-items:center;"></div>
+      <!-- per-target latest inline -->
+      <div id="net-probe-recent" style="font-size:0.62rem;color:var(--dim);font-family:var(--font-mono);display:flex;gap:14px;flex-wrap:wrap;align-items:center;"></div>
+      <!-- summary status -->
+      <div id="net-probe-status" style="font-size:0.65rem;color:var(--dim);white-space:nowrap;flex-shrink:0;">no data</div>
     </div>
-    <!-- Probe dot strip -->
-    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
-    <!-- Last 3 probe results -->
-    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
   </div>
 
 
@@ -2015,10 +2026,30 @@ function render(d) {
   const rSubEl   = document.getElementById('reward-sub');
   if (rVal !== null) {
     rEl.textContent = (rVal >= 0 ? '+' : '') + Number(rVal).toFixed(4) + '/step';
-    rEl.className   = 'mode-val ' + (rVal >= 0 ? 'reward-pos' : 'reward-neg');
+
+    // Colour relative to baseline — not just positive/negative zero-crossing.
+    // If baseline is available, colour by how far we deviate from it.
+    // Within ±20% of baseline magnitude (or ±0.0005 abs): neutral/dim
+    // Meaningfully above baseline: green
+    // Meaningfully below baseline: red/amber
+    const _baseline = d.reward_baseline !== undefined ? d.reward_baseline : null;
+    let rewardClass = 'cockpit-val';  // neutral default
+    if (_baseline !== null) {
+      const deviation = rVal - _baseline;
+      const threshold = Math.max(Math.abs(_baseline) * 0.20, 0.0005);
+      if (deviation > threshold)       rewardClass = 'cockpit-val reward-pos';
+      else if (deviation < -threshold) rewardClass = 'cockpit-val reward-neg';
+      else                             rewardClass = 'cockpit-val reward-neutral';
+    } else {
+      // No baseline — fall back to a wide dead-band around zero
+      const absTol = 0.002;
+      if      (rVal >  absTol) rewardClass = 'cockpit-val reward-pos';
+      else if (rVal < -absTol) rewardClass = 'cockpit-val reward-neg';
+      else                     rewardClass = 'cockpit-val reward-neutral';
+    }
+    rEl.className = rewardClass;
+
     if (rSubEl && totalR !== null) {
-      // FIX-G: show baseline value if available
-      const _baseline = d.reward_baseline !== undefined ? d.reward_baseline : null;
       const _bStr = _baseline !== null
         ? '  ·  baseline ' + (_baseline >= 0 ? '+' : '') + Number(_baseline).toFixed(4)
         : '  ·  baseline-centred';
@@ -2026,7 +2057,7 @@ function render(d) {
     }
   } else {
     rEl.textContent = '--';
-    rEl.className   = 'mode-val';
+    rEl.className   = 'cockpit-val';
   }
 
   /* error steps */
@@ -2838,11 +2869,11 @@ function render(d) {
     orderedLabels.forEach(label => {
       const p   = latestByLabel[label];
       const ms  = p.latency_ms >= 0 ? p.latency_ms + 'ms' : 'timeout';
-      const icon = p.ok ? '●' : '○';
       const col  = p.ok ? 'var(--green)' : 'var(--red)';
-      recent.innerHTML += `<div><span style="color:${col}">${icon}</span> `
-        + `<span style="color:var(--cyan)">${label.padEnd(12)}</span>`
-        + `<span style="color:var(--dim)"> step ${p.step} · ${ms}</span></div>`;
+      recent.innerHTML += `<span style="white-space:nowrap;">`
+        + `<span style="color:${col};margin-right:3px;">●</span>`
+        + `<span style="color:var(--cyan)">${label}</span>`
+        + `<span style="color:var(--muted)"> ${ms}</span></span>`;
     });
   } else {
     probeStatus.textContent = 'no data yet';
@@ -4480,18 +4511,7 @@ function syncCockpit() {
   }
 }
 
-/* Mini reward sparkline in cockpit */
-function renderCockpitSpark(rewardHistory) {
-  const el = document.getElementById('cockpit-spark');
-  if (!el || !rewardHistory || !rewardHistory.length) return;
-  const recent = rewardHistory.slice(-30);
-  const max = Math.max(...recent.map(Math.abs), 0.001);
-  el.innerHTML = recent.map(v => {
-    const h = Math.max(2, Math.round((Math.abs(+v) / max) * 22));
-    const col = +v >= 0 ? 'rgba(57,255,20,0.7)' : 'rgba(255,61,61,0.7)';
-    return '<div class="cockpit-spark-bar" style="height:' + h + 'px;background:' + col + ';"></div>';
-  }).join('');
-}
+
 
 /* Toggle deep dive */
 function toggleDeepDive() {
@@ -4508,7 +4528,7 @@ function toggleDeepDive() {
 const _origRender = typeof render === 'function' ? render : null;
 function _cockpitPostRender(d) {
   syncCockpit();
-  if (d && d.reward_history) renderCockpitSpark(d.reward_history);
+
 }
 // We'll call _cockpitPostRender from the data fetch loop
 
