@@ -951,6 +951,322 @@ body.help-open {
   border-radius: 2px;
   margin: 0 2px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   COCKPIT REDESIGN — attention-first layout
+   ══════════════════════════════════════════════════════════ */
+
+/* ── HEADER: now carries the step-count badge ── */
+.header-step-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+  margin-left: 4px;
+}
+.header-step-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+.header-step-val {
+  font-family: var(--font-ui);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+/* ── COCKPIT STRIP — replaces hero + mode-row ── */
+.cockpit-strip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.cockpit-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--green) 30%, var(--cyan) 70%, transparent 100%);
+  opacity: 0.6;
+}
+.cockpit-strip.strip-warn::before  { background: linear-gradient(90deg, transparent 0%, var(--amber) 50%, transparent 100%); opacity: 0.8; }
+.cockpit-strip.strip-crit::before  { background: linear-gradient(90deg, transparent 0%, var(--red) 50%, transparent 100%); opacity: 1; }
+
+.cockpit-main {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.cockpit-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 18px 22px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cockpit-cell:last-child { border-right: none; flex: 1; }
+.cockpit-cell.grow { flex: 1; }
+
+.cockpit-key {
+  font-size: 0.57rem;
+  letter-spacing: 0.22em;
+  color: var(--dim);
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cockpit-val {
+  font-family: var(--font-ui);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+.cockpit-sub {
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+.cockpit-reward-vec {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+/* Advisory cell — the embedded continuity verdict */
+.cockpit-advisory {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 22px;
+  flex: 1.4;
+  min-width: 220px;
+  border-right: 1px solid var(--border);
+  transition: background 0.4s;
+}
+.cockpit-advisory.adv-green  { background: rgba(57,255,20,0.03); }
+.cockpit-advisory.adv-yellow { background: rgba(255,179,0,0.04); }
+.cockpit-advisory.adv-red    { background: rgba(255,61,61,0.06); }
+
+.cockpit-adv-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cockpit-adv-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 7px currentColor;
+  transition: background 0.4s, color 0.4s;
+}
+.cockpit-adv-dot.green  { background: var(--green); color: var(--green); }
+.cockpit-adv-dot.yellow { background: var(--amber); color: var(--amber); }
+.cockpit-adv-dot.red    { background: var(--red);   color: var(--red);   animation: adv-pulse 1s ease-in-out infinite; }
+@keyframes adv-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.cockpit-adv-verdict {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cockpit-adv-verdict.green  { color: var(--green); }
+.cockpit-adv-verdict.yellow { color: var(--amber); }
+.cockpit-adv-verdict.red    { color: var(--red); }
+
+.cockpit-adv-reason {
+  font-size: 0.64rem;
+  color: var(--dim);
+  letter-spacing: 0.03em;
+  line-height: 1.45;
+  max-width: 320px;
+}
+.cockpit-adv-conf {
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+/* Reward mini-sparkline in cockpit */
+.cockpit-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 24px;
+  margin-top: 4px;
+}
+.cockpit-spark-bar {
+  width: 3px;
+  border-radius: 1px;
+  flex-shrink: 0;
+  min-height: 1px;
+  transition: height 0.3s;
+}
+
+/* Section dividers — tier labels */
+.tier-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 16px;
+}
+.tier-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.tier-divider-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Collapsible deep-dive sections */
+.deep-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-bottom: 0;
+  transition: color 0.2s, background 0.2s;
+}
+.deep-section-toggle:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+.deep-section-toggle .toggle-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.25s;
+  color: var(--muted);
+}
+.deep-section-toggle.open .toggle-arrow { transform: rotate(180deg); }
+
+.deep-section-body {
+  display: none;
+  padding-top: 20px;
+}
+.deep-section-body.open { display: block; }
+
+
+/* ══════════════════════════════════════════════════════════
+   COCKPIT RESPONSIVE — breakpoints for new layout elements
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Tablet (≤900px) — cockpit wraps into 2 rows ── */
+@media (max-width: 900px) {
+  .cockpit-main {
+    flex-wrap: wrap;
+  }
+  .cockpit-cell {
+    flex: 1 1 calc(50% - 1px);
+    min-width: 140px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cockpit-cell:last-child {
+    border-right: none;
+  }
+  .cockpit-advisory {
+    flex: 1 1 100%;
+    border-right: none;
+    border-top: 1px solid var(--border);
+  }
+  .header-step-badge {
+    display: none; /* step count shown in cockpit on tablet */
+  }
+}
+
+/* ── Mobile (≤600px) — single column cockpit, smaller header ── */
+@media (max-width: 600px) {
+  .logo {
+    font-size: 1.6rem;
+  }
+  .logo span {
+    font-size: 0.8rem;
+  }
+  .cockpit-cell {
+    flex: 1 1 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  .cockpit-advisory {
+    flex: 1 1 100%;
+    padding: 14px 16px;
+  }
+  .cockpit-val {
+    font-size: 1.3rem;
+  }
+  .tier-divider {
+    margin: 20px 0 12px;
+  }
+  .deep-section-toggle {
+    padding: 12px;
+    font-size: 0.58rem;
+  }
+  /* Header step badge hidden on small screens — cockpit has it */
+  .header-step-badge {
+    display: none;
+  }
+  /* Stat grid single column */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Very small (≤400px) ── */
+@media (max-width: 400px) {
+  .wrapper {
+    padding: 20px 12px 60px;
+  }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .cockpit-val {
+    font-size: 1.1rem;
+  }
+  .logo {
+    font-size: 1.3rem;
+  }
+}
+
+/* ── Ensure cockpit step badge shows on wide screens only ── */
+@media (min-width: 901px) {
+  .header-step-badge {
+    display: flex;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -967,6 +1283,11 @@ body.help-open {
       <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
+      <div class="header-step-badge">
+        <div class="header-step-label">Steps <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hero')" title="What is this number?" aria-label="Help: Total Empirical Steps" style="vertical-align:middle;">?</button></div>
+        <div class="header-step-val" id="step-count">--</div>
+        <div style="font-size:0.55rem;color:var(--dim);letter-spacing:0.05em;">empirical interventions</div>
+      </div>
       <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
       <div>
         <div class="last-updated" id="last-updated">--</div>
@@ -976,47 +1297,64 @@ body.help-open {
     </div>
   </header>
 
-  <!-- HERO STEP -->
-  <div class="hero-metric">
-    <div class="hero-label">TOTAL EMPIRICAL STEPS <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hero')" title="What is this number?" aria-label="Help: Total Empirical Steps" style="vertical-align:middle;">?</button></div>
-    <div class="hero-number" id="step-count">--</div>
-    <div class="hero-sub">every step is a real intervention on target hardware</div>
+  <!-- HERO STEP moved to header badge -->
+
+  <!-- COCKPIT STRIP — Tier 1: At-a-glance status -->
+  <div class="cockpit-strip" id="cockpit-strip">
+    <div class="cockpit-main">
+
+      <!-- Cognitive Mode -->
+      <div class="cockpit-cell">
+        <div class="cockpit-key">Cognitive Mode<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-mode')" title="What are Cognitive Modes?" aria-label="Help: Cognitive Mode">?</button></div>
+        <div class="cockpit-val" id="cog-mode">--</div>
+      </div>
+
+      <!-- Situation -->
+      <div class="cockpit-cell">
+        <div class="cockpit-key">Situation<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-situation')" title="What do situation labels mean?" aria-label="Help: Situation Classification">?</button></div>
+        <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
+      </div>
+
+      <!-- Rolling Avg Reward + mini sparkline -->
+      <div class="cockpit-cell">
+        <div class="cockpit-key">Rolling Avg Reward<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward')" title="What is Rolling Avg Reward?" aria-label="Help: Rolling Avg Reward">?</button></div>
+        <div class="cockpit-val" id="total-reward">--</div>
+        <div class="cockpit-sub" id="reward-sub">150-step window</div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+          <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.6rem;flex:1;"></div>
+          <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward-vector')" title="What is the Reward Vector?" aria-label="Help: Reward Vector">?</button>
+        </div>
+        <div class="cockpit-spark" id="cockpit-spark"></div>
+      </div>
+
+      <!-- Error Steps -->
+      <div class="cockpit-cell">
+        <div class="cockpit-key">Error Steps (200-step)</div>
+        <div class="cockpit-val" id="error-steps" style="color:var(--dim)">--</div>
+      </div>
+
+      <!-- Confound Rate -->
+      <div class="cockpit-cell">
+        <div class="cockpit-key">Confound Rate<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-confound')" title="What is Confound Rate?" aria-label="Help: Confound Rate">?</button></div>
+        <div class="cockpit-val" id="confound-rate-val" style="color:var(--dim)">--</div>
+        <div class="cockpit-sub" id="confound-rate-sub">causal noise ratio</div>
+      </div>
+
+      <!-- Advisory — continuity verdict embedded -->
+      <div class="cockpit-advisory adv-green" id="cockpit-advisory">
+        <div class="cockpit-key">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
+        <div class="cockpit-adv-top">
+          <div class="cockpit-adv-dot green" id="cockpit-adv-dot"></div>
+          <div class="cockpit-adv-verdict green" id="cockpit-adv-verdict">NOMINAL</div>
+          <div class="cockpit-adv-conf" id="cockpit-adv-conf">confidence: --</div>
+        </div>
+        <div class="cockpit-adv-reason" id="cockpit-adv-reason">no advisory signals detected</div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- MODE / SITUATION / REWARD ROW -->
-  <div class="mode-row mb12">
-    <div class="mode-block">
-      <div class="mode-key">Cognitive Mode<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-mode')" title="What are Cognitive Modes?" aria-label="Help: Cognitive Mode">?</button></div>
-      <div class="mode-val" id="cog-mode">--</div>
-    </div>
-    <div class="mode-div"></div>
-    <div class="mode-block">
-      <div class="mode-key">Situation<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-situation')" title="What do situation labels mean?" aria-label="Help: Situation Classification">?</button></div>
-      <div id="situation-badge"><span class="sit-badge sit-unknown">--</span></div>
-    </div>
-    <div class="mode-div"></div>
-    <div class="mode-block">
-      <div class="mode-key">Rolling Avg Reward<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward')" title="What is Rolling Avg Reward?" aria-label="Help: Rolling Avg Reward">?</button></div>
-      <div class="mode-val" id="total-reward" style="font-size:1.3rem">--</div>
-      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="reward-sub">150-step window</div>
-      <!-- [02] RewardVector decomposition: immediate · durable · health -->
-      <div style="display:flex;align-items:center;gap:4px;margin-top:5px;">
-        <div id="reward-vector-row" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;flex:1;"></div>
-        <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-reward-vector')" title="What is the Reward Vector?" aria-label="Help: Reward Vector">?</button>
-      </div>
-    </div>
-    <div class="mode-div"></div>
-    <div class="mode-block">
-      <div class="mode-key">Error Steps (200-step window)</div>
-      <div class="mode-val" id="error-steps" style="font-size:1.3rem; color:var(--dim)">--</div>
-    </div>
-    <div class="mode-div"></div>
-    <div class="mode-block">
-      <div class="mode-key">Confound Rate<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-confound')" title="What is Confound Rate?" aria-label="Help: Confound Rate">?</button></div>
-      <div class="mode-val" id="confound-rate-val" style="font-size:1.3rem; color:var(--dim)">--</div>
-      <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:3px;" id="confound-rate-sub">causal noise ratio</div>
-    </div>
-  </div>
+
 
   <!-- SYSTEM SIGNALS -->
   <div class="section-label mb12">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
@@ -1042,7 +1380,8 @@ body.help-open {
 
 
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
-  <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
+  <!-- Continuity panel kept hidden — JS still updates it; cockpit syncs from it -->
+  <div style="display:none;" aria-hidden="true">
   <div class="continuity-panel advisory-green mb28" id="continuity-panel">
     <div class="continuity-status-row">
       <div class="continuity-dot green" id="continuity-dot"></div>
@@ -1054,6 +1393,10 @@ body.help-open {
       <li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>
     </ul>
   </div>
+  </div>
+
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">▸ Monitor</div><div class="tier-divider-line"></div></div>
 
   <!-- CORE STATS -->
   <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sitdist')" title="What is the Situation Distribution?" aria-label="Help: Situation Distribution">?</button></div>
@@ -1288,6 +1631,15 @@ body.help-open {
     </div>
   </div>
 
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">▸ Deep Dive</div><div class="tier-divider-line"></div></div>
+
+  <button class="deep-section-toggle" id="deep-toggle" onclick="toggleDeepDive()" aria-expanded="false" aria-controls="deep-body">
+    <span>Deep Dive — Introspection &amp; System Detail</span>
+    <span class="toggle-arrow">▼</span>
+  </button>
+  <div class="deep-section-body" id="deep-body">
+  <!-- DEEP DIVE SECTION -->
   <!-- EMOTION -->
   <div class="emotion-section mb12">
     <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
@@ -1529,6 +1881,7 @@ body.help-open {
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
   </footer>
 
+  </div><!-- /deep-body -->
 </div><!-- /dashboard -->
 </div><!-- /wrapper -->
 
@@ -2874,6 +3227,7 @@ async function refresh() {
   try {
     const data = await fetchData();
     render(data);
+    _cockpitPostRender(data);
     document.getElementById('error-banner').style.display = 'none';
   } catch(e) {
     showError(e.message);
@@ -4047,6 +4401,88 @@ document.addEventListener('keydown', e => {
   if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) { toggleHelp(); }
   if (e.key === 'Escape') { closeHelp(); }
 });
+
+/* ═══════════════════════════════════════════════════
+   COCKPIT SYNC — mirrors continuity panel → cockpit strip
+   ═══════════════════════════════════════════════════ */
+function syncCockpit() {
+  // Sync advisory from hidden continuity panel
+  const dot     = document.getElementById('continuity-dot');
+  const verdict = document.getElementById('continuity-verdict');
+  const conf    = document.getElementById('continuity-confidence');
+  const reasons = document.getElementById('continuity-reasons');
+
+  const cDot     = document.getElementById('cockpit-adv-dot');
+  const cVerdict = document.getElementById('cockpit-adv-verdict');
+  const cConf    = document.getElementById('cockpit-adv-conf');
+  const cReason  = document.getElementById('cockpit-adv-reason');
+  const cAdv     = document.getElementById('cockpit-advisory');
+  const strip    = document.getElementById('cockpit-strip');
+
+  if (!dot || !cDot) return;
+
+  // Determine colour class
+  const colClass = dot.classList.contains('red') ? 'red'
+                 : dot.classList.contains('yellow') ? 'yellow'
+                 : 'green';
+
+  // Update dot
+  cDot.className = 'cockpit-adv-dot ' + colClass;
+  if (cVerdict) {
+    cVerdict.className = 'cockpit-adv-verdict ' + colClass;
+    cVerdict.textContent = verdict ? verdict.textContent : 'NOMINAL';
+  }
+  if (cConf && conf) cConf.textContent = conf.textContent;
+
+  // First advisory reason (most important)
+  if (cReason && reasons) {
+    const first = reasons.querySelector('li:not(.continuity-none)');
+    cReason.textContent = first ? first.textContent.trim() : 'no advisory signals detected';
+  }
+
+  // Colour the advisory cell background
+  if (cAdv) {
+    cAdv.className = 'cockpit-advisory adv-' + (colClass === 'red' ? 'red' : colClass === 'yellow' ? 'yellow' : 'green');
+  }
+
+  // Pulse the strip top bar
+  if (strip) {
+    strip.className = 'cockpit-strip' + (colClass === 'red' ? ' strip-crit' : colClass === 'yellow' ? ' strip-warn' : '');
+  }
+}
+
+/* Mini reward sparkline in cockpit */
+function renderCockpitSpark(rewardHistory) {
+  const el = document.getElementById('cockpit-spark');
+  if (!el || !rewardHistory || !rewardHistory.length) return;
+  const recent = rewardHistory.slice(-30);
+  const max = Math.max(...recent.map(Math.abs), 0.001);
+  el.innerHTML = recent.map(v => {
+    const h = Math.max(2, Math.round((Math.abs(+v) / max) * 22));
+    const col = +v >= 0 ? 'rgba(57,255,20,0.7)' : 'rgba(255,61,61,0.7)';
+    return '<div class="cockpit-spark-bar" style="height:' + h + 'px;background:' + col + ';"></div>';
+  }).join('');
+}
+
+/* Toggle deep dive */
+function toggleDeepDive() {
+  const btn  = document.getElementById('deep-toggle');
+  const body = document.getElementById('deep-body');
+  if (!btn || !body) return;
+  const opening = !body.classList.contains('open');
+  body.classList.toggle('open', opening);
+  btn.classList.toggle('open', opening);
+  btn.setAttribute('aria-expanded', opening);
+}
+
+/* Hook into the existing render cycle — patch after render() runs */
+const _origRender = typeof render === 'function' ? render : null;
+function _cockpitPostRender(d) {
+  syncCockpit();
+  if (d && d.reward_history) renderCockpitSpark(d.reward_history);
+}
+// We'll call _cockpitPostRender from the data fetch loop
+
 </script>
 
 </body>
