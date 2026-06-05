@@ -1018,6 +1018,29 @@ body.help-open {
     </div>
   </div>
 
+  <!-- SYSTEM SIGNALS -->
+  <div class="section-label mb12">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
+  <div class="card card-pad mb28" id="sys-signals-card">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">CORE MAX %</div><div id="sig-cpu-core-max" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">hottest single core</div></div>
+      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">WIFI PHY Mbps</div><div id="sig-wifi-tx" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">negotiated TX rate</div></div>
+      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
+    </div>
+  </div>
+
+  <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
+  <div class="card card-pad mb28" id="net-probe-card">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
+      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
+    </div>
+    <!-- Probe dot strip -->
+    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
+    <!-- Last 3 probe results -->
+    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
+  </div>
+
+
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
   <div class="section-label mb12">Continuity Advisor<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-continuity')" title="What is the Continuity Advisor?" aria-label="Help: Continuity Advisor">?</button></div>
   <div class="continuity-panel advisory-green mb28" id="continuity-panel">
@@ -1030,32 +1053,6 @@ body.help-open {
     <ul class="continuity-reasons" id="continuity-reasons">
       <li class="continuity-none" style="border:none;background:none;color:var(--dim)">no advisory signals detected</li>
     </ul>
-  </div>
-
-  <!-- EMOTION -->
-  <div class="emotion-section mb12">
-    <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
-    <div class="dominant-emotion" id="dominant-emotion">--</div>
-    <div class="emotion-grid" id="emotion-grid"></div>
-  </div>
-
-  <!-- [23] SOMATIC CONFIDENCE MODEL -->
-  <div class="scm-section mb12">
-    <div class="section-label" style="margin-bottom:12px;">
-      Somatic Confidence
-      <span id="scm-phase-badge" class="scm-phase bootstrap" style="margin-left:8px;">BOOTSTRAP</span>
-      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-somatic')" title="What is Somatic Confidence?" aria-label="Help: Somatic Confidence Model">?</button>
-    </div>
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">
-      signal reliability per situation · earned trust · <span id="scm-situation-label" style="color:var(--text);">--</span>
-    </div>
-    <div id="scm-signal-list"></div>
-    <div class="scm-spidey-log" id="scm-spidey-log" style="display:none;">
-      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;">
-        <span class="scm-spidey-pulse"></span> Spidey Sense Events
-      </div>
-      <div id="scm-spidey-entries"></div>
-    </div>
   </div>
 
   <!-- CORE STATS -->
@@ -1291,6 +1288,32 @@ body.help-open {
     </div>
   </div>
 
+  <!-- EMOTION -->
+  <div class="emotion-section mb12">
+    <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
+    <div class="dominant-emotion" id="dominant-emotion">--</div>
+    <div class="emotion-grid" id="emotion-grid"></div>
+  </div>
+
+  <!-- [23] SOMATIC CONFIDENCE MODEL -->
+  <div class="scm-section mb12">
+    <div class="section-label" style="margin-bottom:12px;">
+      Somatic Confidence
+      <span id="scm-phase-badge" class="scm-phase bootstrap" style="margin-left:8px;">BOOTSTRAP</span>
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-somatic')" title="What is Somatic Confidence?" aria-label="Help: Somatic Confidence Model">?</button>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">
+      signal reliability per situation · earned trust · <span id="scm-situation-label" style="color:var(--text);">--</span>
+    </div>
+    <div id="scm-signal-list"></div>
+    <div class="scm-spidey-log" id="scm-spidey-log" style="display:none;">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;">
+        <span class="scm-spidey-pulse"></span> Spidey Sense Events
+      </div>
+      <div id="scm-spidey-entries"></div>
+    </div>
+  </div>
+
   <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
   <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
 
@@ -1411,29 +1434,6 @@ body.help-open {
         <div class="log-line">awaiting data...</div>
       </div>
     </div>
-  </div>
-
-  <!-- CAUSAL REASONING / WHY PANEL -->
-  <!-- SYSTEM SIGNALS -->
-  <div class="section-label mb12" style="margin-top:28px;">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
-  <div class="card card-pad mb28" id="sys-signals-card">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">CORE MAX %</div><div id="sig-cpu-core-max" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">hottest single core</div></div>
-      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">WIFI PHY Mbps</div><div id="sig-wifi-tx" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">negotiated TX rate</div></div>
-      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
-    </div>
-  </div>
-
-  <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
-  <div class="card card-pad mb28" id="net-probe-card">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:120px;">last 20 probes — up to 4 targets per cycle</div>
-      <div id="net-probe-status" style="font-size:0.7rem;color:var(--dim);">no data</div>
-    </div>
-    <!-- Probe dot strip -->
-    <div id="net-probe-strip" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;min-height:18px;"></div>
-    <!-- Last 3 probe results -->
-    <div id="net-probe-recent" style="font-size:0.65rem;color:var(--dim);line-height:1.8;font-family:var(--font-mono);"></div>
   </div>
 
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
