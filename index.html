@@ -1938,6 +1938,7 @@ function render(d) {
   window._armintaConfoundRate         = d.confound_rate || 0;
   window._armintaConfoundRatePresent  = ('confound_rate' in d);
   window._armintaSitDist              = d.sit_dist || {};  // [15] situation distribution
+  window._armintaSituatedEdges        = d.situated_edges_summary || {};  // per-sit edge filter
   // [07] confound rate mode-row display
   (function() {
     const crEl = document.getElementById('confound-rate-val');
@@ -3209,20 +3210,34 @@ function renderD3CausalGraph() {
   const edgeItems = document.querySelectorAll('#edge-list .edge-item, #edge-list [data-action]');
   let edges = window._armintaEdgeData || [];
 
-  // [20] Situation filter — filter edges by tagged_reward_history situation distribution
+  // Situation filter — use situated_edges_summary from Python for real per-sit filtering
   const sitFilter = document.getElementById('d3-sit-filter');
   const selectedSit = sitFilter ? sitFilter.value : 'all';
-  if (selectedSit !== 'all' && window._armintaTaggedRewards && window._armintaTaggedRewards.length) {
-    // Build set of (action, metric) pairs that appear in the tagged history for selected situation
-    // Approximate: show edges that were active during that situation by checking tagged history
-    // For a robust filter: use situation-specific tagged rewards to infer which action slots were active
-    // Since we don't have per-edge situation tags, we filter by top-weight situation match
-    const sitWeight = (window._armintaSitDist || {})[selectedSit] || 0;
-    if (sitWeight < 0.05) {
-      // Situation not active — dim all edges but don't hide (agent may have learned from it)
-      edges = edges.map(e => ({...e, _dimmed: true}));
+  if (selectedSit !== 'all') {
+    const ses = window._armintaSituatedEdges || {};  // {sit: {"action|metric": mean_effect}}
+    const sitEdges = ses[selectedSit] || null;
+
+    if (sitEdges && Object.keys(sitEdges).length > 0) {
+      // Real data: dim edges with no situated observations for this situation
+      edges = edges.map(e => {
+        const key = `${e.action}|${e.metric}`;
+        const sitEffect = sitEdges[key];
+        if (sitEffect === undefined) return {...e, _dimmed: true};
+        // Edge exists in this situation — encode relative effect strength as _sitWeight
+        return {...e, _dimmed: false, _sitWeight: Math.min(1, 0.4 + Math.abs(sitEffect) * 3)};
+      });
+    } else {
+      // No situated data yet for this situation — fall back to sit_dist weight
+      const sitDist   = window._armintaSitDist || {};
+      const sitWeight = sitDist[selectedSit] || 0;
+      const maxWeight = Math.max(...Object.values(sitDist), 0.001);
+      const relWeight = sitWeight / maxWeight;
+      if (relWeight < 0.15) {
+        edges = edges.map(e => ({...e, _dimmed: true}));
+      } else {
+        edges = edges.map(e => ({...e, _sitWeight: relWeight}));
+      }
     }
-    // If sit_dist has good weight for this situation, show edges normally
   }
 
   if (!edges.length) {
@@ -3235,13 +3250,23 @@ function renderD3CausalGraph() {
   const nodeMap = {};
   const links = [];
   edges.forEach(e => {
-    if (!nodeMap[e.action]) nodeMap[e.action] = {id: e.action, type: 'action', count: 0, totalEff: 0};
-    if (!nodeMap[e.metric]) nodeMap[e.metric] = {id: e.metric, type: 'metric', count: 0, totalEff: 0};
+    if (!nodeMap[e.action]) nodeMap[e.action] = {id: e.action, type: 'action', count: 0, totalEff: 0, _dimmed: true, _sitWeight: 0};
+    if (!nodeMap[e.metric]) nodeMap[e.metric] = {id: e.metric, type: 'metric', count: 0, totalEff: 0, _dimmed: true, _sitWeight: 0};
+    // A node is undimmed if any connected edge is undimmed
+    if (!e._dimmed) {
+      nodeMap[e.action]._dimmed = false;
+      nodeMap[e.metric]._dimmed = false;
+    }
+    const sw = e._sitWeight !== undefined ? e._sitWeight : (e._dimmed ? 0 : 1);
+    nodeMap[e.action]._sitWeight = Math.max(nodeMap[e.action]._sitWeight, sw);
+    nodeMap[e.metric]._sitWeight = Math.max(nodeMap[e.metric]._sitWeight, sw);
     nodeMap[e.action].count += e.n || 1;
     nodeMap[e.action].totalEff += Math.abs(e.effect || 0);
     links.push({source: e.action, target: e.metric,
                 effect: e.effect || 0, n: e.n || 1,
-                conf: e.confidence || 0.5});
+                conf: e.confidence || 0.5,
+                _dimmed: e._dimmed || false,
+                _sitWeight: e._sitWeight});
   });
   const nodes = Object.values(nodeMap);
 
@@ -3258,12 +3283,12 @@ function renderD3CausalGraph() {
   // - Confidence NARROWS the band: high confidence → thin, precise line
   //   low confidence (wide CI) → thicker, blurrier stroke
   // - CI zero-crossing (uncertain direction) → amber dashed style
-  const linkBaseWidth  = eff  => Math.max(0.5, Math.min(3.0, Math.abs(eff) * 4));
+  const linkBaseWidth  = eff  => Math.max(0.3, Math.min(1.5, Math.abs(eff) * 2));
   const linkCIWidth    = link => {
     const base = linkBaseWidth(link.effect);
     // conf in [0,1]; low conf → up to 2.5× wider to signal uncertainty
     const uncertaintyScale = 1.0 + (1.0 - (link.conf || 0.5)) * 1.5;
-    return Math.min(6, base * uncertaintyScale);
+    return Math.min(3, base * uncertaintyScale);
   };
   const linkCIColor    = link => {
     // CI crosses zero → amber (uncertain direction)
@@ -3298,7 +3323,7 @@ function renderD3CausalGraph() {
     .join('marker')
     .attr('id', d => 'arrow-' + d)
     .attr('viewBox', '0 -5 10 10').attr('refX', 24).attr('refY', 0)
-    .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+    .attr('markerWidth', 4).attr('markerHeight', 4).attr('orient', 'auto')
     .append('path').attr('d', 'M0,-5L10,0L0,5')
     .attr('fill', d => d === 'pos' ? '#39ff14' : '#ff3d3d').attr('opacity', 0.7);
 
@@ -3307,16 +3332,25 @@ function renderD3CausalGraph() {
     .attr('stroke', d => linkCIColor(d))
     .attr('stroke-width', d => linkCIWidth(d))
     .attr('stroke-dasharray', d => linkDash(d))
-    .attr('stroke-opacity', d => (d.source._dimmed || d.target._dimmed) ? 0.12 : 0.4 + (d.conf || 0.5) * 0.5)
+    .attr('stroke-opacity', d => {
+      if (d.source._dimmed || d.target._dimmed) return 0.08;
+      const base = 0.4 + (d.conf || 0.5) * 0.5;
+      const sw = d._sitWeight !== undefined ? d._sitWeight : 1;
+      return base * sw;
+    })
     .attr('marker-end', d => `url(#arrow-${d.effect >= 0 ? 'pos' : 'neg'})`);
 
   const node = g.append('g').selectAll('circle')
     .data(nodes).join('circle')
     .attr('r', d => radius(d))
     .attr('fill', color)
-    .attr('fill-opacity', 0.85)
+    .attr('fill-opacity', d => {
+      if (d._dimmed) return 0.1;
+      const sw = d._sitWeight !== undefined ? d._sitWeight : 1;
+      return 0.6 + sw * 0.25;
+    })
     .attr('stroke', d => d.type === 'action' ? '#fff3' : '#0ff3')
-    .attr('stroke-width', 1.5)
+    .attr('stroke-width', 0.75)
     .attr('cursor', 'grab')
     .call(d3.drag()
       .on('start', (e, d) => { if (!e.active) _d3Simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -3327,7 +3361,7 @@ function renderD3CausalGraph() {
 
   const label = g.append('g').selectAll('text')
     .data(nodes).join('text')
-    .attr('font-size', 9).attr('fill', '#d8e8f4').attr('text-anchor', 'middle')
+    .attr('font-size', 9).attr('fill', '#d8e8f4').attr('text-anchor', 'middle').attr('opacity', d => d._dimmed ? 0.15 : 1)
     .attr('dy', d => radius(d) + 11).attr('pointer-events', 'none')
     .text(d => d.id.length > 14 ? d.id.slice(0, 13) + '…' : d.id);
 
