@@ -1362,10 +1362,11 @@ body.help-open {
   <!-- SYSTEM SIGNALS -->
   <div class="section-label mb12">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
   <div class="card card-pad mb28" id="sys-signals-card">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">CORE MAX %</div><div id="sig-cpu-core-max" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">hottest single core</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">WIFI PHY Mbps</div><div id="sig-wifi-tx" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">negotiated TX rate</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
+      <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">EARLYOOM<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-earlyoom')" title="What is earlyoom_ct?" aria-label="Help: earlyoom" style="margin-left:3px;">?</button></div><div id="sig-earlyoom-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">kills / step</div></div>
     </div>
   </div>
 
@@ -1670,7 +1671,7 @@ body.help-open {
   </div>
 
   <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
-  <div class="section-label mb12">Circadian CPU Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
+  <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button><button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:2px;">?</button></div>
 
   <!-- Row 1: circadian chart + Q-values -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;align-items:start;">
@@ -2511,10 +2512,12 @@ function render(d) {
     const coreMax = lm.cpu_core_max;
     const wifiTx  = lm.wifi_tx_mbps;
     const diskLat = lm.disk_io_lat_ms;
+    const earlyoomCt = lm.earlyoom_ct !== undefined ? lm.earlyoom_ct : 0;
 
     const elCore = document.getElementById('sig-cpu-core-max');
     const elWifi = document.getElementById('sig-wifi-tx');
     const elDisk = document.getElementById('sig-disk-lat');
+    const elEarlyoom = document.getElementById('sig-earlyoom-ct');
 
     if (elCore) {
       elCore.textContent = coreMax !== undefined ? coreMax.toFixed(0) + '%' : '--';
@@ -2527,6 +2530,12 @@ function render(d) {
     if (elDisk) {
       elDisk.textContent = diskLat !== undefined ? diskLat.toFixed(1) : '--';
       elDisk.style.color = diskLat >= 25 ? 'var(--red)' : diskLat >= 10 ? 'var(--amber)' : 'var(--green)';
+    }
+    if (elEarlyoom) {
+      const eoct = lm.earlyoom_ct;
+      elEarlyoom.textContent = eoct !== undefined ? eoct.toFixed(0) : '0';
+      // 0 = green (no daemon kills this step), 1 = amber (one kill, watch it), 2+ = red (pressure event)
+      elEarlyoom.style.color = eoct >= 2 ? 'var(--red)' : eoct >= 1 ? 'var(--amber)' : 'var(--green)';
     }
   }
   // FIX: RETIRED_ACTIONS filter removed — kill_extension_renderers is now suppressed
@@ -3507,7 +3516,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     </div>
 
     <div class="help-entry" id="help-cmc">
-      <div class="help-entry-title"><span>Circadian CPU Pattern &amp; Meta-Cognitive Controller</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-title"><span>Circadian Pattern &amp; Meta-Cognitive Controller</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
         <strong>Circadian chart (left)</strong> — average CPU usage by hour of day, learned over the agent's entire lifetime. ARMINTA uses this pattern to contextualise whether current CPU usage is unusual for the time of day, and to pre-emptively adjust governors before predictable load spikes.
         <br><br><strong>Meta-Cognitive Controller (right)</strong> — a Q-learning agent that sits above ARMINTA's main loop and chooses <em>which cognitive mode to use</em>. Each cell shows the Q-value (expected future reward) for switching to that mode given the current system state. The highlighted cell is the mode with the highest Q-value — what the controller recommends.
@@ -3519,6 +3528,22 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <code>ṙ</code> — GA-evolved reward scale: multiplier applied to every immediate metric delta
         <br>· <code>κ</code> — GA-evolved curiosity weight: scales how aggressively curiosity probes fire (higher = sooner)
         <br><br>A third row (v3) shows <strong>reward_var</strong> — variance of the last 100 reward signals. Below 0.0015 the agent has entered a consolidation plateau (nothing new surprises it), and the dream cycle is automatically throttled to 4× its normal minimum interval. Shown in purple with a "THROTTLED" badge on the Dreams stat card when active.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-circ-mem">
+      <div class="help-entry-title"><span>Circadian Memory Look-Ahead</span><span class="tag tag-learn">LEARNED</span><span class="tag" style="background:rgba(255,160,0,0.15);color:var(--amber);border-color:rgba(255,160,0,0.3);">v6</span></div>
+      <div class="help-entry-body">
+        A companion to the circadian CPU governor look-ahead (which pre-sets performance mode before a predicted CPU spike). The <strong>memory look-ahead</strong> fires <code>compact_memory</code> during a predicted idle lull before a historically high-RAM hour arrives — compacting the address space while there is room to breathe rather than after the spike has already made compaction disruptive.
+        <br><br><strong>How it works:</strong> Arminta's MosaicCore logs memory usage alongside CPU by hour-of-day over the lifetime of the agent. Each step, <code>_check_circadian_memory()</code> compares the next hour's historical memory average against the current hour's. If the predicted rise is large enough and system conditions are right, it schedules <code>compact_memory</code> during an otherwise idle step.
+        <br><br><strong>Gate conditions (all must hold):</strong>
+        <br>· At least 48 circadian history records — roughly two days of operation before the pattern is trusted
+        <br>· Next hour's historical mem average exceeds <code>MEM_WARN</code> (72%)
+        <br>· That average is at least 25% higher than the current hour's average — a meaningful predicted rise, not noise
+        <br>· Current memory is already below <code>MEM_WARN</code> — no point compacting when already in a crisis
+        <br>· No zswap active — compaction on compressed swap is counterproductive
+        <br>· 20-minute cooldown since the last <code>compact_memory</code> fire
+        <br><br>When triggered, the action reason string begins with <code>[CIRC-MEM]</code> so you can distinguish proactive circadian compaction from reactive compaction in the agent log. Like the CPU governor check, it only overrides a <code>monitor</code> action — it will never displace a real urgent intervention.
       </div>
     </div>
 
@@ -3698,11 +3723,25 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry" id="help-system-signals">
       <div class="help-entry-title"><span>System Signals</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        Three hardware metrics that sit outside the main cognitive loop but feed into causal edge learning as contextual signals. Arminta reads them every step and includes them in the metric snapshot used for causal graph updates.
+        Four hardware and OS-level metrics that feed into causal edge learning as contextual signals. Arminta reads them every step and includes them in the metric snapshot used for causal graph updates.
         <br><br>· <strong>CORE MAX %</strong> — the highest CPU utilisation across all individual cores at the moment of sampling, rather than the blended average. A high core-max with a low average-CPU means a single-threaded bottleneck. This is the metric most relevant to interactive latency, not throughput.
         <br>· <strong>WIFI PHY Mbps</strong> — the 802.11 negotiated physical-layer TX rate reported by the wireless driver. This reflects link quality and antenna proximity, not actual throughput. A drop here (e.g. from 300 to 54 Mbps) tells Arminta that the radio environment has degraded, even if no bytes are currently being sent.
         <br>· <strong>DISK LAT ms</strong> — IO queue wait time in milliseconds, derived from the kernel block layer. Sustained values above ~10ms indicate storage pressure; above 50ms typically means the IO scheduler is saturated. Arminta uses this to detect when disk-bound actions (memory compaction, log flushes) are causing more harm than good.
-        <br><br>These three signals are included in the causal context window so that edges learned under poor WiFi or high disk latency are tagged correctly and not confused with edges learned under idle conditions.
+        <br>· <strong>EARLYOOM</strong> — process kills per step by the earlyoom daemon. See the EARLYOOM entry below for full details.
+        <br><br>These signals are included in the causal context window so that edges learned under poor WiFi, high disk latency, or active OOM pressure are tagged correctly and not confused with edges learned under idle conditions.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-earlyoom">
+      <div class="help-entry-title"><span>EarlyOOM Observation Node</span><span class="tag tag-live">LIVE</span><span class="tag" style="background:rgba(255,160,0,0.15);color:var(--amber);border-color:rgba(255,160,0,0.3);">v6</span></div>
+      <div class="help-entry-body">
+        <strong>earlyoom_ct</strong> counts how many processes the <code>earlyoom</code> daemon killed between the previous step and this one. It is an <em>observational node</em> — Arminta reads it as a signal but cannot causally produce it. This asymmetry is enforced in the causal graph: all <code>action → earlyoom_ct</code> edges are poison-listed at write time, preventing spurious correlations like "compact_memory causes earlyoom to fire" (what actually happened: earlyoom fires because memory was already critically low, and compact_memory happened to run at the same moment).
+        <br><br>The causal direction is <strong>earlyoom_ct → Arminta decides to act</strong>, not the reverse. Over time, the graph can learn: when <code>earlyoom_ct &gt; 0</code> appears alongside specific mem/psi_mem signatures, what actions most effectively prevent the <em>next</em> earlyoom event rather than just reacting after one.
+        <br><br><strong>Colour coding:</strong>
+        <br>· <span style="color:var(--green)">green 0</span> — no daemon kills this step; system pressure within earlyoom's tolerance
+        <br>· <span style="color:var(--amber)">amber 1</span> — one process killed; memory pressure event; watch for repeat
+        <br>· <span style="color:var(--red)">red 2+</span> — multiple kills in a single step; sustained OOM pressure; Arminta should be acting proactively
+        <br><br>On systems without earlyoom installed or where journalctl is not accessible, this value stays at 0 silently — no error, no noise in the causal graph.
       </div>
     </div>
 
