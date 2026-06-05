@@ -1485,6 +1485,45 @@ body.help-open {
     <div class="smart-metrics" id="smart-metrics"></div>
   </div>
 
+  <div class="section-label mb12" style="margin-top:28px;">PriorityShift — Focus-Aware Priority Manager<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-priorityshift')" title="What is PriorityShift?" aria-label="Help: PriorityShift">?</button></div>
+  <div class="card card-pad mb28" id="priorityshift-panel">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;">
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">Focused App</div>
+        <div class="stat-value" id="pb-focus-name" style="font-size:0.85rem;color:var(--cyan);">--</div>
+        <div class="stat-sub" id="pb-focus-pid">pid --</div>
+      </div>
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">Throttled BG</div>
+        <div class="stat-value" id="pb-active">--</div>
+        <div class="stat-sub">processes</div>
+      </div>
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">BG CPU%</div>
+        <div class="stat-value" id="pb-bg-cpu">--</div>
+        <div class="stat-sub">background load</div>
+      </div>
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">Nice Δ</div>
+        <div class="stat-value" id="pb-nice-delta">--</div>
+        <div class="stat-sub">RL-learned throttle</div>
+      </div>
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">Reniced</div>
+        <div class="stat-value" id="pb-renice-ct">--</div>
+        <div class="stat-sub">session total</div>
+      </div>
+      <div class="stat-card" style="padding:10px 14px;">
+        <div class="stat-label">Restored</div>
+        <div class="stat-value" id="pb-restore-ct">--</div>
+        <div class="stat-sub">session total</div>
+      </div>
+    </div>
+    <div id="pb-status" style="font-size:0.72rem;color:var(--dim);border-top:1px solid var(--border2);padding-top:10px;">
+      Waiting for first PriorityShift data…
+    </div>
+  </div>
+
   <footer>
     <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
     <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
@@ -2736,6 +2775,61 @@ function render(d) {
   // [02] Three stacked sparklines
   renderStackedSparklines(d);
 
+  /* ── PRIORITYSHIFT ── */
+  (function() {
+    const pbActive    = document.getElementById('pb-active');
+    const pbBgCpu     = document.getElementById('pb-bg-cpu');
+    const pbNiceDelta = document.getElementById('pb-nice-delta');
+    const pbFocusName = document.getElementById('pb-focus-name');
+    const pbFocusPid  = document.getElementById('pb-focus-pid');
+    const pbReniceCt  = document.getElementById('pb-renice-ct');
+    const pbRestoreCt = document.getElementById('pb-restore-ct');
+    const pbStatus    = document.getElementById('pb-status');
+    if (!pbActive) return;
+
+    const active    = d.priorityshift_active;
+    const bgCpu     = d.priorityshift_bg_cpu;
+    const niceDelta = d.priorityshift_nice_delta;
+    const focusPid  = d.priorityshift_focus_pid;
+    const reniceCt  = d.priorityshift_renice_ct;
+    const restoreCt = d.priorityshift_restore_ct;
+
+    // Resolve focused app name from _top_proc_name if focus pid matches, else use stored
+    const focusName = d.priorityshift_focus_name_str || (d._top_proc_name || '--');
+
+    if (active === undefined || active === null) {
+      pbStatus.textContent = 'PriorityShift data not yet available — requires xdotool on X11 or wlrctl on Wayland.';
+      return;
+    }
+
+    pbActive.textContent    = active !== undefined ? Math.round(active) : '--';
+    pbActive.style.color    = active > 0 ? 'var(--amber)' : 'var(--dim)';
+
+    pbBgCpu.textContent     = bgCpu !== undefined ? bgCpu.toFixed(1) + '%' : '--';
+    pbBgCpu.style.color     = bgCpu > 20 ? 'var(--pink)' : bgCpu > 5 ? 'var(--amber)' : 'var(--dim)';
+
+    pbNiceDelta.textContent = niceDelta !== undefined ? '+' + Math.round(niceDelta) : '--';
+    pbNiceDelta.style.color = niceDelta >= 10 ? 'var(--amber)' : 'var(--cyan)';
+    pbNiceDelta.title       = `RL-learned renice delta — Arminta tunes this toward the minimum throttle that actually reduces CPU dilution`;
+
+    pbFocusName.textContent = focusPid > 0 ? (focusName || '?') : 'none';
+    pbFocusPid.textContent  = focusPid > 0 ? 'pid ' + Math.round(focusPid) : 'no focus detected';
+
+    pbReniceCt.textContent  = reniceCt !== undefined ? Math.round(reniceCt) : '--';
+    pbRestoreCt.textContent = restoreCt !== undefined ? Math.round(restoreCt) : '--';
+
+    // Status line
+    if (active > 0) {
+      pbStatus.innerHTML = `<span style="color:var(--amber)">▼ ${Math.round(active)} background process${active !== 1 ? 'es' : ''} throttled at nice +${Math.round(niceDelta || 0)}</span>`
+        + (bgCpu > 0 ? ` — consuming ${bgCpu.toFixed(1)}% CPU while deprioritised` : '');
+    } else if (reniceCt > 0) {
+      pbStatus.innerHTML = `<span style="color:var(--dim)">All processes at normal priority</span> — ${Math.round(reniceCt)} throttle${reniceCt !== 1 ? 's' : ''} / ${Math.round(restoreCt)} restore${restoreCt !== 1 ? 's' : ''} this session`;
+    } else {
+      pbStatus.textContent = 'Active — monitoring focus changes. No throttle events yet this session.';
+      pbStatus.style.color = 'var(--dim)';
+    }
+  })();
+
 }
 
 /* ── error ── */
@@ -3255,6 +3349,27 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       </div>
     </div>
 
+
+    <div class="help-entry" id="help-priorityshift">
+      <div class="help-entry-title"><span>PriorityShift — Focus-Aware Priority Manager</span><span class="tag tag-learn">LEARNED</span></div>
+      <div class="help-entry-body">
+        PriorityShift is Arminta's equivalent of Windows Process Lasso's PriorityShift feature. When any application window loses focus, its process is automatically reniced (lowered in scheduling priority) to free CPU headroom for whatever you're actively using. When that window regains focus, the process is instantly restored to its original nice value — no manual intervention needed, no hardcoded app list.
+        <br><br><strong>How it works:</strong>
+        <br>· An event-driven watcher thread (using <code>xdotool behave :any focus</code> on X11, or a 1-second poll fallback on Wayland) fires on every window focus change — zero polling overhead on supported systems.
+        <br>· On focus loss: the process's current nice value is saved to a registry, and it is reniced to <code>original + nice_delta</code>.
+        <br>· On focus gain: the process is immediately restored to its saved nice value. No process is ever left permanently throttled.
+        <br>· On shutdown: all throttled processes are restored before Arminta exits.
+        <br><br><strong>RL-learned Nice Δ:</strong>
+        <br>The throttle strength (<strong>Nice Δ</strong>) is not fixed — Arminta learns the optimal value through her causal graph. If a higher delta consistently improves <code>sess_proc_cpu_dilution</code> without causing restore-time CPU spikes, the graph rewards it and the agent may increase it. If the delta is too aggressive (CPU spikes when the user refocuses), the restore action receives negative reward and the agent pulls the delta back. The learned value is persisted in the memory pickle across restarts.
+        <br><br><strong>Metrics shown:</strong>
+        <br>· <strong>Focused App</strong> — the name and PID of the currently focused window's process. Protected from any <code>{PID}</code>-based actions while focused.
+        <br>· <strong>Throttled BG</strong> — count of background processes currently reniced. Non-zero during active work sessions.
+        <br>· <strong>BG CPU%</strong> — aggregate CPU% consumed by all currently-throttled background processes. High values confirm PriorityShift is actively reclaiming headroom.
+        <br>· <strong>Nice Δ</strong> — the RL-learned renice delta applied to background processes. Range +1 to +15; starts at +5 and self-tunes.
+        <br>· <strong>Reniced / Restored</strong> — cumulative session counts of throttle and restore events.
+        <br><br>Requires <code>xdotool</code> for event-driven X11 operation (<code>sudo apt install xdotool</code>). Falls back to polling on Wayland. On headless or SSH sessions, the dynamic focus guard is skipped and a static exclusion list protects known interactive apps as a fallback.
+      </div>
+    </div>
 
   </div><!-- /help-panel-body -->
 </div><!-- /help-panel -->
