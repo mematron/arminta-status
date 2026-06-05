@@ -3366,8 +3366,9 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>Throttled BG</strong> — count of background processes currently reniced. Non-zero during active work sessions.
         <br>· <strong>BG CPU%</strong> — aggregate CPU% consumed by all currently-throttled background processes. High values confirm PriorityShift is actively reclaiming headroom.
         <br>· <strong>Nice Δ</strong> — the RL-learned renice delta applied to background processes. Range +1 to +15; starts at +5 and self-tunes.
-        <br>· <strong>Reniced / Restored</strong> — cumulative session counts of throttle and restore events.
-        <br><br>Requires <code>xdotool</code> for event-driven X11 operation (<code>sudo apt install xdotool</code>). Falls back to polling on Wayland. On headless or SSH sessions, the dynamic focus guard is skipped and a static exclusion list protects known interactive apps as a fallback.
+        <br>· <strong>Reniced</strong> — cumulative count of background processes throttled this session. Each time a window loses focus and its process is reniced, this increments by 1. A high number means you've switched windows frequently and PriorityShift has been active throughout — expected in normal use.
+        <br>· <strong>Restored</strong> — cumulative count of processes restored to their original nice value this session. Should track closely behind Reniced. If Reniced is much higher than Restored, some background processes may still be throttled (normal during a long session). On shutdown, all remaining throttled processes are force-restored regardless.
+        <br><br>Requires <code>xdotool</code> for X11 operation (<code>sudo apt install xdotool</code>). Falls back to 1-second polling if event-driven mode is unavailable. On headless or SSH sessions, the focus guard is skipped entirely.
       </div>
     </div>
 
