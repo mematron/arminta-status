@@ -1769,14 +1769,14 @@ body.help-open {
   </div>
 
   <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
-  <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button><button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:2px;">?</button></div>
+  <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
 
   <!-- Row 1: circadian chart + Q-values -->
   <div class="circ-cmc-row">
 
     <!-- circadian chart -->
     <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)</div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:6px;">?</button></div>
       <div class="chart-wrap" style="height:180px;">
         <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
       </div>
