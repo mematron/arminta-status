@@ -2338,7 +2338,7 @@ function render(d) {
   setEl('gov-idle', d.governor_idle_steps !== undefined ? d.governor_idle_steps : '--');
   // Dwell countdown: steps remaining before relax_governor is eligible
   if (d.governor_perf_set_step !== undefined && d.step_count !== undefined) {
-    const _dwellSteps = 90; // matches GOVERNOR_IDLE_STEPS_REQ in arminta_v4.py
+    const _dwellSteps = 120; // matches _GOVERNOR_DWELL_STEPS (relax_governor dwell gate in arminta_v6.py)
     const _stepsSincePerf = (d.step_count || 0) - (d.governor_perf_set_step || 0);
     const _dwellRemain = Math.max(0, _dwellSteps - _stepsSincePerf);
     const _dwellEl = document.getElementById('gov-dwell');
@@ -3333,7 +3333,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         The <strong>Somatic Confidence Model (SCM)</strong> tracks how much ARMINTA trusts the emotional signal from each situation. Different workloads produce different noise floors — a <code>compile</code> run makes the system genuinely stressed, while <code>idle</code> stress signals are likely spurious. SCM learns these per-situation baselines so emotions are weighted by their reliability, not taken at face value.
         <br><br>· <strong>Phase badge</strong> — <code>BOOTSTRAP</code> (early, little data), <code>LEARNING</code> (accumulating per-situation observations), or <code>MATURE</code> (stable baselines established).
         <br>· <strong>Signal bars</strong> — each row is one emotion channel. The bar shows the <em>somatic weight</em> (0–1) — how much that emotion's raw signal is trusted right now for the current situation. A high bar means the emotion is reliable here; a low bar means ARMINTA down-weights it.
-        <br>· <strong>Spidey Sense Events</strong> — anomalous episodes where a strong emotion signal fired outside its normally expected situation context. These are logged as "spidey sense" events because they often precede surprising reward outcomes. The step number and dominant emotion are recorded for each event.
+        <br>· <strong>Spidey Sense Events</strong> — episodes where a fully mature emotion channel fired with both high precision (≥ 0.72) and high intensity (≥ 2.5 on the 0–5 scale). Both thresholds must clear simultaneously. These events are logged because a strong, well-calibrated signal at unusual intensity often precedes surprising reward outcomes. The step, emotion, situation, precision, and intensity are recorded for each event.
         <br><br>SCM state is per-situation, so weight bars change as the workload label changes. The situation label shown next to the section header reflects which situation's weights are currently displayed.
       </div>
     </div>
