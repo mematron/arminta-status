@@ -3560,7 +3560,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br><strong>How it works:</strong> Arminta's MosaicCore logs memory usage alongside CPU by hour-of-day over the lifetime of the agent. Each step, <code>_check_circadian_memory()</code> compares the next hour's historical memory average against the current hour's. If the predicted rise is large enough and system conditions are right, it schedules <code>compact_memory</code> during an otherwise idle step.
         <br><br><strong>Gate conditions (all must hold):</strong>
         <br>· At least 48 circadian history records — roughly two days of operation before the pattern is trusted
-        <br>· Next hour's historical mem average exceeds <code>MEM_WARN</code> (72%)
+        <br>· Next hour's historical mem average exceeds <code>MEM_WARN</code> (default 80%, adaptive floor 55%)
         <br>· That average is at least 25% higher than the current hour's average — a meaningful predicted rise, not noise
         <br>· Current memory is already below <code>MEM_WARN</code> — no point compacting when already in a crisis
         <br>· No zswap active — compaction on compressed swap is counterproductive
@@ -3789,9 +3789,15 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-lag-overrides">
       <div class="help-entry-title"><span>Adaptive Lag Overrides</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
-        By default, the causal graph compares metric state at <code>lag=1</code> (one step after an action fires, ~0.3s). For most fast OS actions this is correct. But for some action–metric pairs, the real effect consistently appears at a later step.
-        <br><br>Arminta's adaptive lag system monitors each <code>(action, metric)</code> pair across its observation history. When enough samples accumulate, it computes which lag offset produces the highest absolute effect magnitude. If lag 2, 3, or higher consistently outperforms lag 1 by a statistically significant margin, that pair is recorded as a <strong>lag override</strong> — future observations for that pair are measured at the learned offset instead.
-        <br><br>The count shown here is the number of active overrides. The table in the EDGES panel lists the top pairs and their learned lag values. Overrides are reverted automatically if lag=1 re-establishes dominance as more data accumulates. A growing list of overrides typically indicates that Arminta is operating in a regime with non-trivial system latency (heavy IO, thermal throttling, swap pressure) where cause and effect are temporally separated.
+        By default, the causal graph compares metric state at <code>lag=1</code> (one step after an action fires, ~0.3s). For most fast OS actions this is correct. But for some action–metric pairs, the real effect consistently appears at a later step — after a governor change, for example, thermal sensors lag several seconds behind.
+        <br><br>Arminta tests five lag offsets: <code>1, 3, 8, 20, 60</code> steps (~0.3s to ~18s). Re-evaluated every 200 steps for all eligible <code>SLOW_EFFECT_ACTIONS</code> pairs. Two guards prevent spurious selections:
+        <br>· <strong>Baseline gate</strong> — <code>lag=1</code> must have ≥5 samples before any override can be set. Without this, pairs where the immediate observation wasn't captured default to lag=60, not because it's better, but because it's the only bucket with data.
+        <br>· <strong>Margin gate</strong> — a challenger lag must beat the <code>lag=1</code> absolute mean effect by ≥30%. Without this, metrics that drift naturally over time (<code>hour_sin</code>, <code>load_ratio</code>) always produce monotonically higher abs-mean at longer lags, making lag=60 win by autocorrelation rather than causal signal.
+        <br><br><strong>What you see in the card:</strong>
+        <br>· The <strong>count</strong> is total active overrides — pairs where a non-default lag has cleared both gates and is now being used for causal attribution.
+        <br>· Below that, pairs are <strong>grouped by lag bucket</strong> with a color-coded badge: <span style="color:var(--cyan)">cyan = lag 3</span> (~0.9s), <span style="color:var(--green)">green = lag 8</span> (~2.4s), <span style="color:var(--amber)">amber = lag 20</span> (~6s), <span style="color:var(--purple)">purple = lag 60</span> (~18s). Each badge shows the pair count and approximate delay for that bucket.
+        <br>· The pair chips below each badge are the <code>action → metric</code> names — these are the edges where Arminta is measuring causal effect at a delayed offset rather than immediately.
+        <br><br>Overrides revert automatically if lag=1 re-establishes dominance as more data accumulates. A large count of lag=60 overrides after this fix should be treated with skepticism — those pairs are genuinely delayed effects, not just autocorrelation artifacts.
       </div>
     </div>
 
