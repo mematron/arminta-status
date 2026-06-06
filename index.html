@@ -583,7 +583,7 @@ button:focus-visible, a:focus-visible {
 .rv-label { color: var(--dim); font-size: 0.55rem; letter-spacing: 0.08em; margin-right: 2px; }
 .rv-val   { font-size: 0.65rem; font-family: var(--font-mono); margin-right: 2px; }
 .rv-sep   { color: var(--border2); font-size: 0.65rem; margin: 0 3px; }
-.edge-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; flex-wrap: nowrap; }
+.edge-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.7rem; flex-wrap: wrap; }
 .edge-label {
   width: clamp(120px, 28%, 200px);
   min-width: 0;
@@ -1072,7 +1072,7 @@ body.help-open {
   gap: 6px;
   padding: 14px 22px;
   flex: 1.4;
-  min-width: 220px;
+  min-width: 160px;
   border-right: 1px solid var(--border);
   transition: background 0.4s;
 }
@@ -1270,6 +1270,104 @@ body.help-open {
 
 /* ── Step badge always visible ── */
 
+
+/* ── RESPONSIVE FIXES ─────────────────────────────────────────────────────── */
+
+/* System Signals: 4-col → 2-col → 1-col */
+.sys-signals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* WebLearner counters: 4-col → 2-col → 1-col */
+.wl-counters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Circadian chart + CMC Q-values row */
+.circ-cmc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+  align-items: start;
+}
+
+/* Mode donut + emotion timeline row */
+.donut-emotion-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* stat-card span:2 — stop spanning when grid is already 1-col */
+@media (max-width: 400px) {
+  .stat-grid [style*="grid-column:span 2"],
+  .stat-grid [style*="grid-column: span 2"] {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Tablet (≤768px) breakpoints for new classes */
+@media (max-width: 768px) {
+  .sys-signals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wl-counters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .circ-cmc-row {
+    grid-template-columns: 1fr;
+  }
+  .donut-emotion-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile (≤480px) */
+@media (max-width: 480px) {
+  .sys-signals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wl-counters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* edge-row: shrink label column on very small screens */
+  .edge-label {
+    width: clamp(80px, 22%, 160px) !important;
+    font-size: 0.62rem;
+  }
+  .edge-action {
+    width: clamp(70px, 25%, 130px) !important;
+    font-size: 0.62rem;
+  }
+  /* mode-row: tighter spacing */
+  .mode-row {
+    gap: 16px;
+    padding: 14px 16px;
+  }
+  .mode-val {
+    font-size: 1.2rem;
+  }
+  /* cockpit-advisory: full width on small screens */
+  .cockpit-advisory {
+    min-width: 100%;
+  }
+}
+
+/* Very small (≤400px) */
+@media (max-width: 400px) {
+  .sys-signals-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .wl-counters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 </style>
 </head>
 <body>
@@ -1362,7 +1460,7 @@ body.help-open {
   <!-- SYSTEM SIGNALS -->
   <div class="section-label mb12">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
   <div class="card card-pad mb28" id="sys-signals-card">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+    <div class="sys-signals-grid">
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">CORE MAX %</div><div id="sig-cpu-core-max" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">hottest single core</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">WIFI PHY Mbps</div><div id="sig-wifi-tx" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">negotiated TX rate</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
@@ -1674,7 +1772,7 @@ body.help-open {
   <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button><button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:2px;">?</button></div>
 
   <!-- Row 1: circadian chart + Q-values -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;align-items:start;">
+  <div class="circ-cmc-row">
 
     <!-- circadian chart -->
     <div class="card card-pad">
@@ -1702,7 +1800,7 @@ body.help-open {
   <!-- Row 2: mode donut + emotion timeline — unified card -->
   <div style="margin-bottom:28px;">
     <div class="card card-pad">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="donut-emotion-row">
 
         <!-- mode distribution donut -->
         <div>
@@ -1795,7 +1893,7 @@ body.help-open {
   <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+    <div class="wl-counters-grid">
       <div style="text-align:center;">
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">PAGES READ</div>
         <div id="wl-pages" style="font-size:1.4rem;color:var(--cyan);font-family:var(--font-mono);">--</div>
