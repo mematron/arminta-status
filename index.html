@@ -2533,9 +2533,14 @@ function render(d) {
     }
     if (elEarlyoom) {
       const eoct = lm.earlyoom_ct;
-      elEarlyoom.textContent = eoct !== undefined ? eoct.toFixed(0) : '0';
-      // 0 = green (no daemon kills this step), 1 = amber (one kill, watch it), 2+ = red (pressure event)
-      elEarlyoom.style.color = eoct >= 2 ? 'var(--red)' : eoct >= 1 ? 'var(--amber)' : 'var(--green)';
+      if (eoct === undefined) {
+        elEarlyoom.textContent = '--';
+        elEarlyoom.style.color = 'var(--dim)';
+      } else {
+        elEarlyoom.textContent = eoct.toFixed(0);
+        // 0 = green (no daemon kills this step), 1 = amber (one kill, watch it), 2+ = red (pressure event)
+        elEarlyoom.style.color = eoct >= 2 ? 'var(--red)' : eoct >= 1 ? 'var(--amber)' : 'var(--green)';
+      }
     }
   }
   // FIX: RETIRED_ACTIONS filter removed — kill_extension_renderers is now suppressed
