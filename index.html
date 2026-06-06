@@ -1450,10 +1450,6 @@ body.help-open {
       <div class="edge-list" id="edge-list">
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
-      <div id="lag-overrides-panel" style="margin-top:14px;display:none;">
-        <div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:6px;text-transform:uppercase;">Adaptive Lag Overrides</div>
-        <div id="lag-overrides-list" style="font-size:0.62rem;color:var(--purple);line-height:1.7;"></div>
-      </div>
     </div>
     <div class="card card-pad" id="causal-panel-reward" role="tabpanel" aria-labelledby="tab-reward">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">mean reward per action (last 30 executions) · centered axis</div>
@@ -1522,6 +1518,14 @@ body.help-open {
                title="Drag to scroll through reward history — left = oldest, right = most recent">
         <div id="timeline-scrub-label" style="font-size:0.6rem;color:var(--dim);font-family:var(--font-mono);min-width:100px;text-align:right;">-- / --</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ADAPTIVE LAG OVERRIDES -->
+  <div id="lag-overrides-panel" style="display:none;margin-bottom:28px;">
+    <div class="section-label mb12">Adaptive Lag Overrides<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-lag-overrides')" title="What are Adaptive Lag Overrides?" aria-label="Help: Adaptive Lag Overrides">?</button></div>
+    <div class="card card-pad">
+      <div id="lag-overrides-list" style="font-size:0.62rem;color:var(--purple);line-height:1.9;font-family:var(--font-mono);"></div>
     </div>
   </div>
 
