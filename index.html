@@ -1717,7 +1717,7 @@ body.help-open {
   </div>
 
   <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
-  <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button></div>
+  <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button><span id="statements-formed-badge" style="margin-left:10px;font-size:0.62rem;color:var(--dim);font-family:var(--font-mono);font-weight:400;letter-spacing:0.04em;"></span></div>
   <div class="two-col mb28">
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">reward reversals arminta cannot yet explain</div>
@@ -2664,6 +2664,13 @@ function render(d) {
   const qs = (d.open_questions || []);
   const qList = document.getElementById('q-list');
   qList.innerHTML = '';
+
+  // [v6-lang] statements_formed badge
+  const _sfBadge = document.getElementById('statements-formed-badge');
+  if (_sfBadge) {
+    const _sf = d.statements_formed;
+    _sfBadge.textContent = _sf !== undefined ? `· ${_sf.toLocaleString()} statements formed` : '';
+  }
   if (qs.length) {
     qs.slice(0, 6).forEach((q, i) => {
       const cls = i < 2 ? 'q-high' : i < 4 ? 'q-med' : 'q-low';
