@@ -1584,9 +1584,11 @@ body.help-open {
     </div>
     <div class="stat-card" style="grid-column:span 2;">
       <div class="stat-label">Lag Overrides<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-lag-overrides')" title="What are Lag Overrides?" aria-label="Help: Adaptive Lag Overrides">?</button></div>
-      <div class="stat-value" id="lag-override-count" style="color:var(--purple)">--</div>
-      <div class="stat-sub">adaptive lag pairs</div>
-      <div id="lag-overrides-list" style="display:none;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:0.6rem;font-family:var(--font-mono);line-height:1.8;"></div>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <div class="stat-value" id="lag-override-count" style="color:var(--purple)">--</div>
+        <div class="stat-sub">adaptive lag pairs</div>
+      </div>
+      <div id="lag-overrides-list" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"></div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Age<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Age?" aria-label="Help: Age / SelfModel">?</button></div>
@@ -2175,12 +2177,27 @@ function render(d) {
   const lagList = document.getElementById('lag-overrides-list');
   if (lagList && Array.isArray(d.lag_override_top) && d.lag_override_top.length) {
     lagList.style.display = '';
-    lagList.innerHTML = d.lag_override_top.map(x =>
-      '<div style="display:flex;justify-content:space-between;">' +
-      '<span style="color:var(--dim)">' + x.pair + '</span>' +
-      '<span style="color:var(--purple);font-weight:700;margin-left:12px;white-space:nowrap;">lag ' + x.lag + '</span>' +
-      '</div>'
-    ).join('');
+    const _lagColors = { 3: 'var(--cyan)', 8: 'var(--green)', 20: 'var(--amber)', 60: 'var(--purple)' };
+    const _byLag = {};
+    d.lag_override_top.forEach(x => { if (!_byLag[x.lag]) _byLag[x.lag] = []; _byLag[x.lag].push(x.pair); });
+    const _sortedLags = Object.keys(_byLag).map(Number).sort((a,b) => a-b);
+    lagList.innerHTML = _sortedLags.map(lag => {
+      const col = _lagColors[lag] || 'var(--purple)';
+      const pairs = _byLag[lag];
+      return '<div style="margin-bottom:8px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'
+        + '<span style="display:inline-block;padding:2px 7px;border-radius:2px;font-size:0.65rem;'
+        + 'font-family:var(--font-ui);font-weight:700;letter-spacing:0.12em;color:' + col + ';'
+        + 'border:1px solid ' + col + ';background:' + col + '18;">LAG ' + lag + '</span>'
+        + '<span style="font-size:0.6rem;color:var(--dim);letter-spacing:0.06em;">'
+        + pairs.length + ' pair' + (pairs.length > 1 ? 's' : '') + ' · ~' + (lag * 0.3).toFixed(1) + 's delay</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:4px 6px;">'
+        + pairs.map(p => '<span style="font-size:0.62rem;font-family:var(--font-mono);color:var(--dim);'
+          + 'background:var(--surface2);padding:2px 6px;border-radius:2px;border:1px solid var(--border);">'
+          + p + '</span>').join('')
+        + '</div></div>';
+    }).join('');
   } else if (lagList) {
     lagList.style.display = 'none';
   }
