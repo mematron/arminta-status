@@ -1457,6 +1457,9 @@ body.help-open {
 
 
 
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">IS SHE OKAY?</div><div class="tier-divider-line"></div></div>
+
   <!-- SYSTEM SIGNALS -->
   <div class="section-label mb12">System Signals<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-system-signals')" title="What are System Signals?" aria-label="Help: System Signals">?</button></div>
   <div class="card card-pad mb28" id="sys-signals-card">
@@ -1467,6 +1470,7 @@ body.help-open {
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">EARLYOOM<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-earlyoom')" title="What is earlyoom_ct?" aria-label="Help: earlyoom" style="margin-left:3px;">?</button></div><div id="sig-earlyoom-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">kills / step</div></div>
     </div>
   </div>
+
 
   <div class="section-label mb12">Network Health Probes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprobe')" title="What are Network Health Probes?" aria-label="Help: Network Health Probes">?</button></div>
   <div class="card mb28" id="net-probe-card" style="padding:12px 16px;">
@@ -1501,6 +1505,20 @@ body.help-open {
   <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">▸ Monitor</div><div class="tier-divider-line"></div></div>
 
   <!-- CORE STATS -->
+
+  <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
+  <div class="smart-panel mb28" id="smart-panel">
+    <div class="smart-status-row">
+      <div class="smart-dot" id="smart-dot"></div>
+      <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
+      <div class="smart-device" id="smart-device"></div>
+    </div>
+    <div class="smart-metrics" id="smart-metrics"></div>
+  </div>
+
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">WHAT IS SHE DOING AND WHY?</div><div class="tier-divider-line"></div></div>
+
   <div class="section-label mb12">Situation Distribution (last 50 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sitdist')" title="What is the Situation Distribution?" aria-label="Help: Situation Distribution">?</button></div>
   <div class="card card-pad mb28" id="sit-dist-card">
     <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">fuzzy blend of active situation weights · bars sum to 100%</div>
@@ -1510,6 +1528,7 @@ body.help-open {
   </div>
 
   <!-- CAUSAL EDGES + REWARD CHART (2-col / tab on mobile) -->
+
   <div class="section-label mb12">Causal Reasoning<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-why')" title="Why did Arminta do that?" aria-label="Help: Causal Reasoning">?</button></div>
   <div class="why-panel" id="why-panel">
     <div class="why-row">
@@ -1532,6 +1551,7 @@ body.help-open {
   </div>
 
   <!-- SITUATION DISTRIBUTION [15] -->
+
   <div class="section-label mb12">Causal Graph — Top Interventional Edges<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-causal')" title="What is the Causal Graph?" aria-label="Help: Causal Graph">?</button></div>
 
   <!-- Tab switcher — hidden on desktop, shown on mobile -->
@@ -1621,6 +1641,7 @@ body.help-open {
 
 
   <!-- NETWORK HEALTH PROBES -->
+
   <div class="section-label mb12">Reward History (recent 150 steps)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-sparklines')" title="What are the three reward sparklines?" aria-label="Help: Reward History Sparklines">?</button></div>
   <div class="card mb28" style="padding:16px 8px 4px;">
     <div style="font-size:0.6rem;color:var(--cyan);letter-spacing:0.05em;margin-bottom:4px;padding:0 8px;">RAW REWARD</div>
@@ -1638,6 +1659,98 @@ body.help-open {
   </div>
 
   <!-- CONTINUITY ADVISOR -->
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">HOW IS SHE FEELING?</div><div class="tier-divider-line"></div></div>
+
+    <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
+    <div class="dominant-emotion" id="dominant-emotion">--</div>
+    <div class="emotion-grid" id="emotion-grid"></div>
+  </div>
+
+
+  <!-- [23] SOMATIC CONFIDENCE MODEL -->
+  <div class="scm-section mb12">
+    <div class="section-label" style="margin-bottom:12px;">
+      Somatic Confidence
+      <span id="scm-phase-badge" class="scm-phase bootstrap" style="margin-left:8px;">BOOTSTRAP</span>
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-somatic')" title="What is Somatic Confidence?" aria-label="Help: Somatic Confidence Model">?</button>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">
+      signal reliability per situation · earned trust · <span id="scm-situation-label" style="color:var(--text);">--</span>
+    </div>
+    <div id="scm-signal-list"></div>
+    <div class="scm-spidey-log" id="scm-spidey-log" style="display:none;">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;">
+        <span class="scm-spidey-pulse"></span> Spidey Sense Events
+      </div>
+      <div id="scm-spidey-entries"></div>
+    </div>
+  </div>
+
+
+  <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
+  <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
+
+  <!-- Row 1: circadian chart + Q-values -->
+  <div class="circ-cmc-row">
+
+    <!-- circadian chart -->
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:6px;">?</button></div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
+      </div>
+    </div>
+
+    <!-- CMC Q-values -->
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">G-values for current state · highlighted = highest Q</div>
+      <div class="cmc-grid" id="cmc-grid">
+        <div class="cmc-cell"><div class="cmc-mode">OBSERVE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">INVEST.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">OPTIMIZE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">DREAM</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+        <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
+      </div>
+      <div id="cmc-meta" style="font-size:0.65rem;color:var(--dim);margin-top:12px;line-height:1.8;letter-spacing:0.04em;"></div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: mode donut + emotion timeline — unified card -->
+  <div style="margin-bottom:28px;">
+    <div class="card card-pad">
+      <div class="donut-emotion-row">
+
+        <!-- mode distribution donut -->
+        <div>
+          <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">cognitive mode distribution · recent 200</div>
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div style="position:relative;width:100px;height:100px;flex-shrink:0;">
+              <canvas id="modeDonut" width="100" height="100" role="img" aria-label="Cognitive mode distribution donut chart"></canvas>
+            </div>
+            <div class="mode-legend" id="modeLegend"></div>
+          </div>
+        </div>
+
+        <!-- emotion timeline + state bars -->
+        <div>
+          <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">dominant emotion · last 200 recorded steps</div>
+          <div class="emo-timeline" id="emoTimeline"></div>
+          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+            <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">current emotion state</div>
+            <div id="emoStateBars"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- GOVERNOR -->
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">HOW IS SHE GROWING?</div><div class="tier-divider-line"></div></div>
+
   <div class="section-label mb12" style="margin-top:24px">Cognitive Metrics<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cognitive')" title="What are Cognitive Metrics?" aria-label="Help: Cognitive Metrics">?</button></div>
   <div class="stat-grid mb28">
     <div class="stat-card">
@@ -1711,12 +1824,16 @@ body.help-open {
   </div>
 
   <!-- MILESTONES -->
+
   <div class="section-label mb12" style="margin-top:4px">Milestones<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-milestones')" title="What are Milestones?" aria-label="Help: Milestones">?</button></div>
   <div id="milestones-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:28px;">
     <span style="color:var(--dim);font-size:0.72rem;">no milestones yet</span>
   </div>
 
   <!-- KILL INEFFECTIVE + RECENT LOG (2-col) -->
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">WHAT IS SHE LEARNING?</div><div class="tier-divider-line"></div></div>
+
   <div class="section-label mb12">Open Questions / Unresolved Anomalies<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-questions')" title="What are Open Questions?" aria-label="Help: Open Questions">?</button><span id="statements-formed-badge" style="margin-left:10px;font-size:0.62rem;color:var(--dim);font-family:var(--font-mono);font-weight:400;letter-spacing:0.04em;"></span></div>
   <div class="two-col mb28">
     <div class="card card-pad">
@@ -1744,153 +1861,7 @@ body.help-open {
   <!-- DEEP DIVE SECTION -->
   <!-- EMOTION -->
   <div class="emotion-section mb12">
-    <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
-    <div class="dominant-emotion" id="dominant-emotion">--</div>
-    <div class="emotion-grid" id="emotion-grid"></div>
-  </div>
 
-  <!-- [23] SOMATIC CONFIDENCE MODEL -->
-  <div class="scm-section mb12">
-    <div class="section-label" style="margin-bottom:12px;">
-      Somatic Confidence
-      <span id="scm-phase-badge" class="scm-phase bootstrap" style="margin-left:8px;">BOOTSTRAP</span>
-      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-somatic')" title="What is Somatic Confidence?" aria-label="Help: Somatic Confidence Model">?</button>
-    </div>
-    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">
-      signal reliability per situation · earned trust · <span id="scm-situation-label" style="color:var(--text);">--</span>
-    </div>
-    <div id="scm-signal-list"></div>
-    <div class="scm-spidey-log" id="scm-spidey-log" style="display:none;">
-      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;">
-        <span class="scm-spidey-pulse"></span> Spidey Sense Events
-      </div>
-      <div id="scm-spidey-entries"></div>
-    </div>
-  </div>
-
-  <!-- CIRCADIAN + CMC + EMOTION — restructured as 2 rows -->
-  <div class="section-label mb12">Circadian Pattern &amp; Meta-Cognitive Controller<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-cmc')" title="What is the Meta-Cognitive Controller?" aria-label="Help: Meta-Cognitive Controller">?</button></div>
-
-  <!-- Row 1: circadian chart + Q-values -->
-  <div class="circ-cmc-row">
-
-    <!-- circadian chart -->
-    <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:6px;">?</button></div>
-      <div class="chart-wrap" style="height:180px;">
-        <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
-      </div>
-    </div>
-
-    <!-- CMC Q-values -->
-    <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">G-values for current state · highlighted = highest Q</div>
-      <div class="cmc-grid" id="cmc-grid">
-        <div class="cmc-cell"><div class="cmc-mode">OBSERVE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
-        <div class="cmc-cell"><div class="cmc-mode">INVEST.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
-        <div class="cmc-cell"><div class="cmc-mode">OPTIMIZE</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
-        <div class="cmc-cell"><div class="cmc-mode">DREAM</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
-        <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
-      </div>
-      <div id="cmc-meta" style="font-size:0.65rem;color:var(--dim);margin-top:12px;line-height:1.8;letter-spacing:0.04em;"></div>
-    </div>
-
-  </div>
-
-  <!-- Row 2: mode donut + emotion timeline — unified card -->
-  <div style="margin-bottom:28px;">
-    <div class="card card-pad">
-      <div class="donut-emotion-row">
-
-        <!-- mode distribution donut -->
-        <div>
-          <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">cognitive mode distribution · recent 200</div>
-          <div style="display:flex;align-items:center;gap:20px;">
-            <div style="position:relative;width:100px;height:100px;flex-shrink:0;">
-              <canvas id="modeDonut" width="100" height="100" role="img" aria-label="Cognitive mode distribution donut chart"></canvas>
-            </div>
-            <div class="mode-legend" id="modeLegend"></div>
-          </div>
-        </div>
-
-        <!-- emotion timeline + state bars -->
-        <div>
-          <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">dominant emotion · last 200 recorded steps</div>
-          <div class="emo-timeline" id="emoTimeline"></div>
-          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
-            <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">current emotion state</div>
-            <div id="emoStateBars"></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- GOVERNOR -->
-  <div class="section-label mb12">Governor State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-governor')" title="What is Governor State?" aria-label="Help: Governor State">?</button></div>
-  <div class="gov-row mb28">
-    <div class="gov-cell">
-      <div class="gov-key">Current Governor</div>
-      <div class="gov-val" id="gov-current" style="color:var(--green)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">Saved Governor</div>
-      <div class="gov-val" id="gov-saved" style="color:var(--cyan)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">Override</div>
-      <div class="gov-val" id="gov-override" style="color:var(--amber)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">Idle Steps</div>
-      <div class="gov-val" id="gov-idle" style="color:var(--dim)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">Relax Dwell</div>
-      <div class="gov-val" id="gov-dwell" style="color:var(--dim)" title="Steps remaining before relax_governor is eligible (120-step dwell after perf escalation)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">Bootstrap Phase</div>
-      <div class="gov-val" id="bootstrap" style="color:var(--green)">--</div>
-    </div>
-    <div class="gov-cell">
-      <div class="gov-key">HW IRQ</div>
-      <div class="gov-val" id="irq-gave-up" style="color:var(--dim)" title="renice_ksoftirqd fired but could not suppress the IRQ storm — hardware-level interrupt flood, agent has stood down">--</div>
-    </div>
-  </div>
-
-  <!-- ADAPTIVE THRESHOLDS -->
-  <div class="section-label mb12">Adaptive Thresholds<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-thresholds')" title="What are Adaptive Thresholds?" aria-label="Help: Adaptive Thresholds">?</button></div>
-  <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
-    <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
-    <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.60 · floor 0.25</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Dilution Kill</div><div class="thresh-val" id="thresh-dilu-kill">--</div><div class="thresh-default">default 0.85 · floor 0.50</div></div>
-    <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 15000 KB/s · floor 3000</div></div>
-  </div>
-
-  <!-- WEB LEARNER -->
-  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-kill')" title="What is Kill Ineffective?" aria-label="Help: Kill Ineffective">?</button></div>
-  <div class="two-col mb28">
-    <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
-      <div class="ki-list" id="ki-list">
-        <div style="color:var(--dim);font-size:0.7rem">none flagged</div>
-      </div>
-    </div>
-    <div>
-      <div class="log-header">
-        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
-        <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
-      </div>
-      <div class="log-wrap" id="log-wrap">
-        <div class="log-line">awaiting data...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
   <div class="card card-pad mb28" id="weblearn-panel" style="display:none;">
     <div class="wl-counters-grid">
@@ -1929,6 +1900,7 @@ body.help-open {
   </div>
 
   <!-- HOBBYCORE — Voluntary External Engagement -->
+
   <div class="section-label mb12" style="margin-top:28px;">HobbyCore — Voluntary External Engagement<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hobby')" title="What is HobbyCore?" aria-label="Help: HobbyCore">?</button></div>
   <div class="card card-pad mb28" id="hobby-panel">
     <!-- Status row -->
@@ -1957,15 +1929,53 @@ body.help-open {
   </div>
 
   <!-- DRIVE HEALTH (S.M.A.R.T.) -->
-  <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
-  <div class="smart-panel mb28" id="smart-panel">
-    <div class="smart-status-row">
-      <div class="smart-dot" id="smart-dot"></div>
-      <div class="smart-verdict" id="smart-verdict">awaiting first check (~4h at idle)</div>
-      <div class="smart-device" id="smart-device"></div>
+
+  <div class="tier-divider"><div class="tier-divider-line"></div><div class="tier-divider-label">HOW DOES SHE MANAGE HERSELF?</div><div class="tier-divider-line"></div></div>
+
+  <div class="section-label mb12">Governor State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-governor')" title="What is Governor State?" aria-label="Help: Governor State">?</button></div>
+  <div class="gov-row mb28">
+    <div class="gov-cell">
+      <div class="gov-key">Current Governor</div>
+      <div class="gov-val" id="gov-current" style="color:var(--green)">--</div>
     </div>
-    <div class="smart-metrics" id="smart-metrics"></div>
+    <div class="gov-cell">
+      <div class="gov-key">Saved Governor</div>
+      <div class="gov-val" id="gov-saved" style="color:var(--cyan)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Override</div>
+      <div class="gov-val" id="gov-override" style="color:var(--amber)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Idle Steps</div>
+      <div class="gov-val" id="gov-idle" style="color:var(--dim)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Relax Dwell</div>
+      <div class="gov-val" id="gov-dwell" style="color:var(--dim)" title="Steps remaining before relax_governor is eligible (120-step dwell after perf escalation)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">Bootstrap Phase</div>
+      <div class="gov-val" id="bootstrap" style="color:var(--green)">--</div>
+    </div>
+    <div class="gov-cell">
+      <div class="gov-key">HW IRQ</div>
+      <div class="gov-val" id="irq-gave-up" style="color:var(--dim)" title="renice_ksoftirqd fired but could not suppress the IRQ storm — hardware-level interrupt flood, agent has stood down">--</div>
+    </div>
   </div>
+
+  <!-- ADAPTIVE THRESHOLDS -->
+
+  <div class="section-label mb12">Adaptive Thresholds<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-thresholds')" title="What are Adaptive Thresholds?" aria-label="Help: Adaptive Thresholds">?</button></div>
+  <div class="thresh-grid mb28" id="thresh-grid" style="overflow:hidden;">
+    <div class="thresh-cell"><div class="thresh-key">CPU Warn</div><div class="thresh-val" id="thresh-cpu">--</div><div class="thresh-default">default 70%</div></div>
+    <div class="thresh-cell"><div class="thresh-key">MEM Warn</div><div class="thresh-val" id="thresh-mem">--</div><div class="thresh-default">default 80%</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Log</div><div class="thresh-val" id="thresh-dilu-log">--</div><div class="thresh-default">default 0.60 · floor 0.25</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Dilution Kill</div><div class="thresh-val" id="thresh-dilu-kill">--</div><div class="thresh-default">default 0.85 · floor 0.50</div></div>
+    <div class="thresh-cell"><div class="thresh-key">Net Warn</div><div class="thresh-val" id="thresh-net">--</div><div class="thresh-default">default 15000 KB/s · floor 3000</div></div>
+  </div>
+
+  <!-- WEB LEARNER -->
 
   <div class="section-label mb12" style="margin-top:28px;">PriorityShift — Focus-Aware Priority Manager<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-priorityshift')" title="What is PriorityShift?" aria-label="Help: PriorityShift">?</button></div>
   <div class="card card-pad mb28" id="priorityshift-panel">
@@ -4826,3 +4836,25 @@ function _cockpitPostRender(d) {
 
 </body>
 </html>
+
+  <div class="section-label mb12">Kill Ineffective &amp; Agent Log<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-kill')" title="What is Kill Ineffective?" aria-label="Help: Kill Ineffective">?</button></div>
+  <div class="two-col mb28">
+    <div class="card card-pad">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">processes flagged as repeat kill targets with no reward improvement</div>
+      <div class="ki-list" id="ki-list">
+        <div style="color:var(--dim);font-size:0.7rem">none flagged</div>
+      </div>
+    </div>
+    <div>
+      <div class="log-header">
+        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
+        <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
+      </div>
+      <div class="log-wrap" id="log-wrap">
+        <div class="log-line">awaiting data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPEN QUESTIONS + MOSAIC (2-col) -->
+
