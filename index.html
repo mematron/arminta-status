@@ -741,8 +741,14 @@ button:focus-visible, a:focus-visible {
 
 /* ── LOADING ── */
 #loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 80px 20px;
   color: var(--dim);
   font-size: 0.88rem;
   letter-spacing: 0.2em;
@@ -1637,8 +1643,14 @@ button:focus-visible, a:focus-visible {
 
 /* ── LOADING ── */
 #loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 80px 20px;
   color: var(--dim);
   font-size: 0.85rem;
   letter-spacing: 0.2em;
@@ -2918,7 +2930,7 @@ body.help-open {
 </div><!-- /dashboard -->
 </div><!-- /wrapper -->
 
-<div class="fixed-footer">
+<div class="fixed-footer" id="site-footer" style="display:none">
   <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
   <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
 </div>
@@ -2994,6 +3006,7 @@ let lastStepCount = null;
 function render(d) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('site-footer').style.display = 'flex';
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
   const mins = staleness(d.updated_ts);
@@ -4356,6 +4369,7 @@ function render(d) {
 /* ── error ── */
 function showError(msg) {
   document.getElementById('loading').style.display = 'none';
+  document.getElementById('site-footer').style.display = 'flex';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
   const errMsgs = {
