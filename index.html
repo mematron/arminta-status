@@ -753,7 +753,7 @@ button:focus-visible, a:focus-visible {
   font-size: 0.88rem;
   letter-spacing: 0.2em;
   animation: blink 1.2s step-end infinite;
-  transition: opacity 0.35s ease;
+
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -1656,7 +1656,7 @@ button:focus-visible, a:focus-visible {
   font-size: 0.85rem;
   letter-spacing: 0.2em;
   animation: blink 1.2s step-end infinite;
-  transition: opacity 0.35s ease;
+
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -3011,8 +3011,15 @@ function render(d) {
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('site-footer').style.display = 'flex';
     _ld.style.animation = 'none';
-    _ld.style.opacity = '0';
-    setTimeout(() => { _ld.style.display = 'none'; }, 360);
+    _ld.style.opacity = '1';          // lock at full opacity first
+    void _ld.offsetWidth;             // force reflow — flush animation removal
+    _ld.style.transition = 'opacity 0.3s ease';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {   // two rAFs: let transition register before changing value
+        _ld.style.opacity = '0';
+        setTimeout(() => { _ld.style.display = 'none'; }, 320);
+      });
+    });
   }
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
@@ -4376,7 +4383,16 @@ function render(d) {
 /* ── error ── */
 function showError(msg) {
   const _ld2 = document.getElementById('loading');
-  if (_ld2) { _ld2.style.animation = 'none'; _ld2.style.opacity = '0'; setTimeout(() => { _ld2.style.display = 'none'; }, 360); }
+  if (_ld2 && _ld2.style.display !== 'none') {
+    _ld2.style.animation = 'none';
+    _ld2.style.opacity = '1';
+    void _ld2.offsetWidth;
+    _ld2.style.transition = 'opacity 0.3s ease';
+    requestAnimationFrame(() => { requestAnimationFrame(() => {
+      _ld2.style.opacity = '0';
+      setTimeout(() => { _ld2.style.display = 'none'; }, 320);
+    }); });
+  }
   document.getElementById('site-footer').style.display = 'flex';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
