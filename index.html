@@ -717,11 +717,16 @@ button:focus-visible, a:focus-visible {
 
 /* ── LOADING ── */
 #loading {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--dim);
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.88rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
+  color: var(--dim);
   animation: blink 1.2s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -1613,11 +1618,16 @@ button:focus-visible, a:focus-visible {
 
 /* ── LOADING ── */
 #loading {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--dim);
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.85rem;
   letter-spacing: 0.2em;
+  color: var(--dim);
   animation: blink 1.2s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -2966,7 +2976,10 @@ let lastStepCount = null;
 
 /* ── render ── */
 function render(d) {
+  // Only reveal the dashboard once we have real data
+  if (!d || !d.step_count) return;
   document.getElementById('loading').style.display = 'none';
+  document.getElementById('error-banner').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
@@ -4341,8 +4354,8 @@ function showError(msg) {
   };
   const code = (msg.match(/\d{3}/) || [''])[0];
   b.textContent = errMsgs[code] || ('UPLINK ERROR: ' + msg);
-  if (document.getElementById('dashboard').style.display === 'block') return;
-  document.getElementById('dashboard').style.display = 'block';
+  // [fix] Do NOT show the empty dashboard shell on error -- only show it once
+  // real data has been rendered at least once via render().
 }
 
 /* ── fetch + loop ── */
