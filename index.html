@@ -691,6 +691,23 @@ button:focus-visible, a:focus-visible {
 .log-line.lex   { color: #b0bec5; }
 .log-line.res   { color: var(--cyan); }
 .log-line.hobby { color: var(--teal); }        /* [HOBBY] lines */
+
+/* Hobby panel scrollable areas */
+#hobby-interests, #hobby-obs-edges {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+#hobby-interests::-webkit-scrollbar,
+#hobby-obs-edges::-webkit-scrollbar { width: 4px; }
+#hobby-interests::-webkit-scrollbar-track,
+#hobby-obs-edges::-webkit-scrollbar-track { background: transparent; }
+#hobby-interests::-webkit-scrollbar-thumb,
+#hobby-obs-edges::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 2px;
+}
+#hobby-interests::-webkit-scrollbar-thumb:hover,
+#hobby-obs-edges::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .log-line.causal-stmt { color: #80cbc4; }      /* [LEXICAL][CAUSAL] lines */
 .log-line.obs-lex { color: #66b2b2; }         /* [LEXICAL][OBS] observable-edge language */
 .log-line.dream { color: var(--purple); opacity: 0.85; }
@@ -2783,12 +2800,12 @@ body.help-open {
     </div>
     <!-- Interest intensity bars -->
     <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:8px;">interest weights · decay each dream cycle · rise on causal signal</div>
-    <div id="hobby-interests" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+    <div id="hobby-interests" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:180px;overflow-y:auto;padding-right:4px;">
       <div style="color:var(--dim);font-size:0.7rem;">probing capabilities...</div>
     </div>
     <!-- Observable edges -->
     <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:6px;">observable edges · external signals correlated with internal metrics</div>
-    <div id="hobby-obs-edges" style="font-size:0.68rem;color:var(--dim);font-family:var(--font-mono);line-height:1.8;">none yet</div>
+    <div id="hobby-obs-edges" style="font-size:0.68rem;color:var(--dim);font-family:var(--font-mono);line-height:1.8;max-height:160px;overflow-y:auto;padding-right:4px;">none yet</div>
   </div>
 
   <!-- DRIVE HEALTH (S.M.A.R.T.) -->
