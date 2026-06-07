@@ -73,7 +73,7 @@ body::after {
 .wrapper {
   max-width: 1140px;
   margin: 0 auto;
-  padding: 40px 24px 80px;
+  padding: 40px 24px 120px;
   position: relative;
   z-index: 1;
 }
@@ -715,21 +715,29 @@ button:focus-visible, a:focus-visible {
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
 
-/* ── FOOTER ── */
-footer {
-  margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  font-size: 0.67rem;
-  color: var(--dim);
-  letter-spacing: 0.1em;
+/* ── FIXED FOOTER ── */
+.fixed-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 8px 24px;
+  background: rgba(6,10,14,0.92);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 0.67rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
 }
-footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-footer a:hover { color: var(--text); }
+.fixed-footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.fixed-footer a:hover { color: var(--green); }
 
 /* ── LOADING ── */
 #loading {
@@ -969,7 +977,7 @@ body::after {
 .wrapper {
   max-width: 1140px;
   margin: 0 auto;
-  padding: 40px 24px 80px;
+  padding: 40px 24px 120px;
   position: relative;
   z-index: 1;
 }
@@ -1626,22 +1634,6 @@ button:focus-visible, a:focus-visible {
 
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
-
-/* ── FOOTER ── */
-footer {
-  margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  font-size: 0.65rem;
-  color: var(--dim);
-  letter-spacing: 0.1em;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-footer a:hover { color: var(--text); }
 
 /* ── LOADING ── */
 #loading {
@@ -2922,13 +2914,14 @@ body.help-open {
 
   </div><!-- /deep-body -->
 
-  <footer>
-    <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
-    <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
-  </footer>
 
 </div><!-- /dashboard -->
 </div><!-- /wrapper -->
+
+<div class="fixed-footer">
+  <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
+  <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
