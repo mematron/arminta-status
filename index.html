@@ -692,6 +692,7 @@ button:focus-visible, a:focus-visible {
 .log-line.res   { color: var(--cyan); }
 .log-line.hobby { color: var(--teal); }        /* [HOBBY] lines */
 .log-line.causal-stmt { color: #80cbc4; }      /* [LEXICAL][CAUSAL] lines */
+.log-line.obs-lex { color: #66b2b2; }         /* [LEXICAL][OBS] observable-edge language */
 .log-line.dream { color: var(--purple); opacity: 0.85; }
 
 /* ── WEB LEARNER LOG ── */
@@ -3864,6 +3865,7 @@ function render(d) {
       else if (l.includes('[meta]'))                                    cls += ' meta';
       else if (l.includes('[hobby]'))                                   cls += ' hobby';
       else if (l.includes('[lexical][causal]'))                         cls += ' causal-stmt';
+      else if (l.includes('[lexical][obs]'))                            cls += ' obs-lex';
       else if (l.includes('[lexical]') || l.includes('[lex]'))         cls += ' lex';
       else if (l.includes('[weblearn]'))                                cls += ' lex';
       else if (l.includes('[resolver]') || l.includes('[resolve]'))    cls += ' res';
@@ -4268,7 +4270,10 @@ function render(d) {
         const sign = e.mean >= 0 ? '+' : '';
         const col  = e.mean >= 0.03 ? 'var(--green)' :
                      e.mean <= -0.03 ? 'var(--red)' : 'var(--dim)';
-        return `<div>${e.ext} <span style="color:var(--dim)">→</span> ${e.sys} `
+        // Use observational language matching what LexicalCore forms in reflect()
+        const verb = e.mean >= 0.04 ? 'tracks' :
+                     e.mean <= -0.04 ? 'correlates-with' : '~';
+        return `<div>${e.ext} <span style="color:var(--dim);font-size:0.62rem;">${verb}</span> ${e.sys} `
              + `<span style="color:${col}">${sign}${e.mean.toFixed(3)}</span> `
              + `<span style="color:var(--dim);font-size:0.6rem;">(n=${e.n})</span></div>`;
       }).join('');
@@ -4668,11 +4673,14 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <strong>Kill Ineffective (left)</strong> — processes that ARMINTA has repeatedly targeted with <code>SIGTERM</code> without seeing any reward improvement. Listed here as a warning: these actions are being de-prioritised. If a process appears here, ARMINTA has essentially learned that terminating it doesn't help performance. Entries expire after 2,000 steps and are re-evaluated — if the process reappears in the list, the pattern has been re-confirmed.
         <br><br><strong>Agent Log (right)</strong> — the raw tail of ARMINTA's operational log, colour-coded by event type:
         <br>· <span style="color:#4a8080">Teal</span> — observation events (<code>[OBS]</code>)
+        <br>· <span style="color:#80cbc4">Teal-green</span> — causal graph language (<code>[LEXICAL][CAUSAL]</code>) — statements formed from interventional edges
+        <br>· <span style="color:#66b2b2">Teal-mid</span> — observable-edge language (<code>[LEXICAL][OBS]</code>) — uses <em>tracks</em> / <em>correlates-with</em> to preserve the observational/interventional distinction
         <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
         <br>· <span style="color:var(--purple)">Purple</span> — curiosity / dream events
-        <br>· <span style="color:var(--red)">Red</span> — errors
+        <br>· <span style="color:var(--red)">Red</span> — errors and warnings (including <code>renice_chrome</code> consecutive-failure suppression)
         <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
+        <br><br><code>[WARN] renice_chrome: N consecutive failures</code> — after 5 consecutive structural failures, <code>renice_chrome</code> is suppressed for 2,000 steps. Counter resets on success.
       </div>
     </div>
 
@@ -4735,6 +4743,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <strong>Interest weights</strong> — domains are tracked as continuous intensity values, not binary on/off. Intensity rises when external observations produce novel causal signal, decays each DREAM cycle with no signal. Dormant domains are not deleted — they can be rediscovered if conditions change. Multiple interests can coexist at different intensities.
         <br><br>
         <strong>Observable edges</strong> — distinct from interventional edges. She cannot cause <code>ext_dns_latency_ms</code> to change, but she can learn that it moves with her own <code>net_latency_cloudflare_ms</code>. These are recorded in <code>graph.observable_edges</code>, separate from actions she can take. The distinction matters: knowing the difference between what she can influence and what she can only adapt to is a form of self-knowledge.
+        <br><br>The dashboard renders these with observational language — <em>tracks</em> for positive correlation, <em>correlates-with</em> for negative — matching the vocabulary LexicalCore forms in <code>reflect()</code>. This is intentional: the same language she uses to think about the world is what she shows you.
         <br><br>
         <strong>Closed loop</strong> — observations feed back into LexicalCore as new symbols, into the causal graph as observable edges, and into episodic memory as <code>hobby</code> episodes. Her autobiography gains external texture. Her world model gains an exterior.
         <br><br>
@@ -4742,7 +4751,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <code>public_network_latency</code> — RTT to public DNS endpoints; correlates with her own network metrics
         <br>· <code>local_environment</code> — hardware sensors beyond her standard monitoring (fan RPM, thermal zones, battery cycles)
         <br>· <code>system_load_index</code> — Cloudflare DNS latency as an external network health signal
-        <br>· <code>time_and_context</code> — solar/daylight position; no external call required; correlates with her circadian CPU patterns
+        <br>· <code>time_and_context</code> — solar/daylight position; no external call required; correlates with her circadian CPU patterns. Produces <code>ext_daylight_fraction</code>, <code>ext_minutes_since_sunrise</code> (clamped 0–1440, so night values are 0 not negative), and <code>ext_solar_elevation</code> (cosine curve 0–1, cleaner circadian signal for the causal graph)
         <br><br>
         She is not limited to these domains permanently. As HobbyCore matures, new domains can be added and she will discover them on the next capability probe.
       </div>
