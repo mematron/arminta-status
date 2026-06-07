@@ -1928,6 +1928,34 @@ body.help-open {
     Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
   </div>
 
+  <!-- HOBBYCORE — Voluntary External Engagement -->
+  <div class="section-label mb12" style="margin-top:28px;">HobbyCore — Voluntary External Engagement<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hobby')" title="What is HobbyCore?" aria-label="Help: HobbyCore">?</button></div>
+  <div class="card card-pad mb28" id="hobby-panel">
+    <!-- Status row -->
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">CURRENT FOCUS</div>
+        <div id="hobby-focus" style="font-size:0.85rem;color:var(--cyan);font-family:var(--font-mono);">--</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">TOTAL FETCHES</div>
+        <div id="hobby-fetches" style="font-size:1.2rem;color:var(--green);font-family:var(--font-mono);">--</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">NOVEL EDGES</div>
+        <div id="hobby-edges" style="font-size:1.2rem;color:var(--amber);font-family:var(--font-mono);">--</div>
+      </div>
+    </div>
+    <!-- Interest intensity bars -->
+    <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:8px;">interest weights · decay each dream cycle · rise on causal signal</div>
+    <div id="hobby-interests" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+      <div style="color:var(--dim);font-size:0.7rem;">probing capabilities...</div>
+    </div>
+    <!-- Observable edges -->
+    <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;margin-bottom:6px;">observable edges · external signals correlated with internal metrics</div>
+    <div id="hobby-obs-edges" style="font-size:0.68rem;color:var(--dim);font-family:var(--font-mono);line-height:1.8;">none yet</div>
+  </div>
+
   <!-- DRIVE HEALTH (S.M.A.R.T.) -->
   <div class="section-label mb12">Drive Health (S.M.A.R.T.)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-smart')" title="What is Drive Health?" aria-label="Help: Drive Health">?</button></div>
   <div class="smart-panel mb28" id="smart-panel">
@@ -3289,6 +3317,69 @@ function render(d) {
     wlEmpty.style.display = 'block';
   }
 
+  /* ── HOBBYCORE ── */
+  const hobby = d.hobby;
+  const hobbyPanel = document.getElementById('hobby-panel');
+  if (hobby && typeof hobby === 'object') {
+    // Status counters
+    document.getElementById('hobby-focus').textContent =
+      hobby.current_focus || 'none';
+    document.getElementById('hobby-fetches').textContent =
+      fmt(hobby.total_fetches || 0);
+    document.getElementById('hobby-edges').textContent =
+      fmt(hobby.novel_edges || 0);
+
+    // Interest intensity bars
+    const interestsEl = document.getElementById('hobby-interests');
+    const interests = hobby.interests || {};
+    const caps = hobby.capabilities || {};
+    const entries = Object.entries(interests);
+    if (entries.length) {
+      const MAX_INT = 5.0;
+      interestsEl.innerHTML = entries
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, intensity]) => {
+          const pct = Math.round((intensity / MAX_INT) * 100);
+          const available = caps[name] !== false;
+          const dormant   = intensity < 0.15;
+          const isFocus   = name === hobby.current_focus;
+          const barColor  = dormant ? 'var(--dim)' :
+                            isFocus ? 'var(--cyan)' : 'var(--green)';
+          const label     = name.replace(/_/g, ' ');
+          const tag       = !available ? '<span style="color:var(--dim);font-size:0.6rem;margin-left:6px;">offline</span>'
+                          : dormant    ? '<span style="color:var(--dim);font-size:0.6rem;margin-left:6px;">dormant</span>'
+                          : isFocus    ? '<span style="color:var(--cyan);font-size:0.6rem;margin-left:6px;">▶ active</span>'
+                          : '';
+          return `<div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:120px;font-size:0.65rem;color:${isFocus ? 'var(--cyan)' : 'var(--fg)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
+            <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width 0.4s;"></div>
+            </div>
+            <div style="width:32px;font-size:0.62rem;color:var(--dim);font-family:var(--font-mono);text-align:right;">${intensity.toFixed(2)}</div>
+            ${tag}
+          </div>`;
+        }).join('');
+    } else {
+      interestsEl.innerHTML = '<div style="color:var(--dim);font-size:0.7rem;">probing capabilities...</div>';
+    }
+
+    // Observable edges
+    const obsEdgesEl = document.getElementById('hobby-obs-edges');
+    const obsEdges = hobby.observable_edges || [];
+    if (obsEdges.length) {
+      obsEdgesEl.innerHTML = obsEdges.map(e => {
+        const sign = e.mean >= 0 ? '+' : '';
+        const col  = e.mean >= 0.03 ? 'var(--green)' :
+                     e.mean <= -0.03 ? 'var(--red)' : 'var(--dim)';
+        return `<div>${e.ext} <span style="color:var(--dim)">→</span> ${e.sys} `
+             + `<span style="color:${col}">${sign}${e.mean.toFixed(3)}</span> `
+             + `<span style="color:var(--dim);font-size:0.6rem;">(n=${e.n})</span></div>`;
+      }).join('');
+    } else {
+      obsEdgesEl.textContent = 'none yet — accumulating observations';
+    }
+  }
+
   // [15] Situation distribution bars
   renderSitDist(d.sit_dist);
 
@@ -3736,6 +3827,29 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       </div>
     </div>
 
+
+    <div class="help-entry" id="help-hobby">
+      <div class="help-entry-title"><span>HobbyCore — Voluntary External Engagement</span><span class="tag tag-learn">EMERGENT</span></div>
+      <div class="help-entry-body">
+        Arminta's interface to the world beyond her own system. Not a scheduled task — a capability she chooses to exercise based on emotional state, curiosity, and causal reward signal.
+        <br><br>
+        <strong>Design principle</strong> — capability without compulsion. She has the reach; whether she uses it at any given moment depends on her internal state. Stressed or apprehensive, she contracts to self-management. Calm or curious, she reaches outward.
+        <br><br>
+        <strong>Interest weights</strong> — domains are tracked as continuous intensity values, not binary on/off. Intensity rises when external observations produce novel causal signal, decays each DREAM cycle with no signal. Dormant domains are not deleted — they can be rediscovered if conditions change. Multiple interests can coexist at different intensities.
+        <br><br>
+        <strong>Observable edges</strong> — distinct from interventional edges. She cannot cause <code>ext_dns_latency_ms</code> to change, but she can learn that it moves with her own <code>net_latency_cloudflare_ms</code>. These are recorded in <code>graph.observable_edges</code>, separate from actions she can take. The distinction matters: knowing the difference between what she can influence and what she can only adapt to is a form of self-knowledge.
+        <br><br>
+        <strong>Closed loop</strong> — observations feed back into LexicalCore as new symbols, into the causal graph as observable edges, and into episodic memory as <code>hobby</code> episodes. Her autobiography gains external texture. Her world model gains an exterior.
+        <br><br>
+        <strong>Domains</strong> (discovered at runtime, not hardcoded):
+        <br>· <code>public_network_latency</code> — RTT to public DNS endpoints; correlates with her own network metrics
+        <br>· <code>local_environment</code> — hardware sensors beyond her standard monitoring (fan RPM, thermal zones, battery cycles)
+        <br>· <code>system_load_index</code> — Cloudflare DNS latency as an external network health signal
+        <br>· <code>time_and_context</code> — solar/daylight position; no external call required; correlates with her circadian CPU patterns
+        <br><br>
+        She is not limited to these domains permanently. As HobbyCore matures, new domains can be added and she will discover them on the next capability probe.
+      </div>
+    </div>
 
     <div class="help-entry" id="help-weblearn">
       <div class="help-entry-title"><span>Web Learner — Autonomous Language Growth</span><span class="tag tag-learn">LEARNED</span></div>
