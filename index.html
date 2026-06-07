@@ -73,7 +73,7 @@ body::after {
 .wrapper {
   max-width: 1140px;
   margin: 0 auto;
-  padding: 40px 24px 120px;
+  padding: 40px 24px 80px;
   position: relative;
   z-index: 1;
 }
@@ -715,45 +715,14 @@ button:focus-visible, a:focus-visible {
 /* ── REWARD SPARKLINE ── */
 .spark-wrap { position: relative; width: 100%; }
 
-/* ── FIXED FOOTER ── */
-.fixed-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 500;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 24px;
-  background: rgba(6,10,14,0.92);
-  border-top: 1px solid var(--border);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  font-size: 0.67rem;
-  color: var(--dim);
-  letter-spacing: 0.08em;
-}
-.fixed-footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-.fixed-footer a:hover { color: var(--green); }
-
 /* ── LOADING ── */
 #loading {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
+  padding: 80px 20px;
   color: var(--dim);
   font-size: 0.88rem;
   letter-spacing: 0.2em;
   animation: blink 1.2s step-end infinite;
-
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -984,7 +953,7 @@ body::after {
 .wrapper {
   max-width: 1140px;
   margin: 0 auto;
-  padding: 40px 24px 120px;
+  padding: 40px 24px 80px;
   position: relative;
   z-index: 1;
 }
@@ -1644,19 +1613,12 @@ button:focus-visible, a:focus-visible {
 
 /* ── LOADING ── */
 #loading {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
+  padding: 80px 20px;
   color: var(--dim);
   font-size: 0.85rem;
   letter-spacing: 0.2em;
   animation: blink 1.2s step-end infinite;
-
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -2275,6 +2237,10 @@ body.help-open {
         <div class="last-updated" id="last-updated">--</div>
         <div class="last-seen" id="last-seen"></div>
         <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
+        <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.06em;margin-top:4px;text-align:right;">
+          by <a href="https://github.com/mematron" target="_blank" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">mematron</a>
+          · <a href="https://github.com/mematron/Arminta" target="_blank" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">github</a>
+        </div>
       </div>
     </div>
   </header>
@@ -2928,14 +2894,8 @@ body.help-open {
 
   </div><!-- /deep-body -->
 
-
 </div><!-- /dashboard -->
 </div><!-- /wrapper -->
-
-<div class="fixed-footer" id="site-footer" style="display:none">
-  <span>ARMINTA by <a href="https://github.com/mematron" target="_blank">mematron</a> — data pushed directly from the running agent</span>
-  <span><a href="https://github.com/mematron/Arminta" target="_blank">github.com/mematron/Arminta</a></span>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -3006,21 +2966,8 @@ let lastStepCount = null;
 
 /* ── render ── */
 function render(d) {
-  const _ld = document.getElementById('loading');
-  if (_ld && _ld.style.display !== 'none') {
-    document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('site-footer').style.display = 'flex';
-    _ld.style.animation = 'none';
-    _ld.style.opacity = '1';          // lock at full opacity first
-    void _ld.offsetWidth;             // force reflow — flush animation removal
-    _ld.style.transition = 'opacity 0.3s ease';
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {   // two rAFs: let transition register before changing value
-        _ld.style.opacity = '0';
-        setTimeout(() => { _ld.style.display = 'none'; }, 320);
-      });
-    });
-  }
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
   const mins = staleness(d.updated_ts);
@@ -4382,18 +4329,7 @@ function render(d) {
 
 /* ── error ── */
 function showError(msg) {
-  const _ld2 = document.getElementById('loading');
-  if (_ld2 && _ld2.style.display !== 'none') {
-    _ld2.style.animation = 'none';
-    _ld2.style.opacity = '1';
-    void _ld2.offsetWidth;
-    _ld2.style.transition = 'opacity 0.3s ease';
-    requestAnimationFrame(() => { requestAnimationFrame(() => {
-      _ld2.style.opacity = '0';
-      setTimeout(() => { _ld2.style.display = 'none'; }, 320);
-    }); });
-  }
-  document.getElementById('site-footer').style.display = 'flex';
+  document.getElementById('loading').style.display = 'none';
   const b = document.getElementById('error-banner');
   b.style.display = 'block';
   const errMsgs = {
