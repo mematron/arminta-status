@@ -3688,7 +3688,7 @@ function render(d) {
     const coreMax = lm.cpu_core_max;
     const wifiTx  = lm.wifi_tx_mbps;
     const diskLat = lm.disk_io_lat_ms;
-    const earlyoomCt = lm.earlyoom_ct !== undefined ? lm.earlyoom_ct : 0;
+    const earlyoomCt = (d.earlyoom_ct !== undefined ? d.earlyoom_ct : (lm.earlyoom_ct !== undefined ? lm.earlyoom_ct : 0));
 
     const elCore = document.getElementById('sig-cpu-core-max');
     const elWifi = document.getElementById('sig-wifi-tx');
@@ -3705,10 +3705,10 @@ function render(d) {
     }
     if (elDisk) {
       elDisk.textContent = diskLat !== undefined ? diskLat.toFixed(1) : '--';
-      elDisk.style.color = diskLat >= 25 ? 'var(--red)' : diskLat >= 10 ? 'var(--amber)' : 'var(--green)';
+      elDisk.style.color = diskLat === undefined ? 'var(--dim)' : diskLat >= 25 ? 'var(--red)' : diskLat >= 10 ? 'var(--amber)' : 'var(--green)';
     }
     if (elEarlyoom) {
-      const eoct = lm.earlyoom_ct;
+      const eoct = d.earlyoom_ct !== undefined ? d.earlyoom_ct : lm.earlyoom_ct;
       if (eoct === undefined) {
         elEarlyoom.textContent = '--';
         elEarlyoom.style.color = 'var(--dim)';
