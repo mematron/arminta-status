@@ -2187,8 +2187,16 @@ body.help-open {
     margin: 20px 0 12px;
   }
   .deep-section-toggle {
-    padding: 12px;
-    font-size: 0.58rem;
+    padding: 11px 12px;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+  .deep-section-toggle .toggle-hint {
+    display: none;
+  }
+  /* hobby sort toggles: stack label + buttons on narrow screens */
+  .hobby-sort-toggle {
+    flex-shrink: 0;
   }
   /* Header step badge visible on mobile too */
   /* Stat grid single column */
@@ -2301,6 +2309,26 @@ body.help-open {
   /* cockpit-advisory: full width on small screens */
   .cockpit-advisory {
     min-width: 100%;
+  }
+  /* hobby sort: wrap label + buttons onto separate lines */
+  #hobby-interests + div,
+  #hobby-obs-edges + div,
+  div:has(> #hobby-interests-sort),
+  div:has(> #hobby-edges-sort) {
+    flex-wrap: wrap;
+  }
+  .hobby-sort-toggle {
+    margin-top: 4px;
+  }
+  /* deep dive toggle: single line, no overflow */
+  .deep-section-toggle {
+    font-size: 0.58rem;
+    padding: 10px 10px;
+    letter-spacing: 0.08em;
+  }
+  .toggle-pip {
+    width: 5px;
+    height: 5px;
   }
 }
 
