@@ -2677,7 +2677,7 @@ body.help-open {
 
     <!-- circadian chart -->
     <div class="card card-pad">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU % by hour of day (learned over lifetime)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:6px;">?</button></div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:0.05em;">average CPU &amp; MEM % by hour of day (learned over lifetime)<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-circ-mem')" title="What is Circadian Memory Look-Ahead?" aria-label="Help: Circadian Memory Look-Ahead" style="margin-left:6px;">?</button></div>
       <div class="chart-wrap" style="height:180px;">
         <canvas id="circChart" role="img" aria-label="Circadian CPU usage by hour"></canvas>
       </div>
@@ -3788,34 +3788,66 @@ function render(d) {
   if (circChart) { circChart.destroy(); circChart = null; }
   if (circ.length) {
     const hourBuckets = {};
+    const hourBucketsMem = {};
     circ.forEach(pt => {
       const h = pt.hour;
       if (!hourBuckets[h]) hourBuckets[h] = [];
       hourBuckets[h].push(pt.cpu);
+      // mem column added in v6-02 for circadian memory look-ahead
+      if (pt.mem !== undefined) {
+        if (!hourBucketsMem[h]) hourBucketsMem[h] = [];
+        hourBucketsMem[h].push(pt.mem);
+      }
     });
     const hours = Array.from({length:24}, (_,i) => i);
     const avgCpu = hours.map(h => {
       const b = hourBuckets[h];
       return b ? +(b.reduce((a,x)=>a+x,0)/b.length).toFixed(2) : null;
     });
+    const avgMem = hours.map(h => {
+      const b = hourBucketsMem[h];
+      return b && b.length ? +(b.reduce((a,x)=>a+x,0)/b.length).toFixed(2) : null;
+    });
+    const hasMemData = avgMem.some(v => v !== null);
+    const datasets = [{
+      label: 'CPU%',
+      data: avgCpu,
+      borderColor: '#00e5ff',
+      backgroundColor: 'rgba(0,229,255,0.06)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 2,
+      pointBackgroundColor: '#00e5ff',
+      spanGaps: true
+    }];
+    if (hasMemData) {
+      datasets.push({
+        label: 'MEM%',
+        data: avgMem,
+        borderColor: '#b39ddb',
+        backgroundColor: 'rgba(179,157,219,0.04)',
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: '#b39ddb',
+        borderDash: [4, 3],
+        spanGaps: true
+      });
+    }
     circChart = new Chart(document.getElementById('circChart'), {
       type: 'line',
       data: {
         labels: hours.map(h => h + 'h'),
-        datasets: [{
-          data: avgCpu,
-          borderColor: '#00e5ff',
-          backgroundColor: 'rgba(0,229,255,0.06)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 2,
-          pointBackgroundColor: '#00e5ff',
-          spanGaps: true
-        }]
+        datasets
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
+        plugins: {
+          legend: {
+            display: hasMemData,
+            labels: { color: 'rgba(90,106,122,0.9)', font: { size: 10 }, boxWidth: 14, padding: 8 }
+          }
+        },
         scales: {
           x: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},maxRotation:0}, grid:{color:'rgba(26,35,50,0.6)'} },
           y: { ticks:{color:'rgba(90,106,122,0.8)',font:{size:10},callback:v=>v+'%'}, grid:{color:'rgba(26,35,50,0.6)'} }
@@ -4107,12 +4139,13 @@ function render(d) {
 
   // Triggering metric chips
   const _ctxKeys = ['cpu','mem','temp_c','psi_cpu_some','net_recv_kbps','sess_proc_cpu_dilution','nvme_temp_c','load',
-                    'cpu_core_max','wifi_tx_mbps','disk_io_lat_ms'];
+                    'cpu_core_max','wifi_tx_mbps','disk_io_lat_ms','earlyoom_ct'];
   const _ctxLabels = {cpu:'CPU%',mem:'MEM%',temp_c:'Temp°C',psi_cpu_some:'PSI-cpu',
     net_recv_kbps:'Net-in',sess_proc_cpu_dilution:'Dilution',nvme_temp_c:'NVMe°C',load:'Load',
-    cpu_core_max:'CoreMax%',wifi_tx_mbps:'WiFi-PHY',disk_io_lat_ms:'DiskLat'};
+    cpu_core_max:'CoreMax%',wifi_tx_mbps:'WiFi-PHY',disk_io_lat_ms:'DiskLat',
+    earlyoom_ct:'EarlyOOM'};
   const _ctxChips = _ctxKeys
-    .filter(k => _lastCtx[k] !== undefined && _lastCtx[k] !== null)
+    .filter(k => _lastCtx[k] !== undefined && _lastCtx[k] !== null && !(k === 'earlyoom_ct' && _lastCtx[k] === 0))
     .map(k => `<span class="why-ctx-chip">${_ctxLabels[k]||k}: ${Number(_lastCtx[k]).toFixed(1)}</span>`);
   if (_ctxChips.length > 0) {
     whyCtx.innerHTML = _ctxChips.join('');
