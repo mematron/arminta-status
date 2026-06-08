@@ -2060,31 +2060,79 @@ body.help-open {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: none;
-  border: none;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 16px;
-  color: var(--dim);
+  background: rgba(0,229,255,0.04);
+  border: 1px solid var(--cyan);
+  border-radius: 3px;
+  padding: 13px 18px;
+  color: var(--cyan);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
-  margin-bottom: 0;
-  transition: color 0.2s, background 0.2s;
+  margin: 32px 0 0 0;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 10px rgba(0,229,255,0.08);
+  position: relative;
 }
-.deep-section-toggle:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+.deep-section-toggle:hover {
+  background: rgba(0,229,255,0.08);
+  box-shadow: 0 0 18px rgba(0,229,255,0.18);
+}
+.deep-section-toggle.open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+  background: rgba(0,229,255,0.07);
+}
+.deep-section-toggle .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.deep-section-toggle .toggle-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+  flex-shrink: 0;
+  animation: pip-pulse 2s ease-in-out infinite;
+}
+.deep-section-toggle.open .toggle-pip {
+  animation: none;
+  background: var(--cyan);
+  box-shadow: 0 0 4px var(--cyan);
+}
+@keyframes pip-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--cyan); }
+  50%       { opacity: 0.35; box-shadow: none; }
+}
+.deep-section-toggle .toggle-hint {
+  font-size: 0.55rem;
+  color: rgba(0,229,255,0.5);
+  letter-spacing: 0.12em;
+  margin-left: 2px;
+}
+.deep-section-toggle.open .toggle-hint { display: none; }
 .deep-section-toggle .toggle-arrow {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   transition: transform 0.25s;
-  color: var(--muted);
+  color: var(--cyan);
+  opacity: 0.7;
 }
-.deep-section-toggle.open .toggle-arrow { transform: rotate(180deg); }
+.deep-section-toggle.open .toggle-arrow { transform: rotate(180deg); opacity: 1; }
 
 .deep-section-body {
   display: none;
   padding-top: 20px;
+  border: 1px solid var(--cyan);
+  border-top: none;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  padding: 20px 16px 8px;
+  background: rgba(0,229,255,0.015);
+  margin-bottom: 16px;
 }
 .deep-section-body.open { display: block; }
 
@@ -2758,7 +2806,11 @@ body.help-open {
 
 
   <button class="deep-section-toggle" id="deep-toggle" onclick="toggleDeepDive()" aria-expanded="false" aria-controls="deep-body">
-    <span>Deep Dive — Introspection &amp; System Detail</span>
+    <span class="toggle-label">
+      <span class="toggle-pip"></span>
+      <span>Deep Dive · Introspection &amp; System Detail</span>
+      <span class="toggle-hint">click to expand</span>
+    </span>
     <span class="toggle-arrow">▼</span>
   </button>
   <div class="deep-section-body" id="deep-body">
