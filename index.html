@@ -1722,7 +1722,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
     <div class="chart-wrap" style="height:80px;">
       <canvas id="sparkRollingChart" role="img" aria-label="10-step rolling average reward"></canvas>
     </div>
-    <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">REWARD VARIANCE (100-step window) <span id="dream-throttle-badge" style="display:none;margin-left:8px;color:var(--muted,#3a4a5a);font-size:0.55rem;">DREAM THROTTLED</span></div>
+    <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.05em;margin-top:8px;margin-bottom:4px;padding:0 8px;">REWARD VARIANCE (20-step rolling window) <span id="dream-throttle-badge" style="display:none;margin-left:8px;color:var(--muted,#3a4a5a);font-size:0.55rem;">DREAM THROTTLED</span></div>
     <div class="chart-wrap" style="height:70px;margin-bottom:16px;">
       <canvas id="sparkVarianceChart" role="img" aria-label="Reward variance sparkline"></canvas>
     </div>
@@ -3702,15 +3702,15 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-emotion">
       <div class="help-entry-title"><span>Emotional State</span><span class="tag tag-meta">META</span></div>
       <div class="help-entry-body">
-        ARMINTA models internal drive states as "emotions" — not anthropomorphism, but a practical mechanism for biasing exploration vs. exploitation.
-        <br><br>· <strong>Calm</strong> — low arousal; suitable for patient observation
-        <br>· <strong>Curious</strong> — high novelty signal; drives exploration and dreaming
-        <br>· <strong>Focused</strong> — mid-arousal; sustains investigation of a specific hypothesis
-        <br>· <strong>Confident</strong> — strong prior; biases toward exploitation
-        <br>· <strong>Stressed</strong> — resource pressure detected; triggers conservative governors
-        <br>· <strong>Frustrated</strong> — repeated failed hypotheses; may trigger self-modification
-        <br>· <strong>Bored</strong> — low novelty; increases exploration probability
-        <br><br>The dominant emotion (large label) is the highest-valued state. Bars show relative intensity on a 0–5 scale.
+        ARMINTA models internal drive states as "emotions" — not anthropomorphism, but a practical mechanism for biasing exploration vs. exploitation. Each emotion is a scalar on a 0–5 scale that rises on trigger conditions and decays passively between ticks.
+        <br><br>· <strong>Calm</strong> — low arousal; suitable for patient observation. Rises when CPU &lt;30% and mem &lt;50%. Suppressed by stress triggers.
+        <br>· <strong>Curious</strong> — high novelty signal; drives exploration and dreaming. Rises on prediction error &gt;0.15.
+        <br>· <strong>Focused</strong> — mid-arousal; sustains investigation of a specific hypothesis. Rises when CPU is 35–70%.
+        <br>· <strong>Confident</strong> — strong prior; biases toward exploitation. Rises on successful actions with reward &gt;0.1.
+        <br>· <strong>Stressed</strong> — resource pressure detected; triggers conservative governors. Rises when CPU &gt;80%, mem &gt;85%, temp &gt;75°C, NVMe ≥ amber threshold, or any metric deteriorating rapidly. Decays passively at 8%/tick so it can recover even when memory is above the calm threshold.
+        <br>· <strong>Frustrated</strong> — repeated failed hypotheses; may trigger self-modification. Rises on action failures. Decays passively at 5%/tick.
+        <br>· <strong>Bored</strong> — low novelty; increases exploration probability. Rises after 40+ consecutive calm ticks.
+        <br><br>The dominant emotion (large label) is the highest-valued state. Bars show relative intensity on a 0–5 scale. A stressed reading while system metrics look nominal usually means a transient spike accumulated before the passive decay caught up — it will bleed off within a few minutes of genuinely calm conditions.
       </div>
     </div>
 
@@ -3878,7 +3878,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>cloudflare</strong> — a direct HTTPS probe to <code>1.1.1.1/cdn-cgi/trace</code> (IP literal, no DNS needed). Distinct from the dns probe: gateway fail = router problem; cloudflare fail (gateway ok) = ISP/WAN problem; portal fail (cloudflare ok) = Firefox endpoint down.
         <br>· <strong>portal</strong> — Firefox's captive portal URL: confirms basic internet reachability regardless of upstream DNS.
         <br><br>Probes fire on two triggers:
-        <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%
+        <br>· <strong>Routine</strong> — every ~60 idle steps when CPU is below 40%. The cooldown is enforced across all dispatch paths: whether the probe fires on schedule, as part of a beam-search plan, or as an information-gain probe during INVESTIGATE mode, the cooldown counter resets so the next routine probe waits the full interval.
         <br>· <strong>Triggered</strong> — immediately when <code>iface_drops</code> or <code>iface_errors</code> are nonzero, to distinguish local interface problems from upstream failures
         <br><br>· <span style="color:var(--green)">Green dot</span> — probe succeeded
         <br>· <span style="color:var(--red)">Red dot</span> — probe failed (timeout or error)
