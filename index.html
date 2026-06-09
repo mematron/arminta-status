@@ -3740,7 +3740,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         ARMINTA continuously classifies the current workload into one of nine named situations from metric history (not snapshots). Each situation has its own causal edge weights, so knowledge learned during streaming doesn't pollute compile-time decisions.
         <br><br>· <strong>idle</strong> — low CPU, low net, minimal process activity
-        <br>· <strong>streaming</strong> — significant network download + browser renderer pressure + moderate CPU. Cloud gaming, video, remote desktop.
+        <br>· <strong>streaming</strong> — browser GPU/renderer pressure + moderate CPU + asymmetric network (or buffered: net quiet, GPU decode active). YouTube, cloud gaming, remote desktop. HW decode runs in Chrome's GPU process — network may be near-zero during buffer playback.
         <br>· <strong>browser_compute</strong> — browser pegging cores (high dilution, renderer pressure) with minimal network. JS compute, WebGL, local video decode. System CPU looks deceptively low because Chrome's multi-process architecture hides per-core saturation.
         <br>· <strong>compile</strong> — high dilution + high system CPU + low net. Build systems, ML training, video encode.
         <br>· <strong>memory_pressure</strong> — RAM above 75%, swap active.
@@ -4076,7 +4076,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>memory_pressure</strong> — high RSS, swap activity, or PSI memory stalls
         <br>· <strong>io_bound</strong> — high iowait, disk read/write saturation, PSI IO pressure
         <br>· <strong>cpu_bound</strong> — sustained single/multi-core saturation without significant IO
-        <br>· <strong>streaming</strong> — significant network throughput + browser renderer pressure + moderate CPU
+        <br>· <strong>streaming</strong> — browser GPU/renderer pressure + asymmetric or buffered network + moderate CPU
         <br>· <strong>browser_compute</strong> — browser pegging cores (high dilution, renderer pressure) with minimal network
         <br>· <strong>irq_storm</strong> — high hardware interrupt rate overwhelming softirq processing
         <br>· <strong>thermal_stress</strong> — CPU temperature above safe range; throttling likely or imminent
