@@ -213,6 +213,12 @@ header {
   border-left: 3px solid var(--cyan);
   padding-left: 10px;
   opacity: 0.85;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* ── TIER DIVIDERS ── */
@@ -226,6 +232,10 @@ header {
 @keyframes tierFadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes skel-fade {
+  from { opacity: 0; }
+  to   { opacity: 0.6; }
 }
 .tier-divider-line {
   flex: 1;
@@ -339,6 +349,10 @@ header {
 .sit-thermal_stress   { color: #ff6e40;       border-color: rgba(255,110,64,0.4);  background: rgba(255,110,64,0.07); }
 .sit-torrenting       { color: #69f0ae;       border-color: rgba(105,240,174,0.4); background: rgba(105,240,174,0.07); }
 .sit-unknown          { color: var(--dim);    border-color: var(--border);         background: transparent; }
+/* FIX-14: confidence ring overrides — applied in addition to sit-* color class */
+.sit-conf-high  { box-shadow: 0 0 0 1px rgba(57,255,20,0.55),  0 0 8px rgba(57,255,20,0.18); }
+.sit-conf-mid   { box-shadow: 0 0 0 1px rgba(255,179,0,0.55),  0 0 8px rgba(255,179,0,0.18); }
+.sit-conf-low   { box-shadow: 0 0 0 1px rgba(255,61,61,0.65),  0 0 10px rgba(255,61,61,0.22); opacity: 0.8; }
 
 /* ── EMOTION ── */
 .emotion-section { border: 1px solid var(--border); padding: 20px 24px; background: var(--surface); margin-bottom: 12px; }
@@ -1834,6 +1848,8 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
         <div class="cmc-cell"><div class="cmc-mode">SELF_A.</div><div class="cmc-q" style="color:var(--dim)">--</div></div>
       </div>
       <div id="cmc-meta" style="font-size:0.65rem;color:var(--dim);margin-top:12px;line-height:1.8;letter-spacing:0.04em;"></div>
+      <!-- FIX-12: GA evolved vs live divergence row -->
+      <div id="ga-divergence" style="display:none;margin-top:10px;padding:8px 10px;border:1px solid rgba(255,179,0,0.2);border-radius:2px;background:rgba(255,179,0,0.04);font-size:0.62rem;color:var(--dim);letter-spacing:0.04em;line-height:1.9;"></div>
     </div>
 
   </div>
@@ -2003,8 +2019,8 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
         <div id="wl-lexicon" style="font-size:1.4rem;color:var(--amber);font-family:var(--font-mono);">--</div>
       </div>
       <div style="text-align:center;">
-        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">CONCEPTS MAPPED</div>
-        <div id="wl-queried" style="font-size:1.4rem;color:#c678dd;font-family:var(--font-mono);">--</div>
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">ACTIVE QUERIES</div>
+        <div id="wl-queried" style="font-size:1.4rem;color:#c678dd;font-family:var(--font-mono);" title="recently queried symbols (TTL window)">--</div>
       </div>
     </div>
     <div class="log-header">
@@ -2306,9 +2322,17 @@ function render(d) {
 
   /* situation */
   const sit = d.situation || 'unknown';
-  const sitConf = d.sit_confidence !== undefined ? ` (${(d.sit_confidence * 100).toFixed(0)}%)` : '';
+  const sitConfVal = d.sit_confidence !== undefined ? d.sit_confidence : null;
+  const sitConfStr = sitConfVal !== null ? ` (${(sitConfVal * 100).toFixed(0)}%)` : '';
+  // FIX-14: color-code badge border by confidence (green >60%, amber 30-60%, red <30%)
+  let sitConfClass = '';
+  if (sitConfVal !== null) {
+    if (sitConfVal >= 0.60) sitConfClass = ' sit-conf-high';
+    else if (sitConfVal >= 0.30) sitConfClass = ' sit-conf-mid';
+    else sitConfClass = ' sit-conf-low';
+  }
   document.getElementById('situation-badge').innerHTML =
-    `<span class="sit-badge sit-${sit}" title="confidence${sitConf}">${sit.toUpperCase()}${sitConf}</span>`;
+    `<span class="sit-badge sit-${sit}${sitConfClass}" title="confidence: ${sitConfVal !== null ? (sitConfVal*100).toFixed(1)+'%' : 'unknown'}">${sit.toUpperCase()}${sitConfStr}</span>`;
 
   /* reward — prefer rolling_avg_reward (150-step window); fall back to total_reward */
   const rollingR = d.rolling_avg_reward !== undefined ? d.rolling_avg_reward : null;
@@ -3064,6 +3088,32 @@ function render(d) {
     } else {
       epWarnEl.style.display = 'none';
     }
+  }
+
+  /* ── GA EVOLVED vs LIVE PARAMS DIVERGENCE PANEL (FIX-12) ── */
+  const gaDiv = document.getElementById('ga-divergence');
+  if (gaDiv && d.arminta_ga_best && d.arminta_ga_live) {
+    const gb = d.arminta_ga_best;
+    const gl = d.arminta_ga_live;
+    const _gFmt = v => v !== undefined ? v.toFixed(4) : '--';
+    const _gDiff = (a, b, thr) => {
+      if (a === undefined || b === undefined) return false;
+      return Math.abs(a - b) > thr;
+    };
+    const _gRow = (label, key, thr) => {
+      const diverged = _gDiff(gb[key], gl[key], thr);
+      const color = diverged ? 'var(--amber)' : 'var(--muted)';
+      const flag  = diverged ? ' ⚠' : '';
+      return `<span style="color:${color}">${label}: evolved=${_gFmt(gb[key])} live=${_gFmt(gl[key])}${flag}</span>`;
+    };
+    gaDiv.style.display = '';
+    gaDiv.innerHTML = '<span style="color:var(--dim);letter-spacing:0.1em;font-size:0.6rem;">GA EVOLVED vs LIVE</span><br>'
+      + _gRow('lr', 'learning_rate', 0.005) + ' &nbsp;·&nbsp; '
+      + _gRow('γ',  'discount_factor', 0.005) + ' &nbsp;·&nbsp; '
+      + _gRow('κ',  'curiosity_weight', 0.02) + ' &nbsp;·&nbsp; '
+      + _gRow('ṙ',  'reward_scale', 0.002);
+  } else if (gaDiv) {
+    gaDiv.style.display = 'none';
   }
 
   /* ── MODE DISTRIBUTION DONUT ── */
@@ -5056,6 +5106,21 @@ function toggleDeepDive() {
   body.classList.toggle('open', opening);
   btn.classList.toggle('open', opening);
   btn.setAttribute('aria-expanded', opening);
+  // FIX-15: show brief loading skeleton on expand so it doesn't flash empty
+  if (opening) {
+    let _skel = document.getElementById('deep-loading-skel');
+    if (!_skel) {
+      _skel = document.createElement('div');
+      _skel.id = 'deep-loading-skel';
+      _skel.style.cssText = 'padding:18px 0 8px;color:var(--dim);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.6;animation:skel-fade 0.35s ease-out both;';
+      _skel.textContent = 'loading...';
+      body.prepend(_skel);
+    }
+    _skel.style.display = 'block';
+    requestAnimationFrame(() => setTimeout(() => {
+      if (_skel) _skel.style.display = 'none';
+    }, 280));
+  }
 }
 
 /* Hook into the existing render cycle — patch after render() runs */
