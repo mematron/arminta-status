@@ -4047,7 +4047,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <span style="color:var(--red)">Red</span> — errors and warnings (including <code>renice_chrome</code> consecutive-failure suppression)
         <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
-        <br><br><code>[WARN] renice_chrome: N consecutive failures</code> — after 5 consecutive structural failures, <code>renice_chrome</code> is suppressed for 2,000 steps. Counter resets on success.
+        <br><br><code>[WARN] renice_chrome: N consecutive failures</code> — after 3 consecutive failures, <code>renice_chrome</code> is suppressed: 8,000 steps for structural failures (renderer count too low — "all protected", "no eligible") or 2,000 steps for transient ones. Counter resets on success.
       </div>
     </div>
 
