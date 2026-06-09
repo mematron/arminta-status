@@ -90,6 +90,37 @@ header {
   gap: 12px;
 }
 
+/* On narrow screens the logo takes full width and header-right
+   sits below it, left-aligned so nothing gets squeezed */
+@media (max-width: 520px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .header-right {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100%;
+  }
+  .header-step-badge {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    border-left: none;
+    padding-left: 0;
+    margin-left: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    width: 100%;
+  }
+  .header-step-val {
+    font-size: 1.2rem;
+  }
+}
+
 .logo {
   font-family: var(--font-ui);
   font-weight: 700;
@@ -528,7 +559,7 @@ header {
 }
 
 /* ── LOG LOCK BUTTON ── */
-.log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.log-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
 .log-lock-btn {
   font-size: 0.62rem;
   padding: 3px 9px;
@@ -540,6 +571,8 @@ header {
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
   transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .log-lock-btn.locked { border-color: var(--amber); color: var(--amber); background: rgba(255,179,0,0.07); }
 .log-lock-btn:hover  { border-color: var(--cyan); color: var(--cyan); }
@@ -1463,7 +1496,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
       ARMINTA
       <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
     </div>
-    <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;">
+    <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;">
       <div class="header-step-badge">
         <div class="header-step-label">Steps</div>
         <div class="header-step-val" id="step-count">--</div>
@@ -1975,8 +2008,8 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
       </div>
     </div>
     <div class="log-header">
-      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">learning session log — recent fetch &amp; discovery events</div>
-      <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;display:flex;gap:14px;">
+      <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:0;">learning session log — recent fetch &amp; discovery events</div>
+      <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <span style="color:var(--cyan)">■</span> fetch
         <span style="color:var(--green)">■</span> learn
         <span style="color:var(--amber)">■</span> concept
@@ -2096,7 +2129,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
     </div>
     <div>
       <div class="log-header">
-        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;">recent log lines (color coded)</div>
+        <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:0;">recent log lines (color coded)</div>
         <button class="log-lock-btn" id="log-lock-btn" onclick="toggleLogLock()" aria-label="Lock log scroll position">SCROLL AUTO</button>
       </div>
       <div class="log-wrap" id="log-wrap">
