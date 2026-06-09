@@ -1734,7 +1734,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 
     <div class="section-label">Emotional State<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-emotion')" title="What is Emotional State?" aria-label="Help: Emotional State">?</button></div>
     <div class="dominant-emotion" id="dominant-emotion">--</div>
-    <div class="emotion-grid" id="emotion-grid"></div>
+    <div class="emotion-grid" id="emotion-grid" style="margin-bottom:18px;"></div>
   </div>
 
 
@@ -4197,27 +4197,29 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-priorityshift">
       <div class="help-entry-title"><span>PriorityShift — Focus-Aware Priority Manager</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
-        PriorityShift is Arminta's equivalent of Windows Process Lasso's PriorityShift feature. When any application window loses focus, its process is automatically reniced (lowered in scheduling priority) to free CPU headroom for whatever you're actively using. When that window regains focus, the process is instantly restored to its original nice value — no manual intervention needed, no hardcoded app list.
+        PriorityShift is Arminta's equivalent of Windows Process Lasso's PriorityShift feature. When any application window loses focus, its process is automatically reniced (lowered in scheduling priority) to free CPU headroom for whatever you're actively using. When that window regains focus, the process is instantly restored to its original nice value — no manual intervention needed.
         <br><br><strong>How it works:</strong>
-        <br>· An event-driven watcher thread (using <code>xdotool behave :any focus</code> on X11, or a 1-second poll fallback on Wayland) fires on every window focus change — zero polling overhead on supported systems.
+        <br>· A background watcher thread polls <code>xdotool getactivewindow getwindowpid</code> every second. On focus change, the outgoing process is reniced and the incoming process is restored.
         <br>· On focus loss: the process's current nice value is saved to a registry, and it is reniced to <code>original + nice_delta</code>.
         <br>· On focus gain: the process is immediately restored to its saved nice value. No process is ever left permanently throttled.
         <br>· On shutdown: all throttled processes are restored before Arminta exits.
+        <br><br><strong>Ignored processes:</strong>
+        <br>Desktop infrastructure daemons — <code>xdg-desktop-portal</code>, compositor windows, panel applets, notification daemons, D-Bus services — are silently excluded from focus tracking. They receive transient X11 focus events during app switching but are never what you're actually using. Without this filter they would be incorrectly flagged as the "focused" foreground app, causing the real active window to get throttled.
         <br><br><strong>RL-learned Nice Δ:</strong>
-        <br>The throttle strength (<strong>Nice Δ</strong>) is not fixed — Arminta learns the optimal value through her causal graph. If a higher delta consistently improves <code>sess_proc_cpu_dilution</code> without causing restore-time CPU spikes, the graph rewards it and the agent may increase it. If the delta is too aggressive (CPU spikes when the user refocuses), the restore action receives negative reward and the agent pulls the delta back. The learned value is persisted in the memory pickle across restarts.
+        <br>The throttle strength (<strong>Nice Δ</strong>) is not fixed — Arminta learns the optimal value through her causal graph. If a higher delta consistently improves <code>sess_proc_cpu_dilution</code> without causing restore-time CPU spikes, the graph rewards it and the agent may increase it. If the delta is too aggressive, the restore action receives negative reward and the agent pulls the delta back. The learned value is persisted in the memory pickle across restarts.
         <br><br><strong>Metrics shown:</strong>
-        <br>· <strong>Focused App</strong> — the name and PID of the currently focused window's process. Protected from any <code>{PID}</code>-based actions while focused.
+        <br>· <strong>Focused App</strong> — the name and PID of the currently focused window's process. Infrastructure daemons are filtered out and won't appear here.
         <br>· <strong>Throttled BG</strong> — count of background processes currently reniced. Non-zero during active work sessions.
         <br>· <strong>BG CPU%</strong> — aggregate CPU% consumed by all currently-throttled background processes. High values confirm PriorityShift is actively reclaiming headroom.
         <br>· <strong>Nice Δ</strong> — the RL-learned renice delta applied to background processes. Range +1 to +15; starts at +5 and self-tunes.
-        <br>· <strong>Reniced</strong> — cumulative count of background processes throttled this session. Each time a window loses focus and its process is reniced, this increments by 1. A high number means you've switched windows frequently and PriorityShift has been active throughout — expected in normal use.
-        <br>· <strong>Restored</strong> — cumulative count of processes restored to their original nice value this session. Should track closely behind Reniced. If Reniced is much higher than Restored, some background processes may still be throttled (normal during a long session). On shutdown, all remaining throttled processes are force-restored regardless.
+        <br>· <strong>Reniced</strong> — cumulative count of throttle events this session. A gap between Reniced and Restored is normal — the watcher thread handles most restores automatically on focus change, and the step-loop <code>priorityshift_restore</code> action cleans up any remainder when dilution subsides. On shutdown, all remaining throttled processes are force-restored regardless.
+        <br>· <strong>Restored</strong> — cumulative count of restore events this session.
         <br><br><strong>Proactive Step Actions:</strong>
         <br>In addition to the automatic watcher thread, <code>priorityshift_renice</code> and <code>priorityshift_restore</code> are also first-class selectable actions in Arminta's step loop:
-        <br>· <code>priorityshift_renice</code> fires during a CPU dilution crisis when <code>kill_top_proc</code> is suppressed (kernel thread or known respawner). Rather than doing nothing, Arminta throttles background PIDs system-wide via a renice pass, providing pressure relief without the risk of targeting an unkillable process.
-        <br>· <code>priorityshift_restore</code> fires during the idle/watching fallback when dilution has subsided but background PIDs are still throttled from a previous pass. Restoring them promptly avoids unnecessary priority starvation after the crisis has cleared.
-        <br>Both actions feed into the causal graph normally — reward signal is <code>sess_proc_cpu_dilution</code> and <code>cpu</code>, so Arminta learns when proactive throttling actually helps versus when it is neutral noise.
-        <br><br>Requires <code>xdotool</code> for X11 operation (<code>sudo apt install xdotool</code>). Falls back to 1-second polling if event-driven mode is unavailable. On headless or SSH sessions, the focus guard is skipped entirely.
+        <br>· <code>priorityshift_renice</code> fires during a CPU dilution crisis when <code>kill_top_proc</code> is suppressed. Rather than doing nothing, Arminta throttles background PIDs system-wide via a renice pass.
+        <br>· <code>priorityshift_restore</code> fires when dilution has subsided but background PIDs are still throttled. If the watcher thread already cleared the registry between action selection and dispatch, the step is silently redirected to <code>monitor</code> to avoid a wasted no-op.
+        <br>Both actions feed into the causal graph normally — reward signal is <code>sess_proc_cpu_dilution</code> and <code>cpu</code>.
+        <br><br>Requires <code>xdotool</code> for X11 operation (<code>sudo apt install xdotool</code>). On headless or SSH sessions the focus guard is skipped entirely.
       </div>
     </div>
 
