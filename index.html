@@ -3116,6 +3116,28 @@ function render(d) {
     gaDiv.style.display = 'none';
   }
 
+  /* ── HW PROFILE ── */
+  if (d.hw_profile && Object.keys(d.hw_profile).length) {
+    const hwp = d.hw_profile;
+    let hwEl = document.getElementById('hw-profile-row');
+    if (!hwEl) {
+      hwEl = document.createElement('div');
+      hwEl.id = 'hw-profile-row';
+      hwEl.style.cssText = 'font-size:0.6rem;color:var(--muted);letter-spacing:0.07em;margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px;';
+      const gaDiv2 = document.getElementById('ga-divergence');
+      if (gaDiv2 && gaDiv2.parentNode) gaDiv2.parentNode.insertBefore(hwEl, gaDiv2.nextSibling);
+    }
+    const parts = [];
+    if (hwp.cpu_vendor && hwp.cpu_vendor !== 'unknown') parts.push(`CPU:${hwp.cpu_vendor.toUpperCase()}`);
+    if (hwp.gpu_vendor && hwp.gpu_vendor !== 'unknown') {
+      parts.push(`GPU:${hwp.gpu_vendor.toUpperCase()}${hwp.gpu_integrated ? '(igp)' : '(dgpu)'}`);
+    }
+    if (hwp.oem) parts.push(`OEM:${hwp.oem.toUpperCase()}`);
+    if (hwp.chassis && hwp.chassis !== 'unknown') parts.push(hwp.chassis);
+    if (hwp.ec_thermal) parts.push('<span style="color:var(--amber)">EC-thermal</span>');
+    hwEl.innerHTML = parts.join(' <span style="color:var(--border2)">·</span> ');
+  }
+
   /* ── MODE DISTRIBUTION DONUT ── */
   const modeHist = (d.operational_mode_history || []).slice(-200);
   const modeCounts2 = {};
@@ -3223,6 +3245,8 @@ function render(d) {
       else if (l.includes('[err]'))                                     cls += ' err';
       else if (l.includes('[warn]'))                                    cls += ' warn';
       else if (l.includes('[skip]'))                                    cls += ' gov';   // suppressed no-op — green (neutral, not failure)
+      else if (l.includes('[hw_profile]'))                              cls += ' res';   // hardware detection — cyan
+      else if (l.includes('[memory]'))                                  cls += ' res';   // memory restore/purge notices — cyan
       else if (l.includes('[meta]'))                                    cls += ' meta';
       else if (l.includes('[hobby]'))                                   cls += ' hobby';
       else if (l.includes('[lexical][causal]'))                         cls += ' causal-stmt';
@@ -3605,7 +3629,7 @@ function render(d) {
         .map(([name, intensity]) => {
           const pct = Math.round((intensity / MAX_INT) * 100);
           const available = caps[name] !== false;
-          const dormant   = intensity < 0.15;
+          const dormant   = intensity < 0.25;  // matches INTENSITY_FLOOR in arminta_v6.py
           const isFocus   = name === hobby.current_focus;
           const barColor  = dormant ? 'var(--dim)' :
                             isFocus ? 'var(--cyan)' : 'var(--green)';
@@ -3950,7 +3974,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <code>n</code> = number of times this relationship has been observed
         <br>· <code>CI90</code> line — 90% Bayesian credible interval; see <a href="#" onclick="openHelp('help-bayes-ci');return false;" style="color:var(--cyan);">Bayesian Credible Intervals</a> for details
         <br><br>Effect is computed as <code>(before − after) / |before|</code>, so a positive value means the metric was lower after the action. For the special case of <code>governor_is_performance</code> the sign is flipped so positive still means "improved".
-        <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide. Idle-maintenance actions (<code>compact_memory</code>, <code>log_ss_stats</code>, <code>restore_renderer_nice</code>, <code>clean_trash_orphans</code>), hardware-tuning actions (<code>nvme_thermal_tune</code> — reward targets: <code>disk_write_kbps</code> and <code>io_wait</code>), and observational reads (<code>web_fetch</code>) now appear here as well — their edges are fully poison-guarded at write time so only legitimate causal signals accumulate.
+        <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide. Idle-maintenance actions (<code>compact_memory</code>, <code>log_ss_stats</code>, <code>restore_renderer_nice</code>, <code>clean_trash_orphans</code> — reward target: <code>orphans_removed</code>, 0 for no-op runs), hardware-tuning actions (<code>nvme_thermal_tune</code> — EC-gated on OEM laptops; only fires above temp threshold), and observational reads (<code>web_fetch</code>) now appear here as well — their edges are fully poison-guarded at write time so only legitimate causal signals accumulate.
         <br><br>The <strong>GRAPH ✦</strong> tab shows a force-directed graph of the same edges. Use the <strong>FILTER SIT</strong> dropdown to see which edges are relevant to a specific workload situation — see <a href="#" onclick="openHelp('help-d3-filter');return false;" style="color:var(--cyan);">D3 Graph Situation Filter</a>.
         <br>The <strong>TIMELINE</strong> tab shows reward bars colour-coded by situation over the last 150 steps. Use the scrubber to scroll back through history — see <a href="#" onclick="openHelp('help-timeline-scrubber');return false;" style="color:var(--cyan);">Timeline Scrubber</a>.
       </div>
