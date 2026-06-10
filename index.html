@@ -3222,6 +3222,7 @@ function render(d) {
       if (l.includes('[obs]'))                                          cls += ' obs';
       else if (l.includes('[err]'))                                     cls += ' err';
       else if (l.includes('[warn]'))                                    cls += ' warn';
+      else if (l.includes('[skip]'))                                    cls += ' gov';   // suppressed no-op — green (neutral, not failure)
       else if (l.includes('[meta]'))                                    cls += ' meta';
       else if (l.includes('[hobby]'))                                   cls += ' hobby';
       else if (l.includes('[lexical][causal]'))                         cls += ' causal-stmt';
@@ -4045,7 +4046,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
         <br>· <span style="color:var(--purple)">Purple</span> — curiosity / dream events
         <br>· <span style="color:var(--red)">Red</span> — errors and warnings (including <code>renice_chrome</code> consecutive-failure suppression)
-        <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>)
+        <br>· <span style="color:var(--green)">Green</span> — governor changes (<code>[GOV]</code>) and suppressed no-ops (<code>[SKIP]</code> — action was gated by a dwell/cooldown/lock and skipped cleanly; no causal recording, no reward)
         <br><br><code>[MAINT]</code> lines are scheduled maintenance tasks (memory sync, log compaction). <code>[OK]</code> means the action completed successfully; <code>Δr=</code> shows the reward delta for that action.
         <br><br><code>[WARN] renice_chrome: N consecutive failures</code> — after 3 consecutive failures, <code>renice_chrome</code> is suppressed: 8,000 steps for structural failures (renderer count too low — "all protected", "no eligible") or 2,000 steps for transient ones. Counter resets on success.
       </div>
