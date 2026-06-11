@@ -1499,7 +1499,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 /* ── Wish Pipeline panel ────────────────────────────────────────────────── */
 .wish-stat-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
 .wish-stat {
@@ -1558,12 +1558,19 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 }
 
 
+/* ── Wish review pending animation ─────────────────────────────────────── */
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
 /* ── Additional responsive fixes (v7) ─────────────────────────────────── */
 @media (max-width: 600px) {
   /* help panel: full-width on mobile */
   #help-panel { width: 100vw; border-left: none; }
   /* wish stat row: 3 cols on mobile */
   .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
+  #wish-review-stat { grid-column: span 3; }
   /* wish row: stack on narrow */
   .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
   .wish-status { margin-left: 0; }
@@ -2281,6 +2288,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <span id="wish-staging-badge" style="display:none;font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(0,229,255,0.3);color:var(--cyan);border-radius:2px;">STAGING</span>
         <span id="wish-wins-badge" style="display:none;font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(57,255,20,0.35);color:var(--green);border-radius:2px;">WIN</span>
+        <span id="wish-review-badge" style="display:none;font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(255,179,0,0.45);color:var(--amber);border-radius:2px;animation:pulse-amber 2s infinite;">⚡ REVIEW NEEDED</span>
       </div>
     </div>
     <div class="wish-stat-row">
@@ -2304,9 +2312,16 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
         <div class="wish-stat-val" id="wish-wins" style="color:var(--green);">--</div>
         <div class="wish-stat-label">wins</div>
       </div>
+      <div class="wish-stat" id="wish-review-stat" style="border-color:rgba(255,179,0,0.3);">
+        <div class="wish-stat-val" id="wish-pending-review" style="color:var(--amber);">--</div>
+        <div class="wish-stat-label">awaiting review</div>
+      </div>
     </div>
     <div id="wish-list" style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
       <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
+    </div>
+    <div id="wish-codegen-status" style="margin-top:10px;font-size:0.68rem;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;display:none;">
+      <span id="wish-codegen-text"></span>
     </div>
   </div>
 
@@ -2619,8 +2634,30 @@ function render(d) {
     // staging / win badges
     const stagingBadge = document.getElementById('wish-staging-badge');
     const winsBadge    = document.getElementById('wish-wins-badge');
-    if (stagingBadge) stagingBadge.style.display = (d.wish_items_staged > 0) ? '' : 'none';
-    if (winsBadge)    winsBadge.style.display    = (d.wish_wins > 0)         ? '' : 'none';
+    const reviewBadge  = document.getElementById('wish-review-badge');
+    if (stagingBadge) stagingBadge.style.display = (d.wish_items_staged > 0)    ? '' : 'none';
+    if (winsBadge)    winsBadge.style.display    = (d.wish_wins > 0)            ? '' : 'none';
+    if (reviewBadge)  reviewBadge.style.display  = (d.wish_pending_review > 0)  ? '' : 'none';
+    if (d.wish_pending_review !== undefined) setAndFlash('wish-pending-review', d.wish_pending_review);
+
+    // codegen status line
+    const codegenStatus = document.getElementById('wish-codegen-status');
+    const codegenText   = document.getElementById('wish-codegen-text');
+    if (codegenStatus && codegenText) {
+      const pending  = d.wish_pending_review || 0;
+      const backups  = d.wish_backup_count   || 0;
+      const wins     = d.wish_wins           || 0;
+      if (wins > 0 || pending > 0 || backups > 0) {
+        let parts = [];
+        if (pending > 0)  parts.push(`${pending} action(s) in staged file — review &amp; merge to deploy`);
+        if (backups > 0)  parts.push(`${backups} source backup(s) on disk`);
+        if (pending === 0 && wins > 0) parts.push('all generated actions reviewed');
+        codegenText.innerHTML = parts.join(' · ');
+        codegenStatus.style.display = '';
+      } else {
+        codegenStatus.style.display = 'none';
+      }
+    }
 
     // wish detail rows
     const wishList = document.getElementById('wish-list');
@@ -4505,6 +4542,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br><strong>W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a ~5000-step cooldown: first existing system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…), then action composition from the existing registry, then generated stubs as a last resort. Stubs are typed no-ops — correct call signature, no logic — used to validate routing before implementation.
         <br><br><strong>W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2000 steps (~83 min). The candidate observes live metrics, predicts decisions, never executes. Three disqualification gates: out-of-registry action proposal, resource threshold breach, or fire rate outside 1%–80% of steps.
         <br><br><strong>W4 — Evolutionary Grading</strong> evaluates passed shadows over 5000 steps. WIN = target metric improves &gt;10% sustained with no degradation elsewhere. TIE/LOSE = candidate retired, nothing changes. A WIN marks the wish <code>deployed</code> in W1.
+        <br><br><strong style="color:var(--amber);">W4b — Code Generation</strong> fires on every WIN. Calls the Anthropic API with the wish description and an action template, generates a real Python implementation, validates syntax, backs up the current source file, and appends to <code>arminta_v7_staged_actions.py</code> alongside the script. Staged actions accumulate — they never auto-deploy. The <strong style="color:var(--amber);">REVIEW NEEDED</strong> badge and counter show how many are waiting. To merge: copy approved functions into <code>arminta_v7.py</code>, add to <code>ACTIONS</code> list, add dispatch case, restart.
         <br><br>The reward evaluator formula is never modified. ARMINTA can acquire new capabilities — she cannot redefine what counts as good.
         <br><br><strong>When to expect data:</strong> First wishes appear within the first <code>SELF_ASSESS</code> window after restart (~3–10 min). Shopping runs ~3.5 hrs later. Each staging pass takes ~83 min. Grading takes ~3.5 hrs after staging clears.
       </div>
