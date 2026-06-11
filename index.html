@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARMINTA — Live Agent Status</title>
+<title>ARMINTA v7 — Live Agent Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" defer></script>
@@ -1495,6 +1495,84 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ── Wish Pipeline panel ────────────────────────────────────────────────── */
+.wish-stat-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.wish-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.wish-stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.wish-stat-label {
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wish-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.wish-trigger-badge {
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.wish-trigger-causal_dead_zone { background: rgba(255,179,0,0.12); color: var(--amber); border: 1px solid rgba(255,179,0,0.25); }
+.wish-trigger-situation_gap    { background: rgba(179,157,219,0.1); color: var(--purple); border: 1px solid rgba(179,157,219,0.25); }
+.wish-trigger-metric_blind_spot{ background: rgba(0,229,255,0.08); color: var(--cyan); border: 1px solid rgba(0,229,255,0.2); }
+.wish-target { font-size: 0.72rem; color: var(--text); font-family: var(--font-mono); }
+.wish-status { font-size: 0.6rem; color: var(--dim); margin-left: auto; }
+.wish-status-deployed { color: var(--green); }
+.wish-status-staged   { color: var(--cyan); }
+.wish-status-shopping { color: var(--amber); }
+
+@media (max-width: 600px) {
+  .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 380px) {
+  .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ── Additional responsive fixes (v7) ─────────────────────────────────── */
+@media (max-width: 600px) {
+  /* help panel: full-width on mobile */
+  #help-panel { width: 100vw; border-left: none; }
+  /* wish stat row: 3 cols on mobile */
+  .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
+  /* wish row: stack on narrow */
+  .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
+  .wish-status { margin-left: 0; }
+}
+@media (max-width: 380px) {
+  #help-panel { width: 100vw; }
+  .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+
 </style>
 </head>
 <body>
@@ -1508,7 +1586,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   <header>
     <div class="logo">
       ARMINTA
-      <span>AUTONOMOUS CAUSAL DISCOVERY AGENT</span>
+      <span>AUTONOMOUS CAUSAL DISCOVERY AGENT · v7</span>
     </div>
     <div class="header-right" style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;">
       <div class="header-step-badge">
@@ -2196,6 +2274,42 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
     </div>
   </div>
 
+  <!-- ── WISH PIPELINE (W1–W4) ───────────────────────────────────────────── -->
+  <div class="card card-pad mb28" id="wish-panel">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <div class="section-label" style="margin:0;">Wish Pipeline<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-wish')" title="What is the Wish Pipeline?" aria-label="Help: Wish Pipeline" style="margin-left:6px;">?</button></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span id="wish-staging-badge" style="display:none;font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(0,229,255,0.3);color:var(--cyan);border-radius:2px;">STAGING</span>
+        <span id="wish-wins-badge" style="display:none;font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(57,255,20,0.35);color:var(--green);border-radius:2px;">WIN</span>
+      </div>
+    </div>
+    <div class="wish-stat-row">
+      <div class="wish-stat">
+        <div class="wish-stat-val" id="wish-active">--</div>
+        <div class="wish-stat-label">active wishes</div>
+      </div>
+      <div class="wish-stat">
+        <div class="wish-stat-val" id="wish-dead-zones" style="color:var(--amber);">--</div>
+        <div class="wish-stat-label">dead zones</div>
+      </div>
+      <div class="wish-stat">
+        <div class="wish-stat-val" id="wish-sit-gaps" style="color:var(--purple);">--</div>
+        <div class="wish-stat-label">sit. gaps</div>
+      </div>
+      <div class="wish-stat">
+        <div class="wish-stat-val" id="wish-staged" style="color:var(--cyan);">--</div>
+        <div class="wish-stat-label">in staging</div>
+      </div>
+      <div class="wish-stat">
+        <div class="wish-stat-val" id="wish-wins" style="color:var(--green);">--</div>
+        <div class="wish-stat-label">wins</div>
+      </div>
+    </div>
+    <div id="wish-list" style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
+      <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
+    </div>
+  </div>
+
   </div><!-- /deep-body -->
 
 </div><!-- /dashboard -->
@@ -2494,6 +2608,38 @@ function render(d) {
   if (d.quarantine_pending !== undefined)  setAndFlash('quarantine-pending',  d.quarantine_pending);
   if (d.quarantine_promoted !== undefined) setAndFlash('quarantine-promoted', d.quarantine_promoted);
 
+  // [W1-W4] Wish pipeline
+  if (d.wish_active !== undefined) {
+    setAndFlash('wish-active',    d.wish_active);
+    setAndFlash('wish-dead-zones',d.wish_dead_zones || 0);
+    setAndFlash('wish-sit-gaps',  d.wish_sit_gaps   || 0);
+    setAndFlash('wish-staged',    d.wish_items_staged || 0);
+    setAndFlash('wish-wins',      d.wish_wins || 0);
+
+    // staging / win badges
+    const stagingBadge = document.getElementById('wish-staging-badge');
+    const winsBadge    = document.getElementById('wish-wins-badge');
+    if (stagingBadge) stagingBadge.style.display = (d.wish_items_staged > 0) ? '' : 'none';
+    if (winsBadge)    winsBadge.style.display    = (d.wish_wins > 0)         ? '' : 'none';
+
+    // wish detail rows
+    const wishList = document.getElementById('wish-list');
+    if (wishList && Array.isArray(d.wish_details) && d.wish_details.length) {
+      const statusClass = s => s === 'deployed' ? 'wish-status-deployed'
+                             : s === 'staged'   ? 'wish-status-staged'
+                             : s === 'shopping' ? 'wish-status-shopping' : '';
+      wishList.innerHTML = d.wish_details.map(w =>
+        `<div class="wish-row">
+          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${w.trigger.replace('_',' ')}</span>
+          <span class="wish-target">${w.target}</span>
+          <span class="wish-status ${statusClass(w.status)}">${w.status} · step ${Number(w.step).toLocaleString()}</span>
+        </div>`
+      ).join('');
+    } else if (wishList && d.wish_active === 0) {
+      wishList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem;">no active wishes</div>';
+    }
+  }
+
   // slow-effect queue + adaptive lag overrides
   if (d.pending_obs_count !== undefined) setAndFlash('pending-obs-count', d.pending_obs_count);
   if (d.lag_override_count !== undefined) setAndFlash('lag-override-count', d.lag_override_count);
@@ -2678,7 +2824,7 @@ function render(d) {
   setEl('gov-idle', d.governor_idle_steps !== undefined ? d.governor_idle_steps : '--');
   // Dwell countdown: steps remaining before relax_governor is eligible
   if (d.governor_perf_set_step !== undefined && d.step_count !== undefined) {
-    const _dwellSteps = 120; // matches _GOVERNOR_DWELL_STEPS (relax_governor dwell gate in arminta_v6.py)
+    const _dwellSteps = 120; // matches _GOVERNOR_DWELL_STEPS (relax_governor dwell gate in arminta_v7.py)
     const _stepsSincePerf = (d.step_count || 0) - (d.governor_perf_set_step || 0);
     const _dwellRemain = Math.max(0, _dwellSteps - _stepsSincePerf);
     const _dwellEl = document.getElementById('gov-dwell');
@@ -3629,7 +3775,7 @@ function render(d) {
         .map(([name, intensity]) => {
           const pct = Math.round((intensity / MAX_INT) * 100);
           const available = caps[name] !== false;
-          const dormant   = intensity < 0.25;  // matches INTENSITY_FLOOR in arminta_v6.py
+          const dormant   = intensity < 0.25;  // matches INTENSITY_FLOOR in arminta_v7.py
           const isFocus   = name === hobby.current_focus;
           const barColor  = dormant ? 'var(--dim)' :
                             isFocus ? 'var(--cyan)' : 'var(--green)';
