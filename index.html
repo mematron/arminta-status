@@ -4495,27 +4495,20 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     </div>
 
 
-  <!-- WISH PIPELINE HELP -->
-  <div class="help-entry" id="help-wish">
-    <div class="help-entry-title">// WISH PIPELINE (W1–W4)</div>
-    <p>The Wish Pipeline is Arminta's self-directed capability development loop — the mechanism by which she identifies her own gaps and proposes ways to fill them. Nothing deploys without surviving all four phases.</p>
-
-    <p><strong style="color:var(--amber);">W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode, after the lexical reflection pass, gated by a 3000-step cooldown (~2 hours). It scans for two classes of deficit right now:</p>
-    <ul>
-      <li><strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over the last 500+ samples. She can see something is wrong, she can't fix it. Current examples from live data: <code>renice_chrome</code>, <code>kill_top_proc</code>, <code>sync</code>.</li>
-      <li><strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. Examples: <code>torrenting</code> (31 edges, no throttle action), <code>thermal_stress</code> (0 edges — not yet observed enough).</li>
-    </ul>
-
-    <p><strong style="color:var(--cyan);">W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a 5000-step cooldown: (1) existing system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…), (2) action composition from the existing registry, (3) generated stubs as last resort. Stubs are typed no-ops — they have the correct call signature but do nothing until staging confirms the routing is safe.</p>
-
-    <p><strong style="color:var(--purple);">W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2,000 steps (~83 minutes at normal pace). The candidate observes live metrics, predicts what it would do, and never executes anything. Three disqualification gates: out-of-registry action proposal, resource threshold breach, fire rate outside [1%–80%] of steps.</p>
-
-    <p><strong style="color:var(--green);">W4 — Evolutionary Grading</strong> evaluates passed shadows over 5,000 steps post-shadow. <strong>WIN</strong> = target metric improves &gt;10% sustained with no degradation elsewhere. <strong>TIE/LOSE</strong> = candidate retired, nothing changes. WIN marks the wish <code>deployed</code> in W1.</p>
-
-    <p style="font-size:0.78rem;color:var(--dim);">The reward evaluator formula is never modified. Arminta can acquire new capabilities — she cannot redefine what counts as good.</p>
-
-    <p style="font-size:0.78rem;color:var(--dim);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;"><strong style="color:var(--text);">When to expect data:</strong> Wishes first appear after the first <code>SELF_ASSESS</code> cycle past step ~3000. At 596k steps with your current session, the first scan fires within the first SELF_ASSESS window after restart (~3–10 minutes). Shopping runs ~5000 steps later. Staging takes ~2000 steps (~83 min) per candidate. Grading takes ~5000 steps (~3.5 hrs) after that.</p>
-  </div>
+    <div class="help-entry" id="help-wish">
+      <div class="help-entry-title"><span>Wish Pipeline (W1–W4)</span><span class="tag tag-meta">META</span></div>
+      <div class="help-entry-body">
+        The Wish Pipeline is how ARMINTA identifies her own capability gaps and proposes ways to fill them — a self-directed development loop that runs alongside normal operation. Nothing deploys without surviving all four phases.
+        <br><br><strong>W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode after the lexical reflection pass, gated by a ~3000-step cooldown. It scans for two classes of deficit:
+        <br>· <strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over 500+ samples. She knows something is wrong and can't fix it. Live examples: <code>renice_chrome</code>, <code>kill_top_proc</code>, <code>sync</code>.
+        <br>· <strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. Examples: <code>torrenting</code> (31 edges, no throttle action), <code>thermal_stress</code> (not yet observed enough to qualify).
+        <br><br><strong>W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a ~5000-step cooldown: first existing system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…), then action composition from the existing registry, then generated stubs as a last resort. Stubs are typed no-ops — correct call signature, no logic — used to validate routing before implementation.
+        <br><br><strong>W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2000 steps (~83 min). The candidate observes live metrics, predicts decisions, never executes. Three disqualification gates: out-of-registry action proposal, resource threshold breach, or fire rate outside 1%–80% of steps.
+        <br><br><strong>W4 — Evolutionary Grading</strong> evaluates passed shadows over 5000 steps. WIN = target metric improves &gt;10% sustained with no degradation elsewhere. TIE/LOSE = candidate retired, nothing changes. A WIN marks the wish <code>deployed</code> in W1.
+        <br><br>The reward evaluator formula is never modified. ARMINTA can acquire new capabilities — she cannot redefine what counts as good.
+        <br><br><strong>When to expect data:</strong> First wishes appear within the first <code>SELF_ASSESS</code> window after restart (~3–10 min). Shopping runs ~3.5 hrs later. Each staging pass takes ~83 min. Grading takes ~3.5 hrs after staging clears.
+      </div>
+    </div>
 
   </div><!-- /help-panel-body -->
 </div><!-- /help-panel -->
