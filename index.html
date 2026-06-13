@@ -1617,9 +1617,11 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
         <div class="header-step-val" id="step-count">--</div>
         <div style="font-size:0.55rem;color:var(--dim);letter-spacing:0.05em;">empirical interventions</div>
       </div>
-      <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)">?</button>
       <div>
-        <div class="last-updated" id="last-updated">--</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;">
+          <div class="last-updated" id="last-updated">--</div>
+          <button class="help-btn" onclick="toggleHelp()" title="Help — explain each section (press ?)" aria-label="Open field guide (press ? key)" style="flex-shrink:0;margin-left:4px;">?</button>
+        </div>
         <div class="last-seen" id="last-seen"></div>
         <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
         <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.06em;margin-top:4px;text-align:right;">
@@ -2589,10 +2591,11 @@ function render(d) {
         list.innerHTML = scmTop.map(([emo, weight]) => {
           const w = +weight;
           const pct = (w * 100).toFixed(1);
+          const col = w >= 0.6 ? 'var(--green)' : w >= 0.3 ? 'var(--amber)' : 'var(--muted)';
           const emoCol = domColors[emo] || 'var(--dim)';
           return `<div class="scm-signal-row">
             <div class="scm-emotion-name" style="color:${emoCol}">${emo}</div>
-            <div class="scm-bar-bg"><div class="scm-bar-fill" style="width:${pct}%;background:${emoCol};box-shadow:0 0 4px ${emoCol}40"></div></div>
+            <div class="scm-bar-bg"><div class="scm-bar-fill" style="width:${pct}%;background:${col}"></div></div>
             <div class="scm-weight-val">${w.toFixed(2)}</div>
           </div>`;
         }).join('');
