@@ -1533,6 +1533,19 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   border: 1px solid var(--border);
   flex-wrap: wrap;
 }
+#wish-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#wish-list::-webkit-scrollbar { width: 4px; }
+#wish-list::-webkit-scrollbar-track { background: transparent; }
+#wish-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .wish-trigger-badge {
   font-size: 0.58rem;
   font-family: var(--font-mono);
@@ -1574,10 +1587,13 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   /* wish row: stack on narrow */
   .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
   .wish-status { margin-left: 0; }
+  /* wish list: slightly shorter on small screens */
+  #wish-list { max-height: 180px; }
 }
 @media (max-width: 380px) {
   #help-panel { width: 100vw; }
   .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
+  #wish-list { max-height: 150px; }
 }
 
 </style>
@@ -2317,7 +2333,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
         <div class="wish-stat-label">awaiting review</div>
       </div>
     </div>
-    <div id="wish-list" style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
+    <div id="wish-list">
       <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
     </div>
     <div id="wish-codegen-status" style="margin-top:10px;font-size:0.68rem;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;display:none;">
@@ -4537,12 +4553,12 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         The Wish Pipeline is how ARMINTA identifies her own capability gaps and proposes ways to fill them — a self-directed development loop that runs alongside normal operation. Nothing deploys without surviving all four phases.
         <br><br><strong>W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode after the lexical reflection pass, gated by a ~3000-step cooldown. It scans for two classes of deficit:
-        <br>· <strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over 500+ samples. She knows something is wrong and can't fix it. Live examples: <code>renice_chrome</code>, <code>kill_top_proc</code>, <code>sync</code>. Each dead zone gets a real replacement: <code>kill_top_proc</code> → <code>ionice_top_proc</code> during IRQ storms; <code>sync</code> → <code>handle_io_bound</code>.
-        <br>· <strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. All current gaps now have real implementations: <code>handle_idle</code>, <code>handle_streaming</code>, <code>handle_compile</code>, <code>handle_io_bound</code>, <code>handle_browser_compute</code>, <code>throttle_torrent</code>.
+        <br>· <strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over 500+ samples. She knows something is wrong and can't fix it. Current dead zone: <code>renice_chrome</code> (structural — fires when only 1 eligible renderer exists; suppressed after 3 consecutive failures). Resolved dead zones: <code>kill_top_proc</code> → <code>wish_log_top_proc</code>; <code>sync</code> → <code>handle_io_bound</code>; <code>set_ac_max_perf</code> → <code>wish_set_ac_max_perf</code>; <code>priorityshift_restore</code> → <code>wish_priorityshift_restore</code>; <code>compact_memory</code> → <code>wish_compact_memory</code>; <code>restore_renderer_nice</code> → <code>wish_restore_renderer_nice</code>.
+        <br>· <strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. All current gaps have real implementations: <code>handle_idle_v2</code>, <code>handle_streaming_v2</code>, <code>handle_compile_v2</code>, <code>handle_io_bound</code>, <code>handle_browser_compute_v2</code>, <code>throttle_torrent_v2</code>.
         <br><br><strong>W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a ~5000-step cooldown: first existing system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…), then action composition from the existing registry, then generated stubs as a last resort. Stubs are typed no-ops — correct call signature, no logic — used to validate routing before implementation.
         <br><br><strong>W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2000 steps (~83 min). The candidate observes live metrics, predicts decisions, never executes. Three disqualification gates: out-of-registry action proposal, resource threshold breach, or fire rate outside 1%–80% of steps.
         <br><br><strong>W4 — Evolutionary Grading</strong> evaluates passed shadows over 5000 steps. WIN = target metric improves &gt;10% sustained with no degradation elsewhere. TIE/LOSE = candidate retired, nothing changes. A WIN marks the wish <code>deployed</code> in W1.
-        <br><br><strong style="color:var(--amber);">W4b — Code Generation</strong> fires on every WIN. Reads her own source file via AST, extracts the closest matching action as a template, renames it, injects an improvement note, validates syntax, backs up the current source file, and appends to <code>arminta_v7_staged_actions.py</code> alongside the script. No external API — she generates from her own patterns. Staged actions accumulate — they never auto-deploy. The <strong style="color:var(--amber);">REVIEW NEEDED</strong> badge and counter show how many are waiting. To merge: copy approved functions into <code>arminta_v7.py</code>, add to <code>ACTIONS</code> list, add dispatch case, restart.
+        <br><br><strong style="color:var(--amber);">W4b — Code Generation</strong> fires on every WIN. Reads her own source file via AST, extracts the closest matching action as a template, renames it, injects an improvement note, validates syntax, backs up the current source file, and appends to <code>arminta_v7_staged_actions.py</code> alongside the script. No external API — she generates from her own patterns. Staged actions accumulate — they never auto-deploy. The <strong style="color:var(--amber);">REVIEW NEEDED</strong> badge and counter show how many are waiting. To merge: open <code>arminta_merge_tool.html</code>, drop in <code>arminta_v7.py</code> and <code>arminta_v7_staged_actions.py</code>, review each pending function, approve or reject, then download the merged file. The tool handles ACTIONS list registration, dispatch wiring, and function insertion automatically.
         <br><br>The reward evaluator formula is never modified. ARMINTA can acquire new capabilities — she cannot redefine what counts as good.
         <br><br><strong>When to expect data:</strong> First wishes appear within the first <code>SELF_ASSESS</code> window after restart (~3–10 min). Shopping runs ~3.5 hrs later. Each staging pass takes ~83 min. Grading takes ~3.5 hrs after staging clears.
       </div>
