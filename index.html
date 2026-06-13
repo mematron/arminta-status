@@ -2100,8 +2100,8 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   </button>
   <div class="deep-section-body" id="deep-body">
   <!-- DEEP DIVE SECTION -->
-  <!-- EMOTION -->
-  <div class="emotion-section mb12">
+  <!-- EMOTION (emotion-section is purely a CSS wrapper; no content here — closed immediately) -->
+  <div class="emotion-section mb12"></div>
 
 
   <div class="section-label mb12" style="margin-top:28px;">Web Learner — Autonomous Language Growth<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-weblearn')" title="What is the Web Learner?" aria-label="Help: Web Learner">?</button></div>
@@ -2463,7 +2463,7 @@ function render(d) {
   /* mode */
   const mode = (d.cognitive_mode || 'unknown').toUpperCase();
   const mEl = document.getElementById('cog-mode');
-  mEl.textContent = mode; mEl.className = 'mode-val mode-' + mode;
+  mEl.textContent = mode; mEl.className = 'cockpit-val mode-' + mode;
 
   /* situation */
   const sit = d.situation || 'unknown';
@@ -2683,7 +2683,7 @@ function render(d) {
                              : s === 'shopping' ? 'wish-status-shopping' : '';
       wishList.innerHTML = d.wish_details.map(w =>
         `<div class="wish-row">
-          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${w.trigger.replace('_',' ')}</span>
+          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${w.trigger.replace(/_/g,' ')}</span>
           <span class="wish-target">${w.target}</span>
           <span class="wish-status ${statusClass(w.status)}">${w.status} · step ${Number(w.step).toLocaleString()}</span>
         </div>`
