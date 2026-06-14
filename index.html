@@ -2740,6 +2740,7 @@ function render(d) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('error-banner').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
+  _dashboardRevealed = true; // allow refresh() to re-show after error recovery
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
   const mins = staleness(d.updated_ts);
@@ -4285,7 +4286,12 @@ async function fetchData() {
   _fetchAbortController = new AbortController();
   const timeoutId = setTimeout(() => _fetchAbortController.abort(), 12000); // 12s hard timeout
   try {
-    const res = await fetch(GIST_URL + '?_=' + Date.now(), { signal: _fetchAbortController.signal });
+    // referrerpolicy: 'no-referrer' prevents the Gist URL (which contains the user ID)
+    // from leaking in Referer headers if this page is embedded or linked.
+    const res = await fetch(GIST_URL + '?_=' + Date.now(), {
+      signal: _fetchAbortController.signal,
+      referrerPolicy: 'no-referrer',
+    });
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error('fetch failed ' + res.status);
     return res.json();
@@ -4296,17 +4302,29 @@ async function fetchData() {
   }
 }
 
+// Track whether the dashboard shell has been revealed at least once.
+// Used to re-show it after an error recovery without waiting for a forced reload.
+let _dashboardRevealed = false;
+
 async function refresh() {
   try {
     const data = await fetchData();
     render(data);
     _cockpitPostRender(data);
     document.getElementById('error-banner').style.display = 'none';
+    // Fix: if the dashboard was hidden by a prior showError() path, re-reveal it
+    // once we have valid data again (showError doesn't reveal the shell, but an
+    // error followed by recovery would leave the shell hidden indefinitely).
+    if (_dashboardRevealed) {
+      document.getElementById('dashboard').style.display = 'block';
+    }
   } catch(e) {
     showError(e.message);
   } finally {
-    // Chain next refresh with setTimeout so overlapping calls can never stack
-    setTimeout(refresh, REFRESH_MS);
+    // Chain next refresh with setTimeout so overlapping calls can never stack.
+    // Add ±5 s jitter so multiple open tabs don't hit the Gist endpoint in lockstep.
+    const jitter = (Math.random() - 0.5) * 10000;
+    setTimeout(refresh, REFRESH_MS + jitter);
   }
 }
 
