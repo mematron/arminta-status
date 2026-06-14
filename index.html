@@ -119,6 +119,10 @@ header {
   .header-step-val {
     font-size: 1.2rem;
   }
+  .header-step-sub {
+    flex-basis: 100%;
+    white-space: normal;
+  }
 }
 
 .logo {
@@ -1615,7 +1619,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
       <div class="header-step-badge">
         <div class="header-step-label">Steps</div>
         <div class="header-step-val" id="step-count">--</div>
-        <div style="font-size:0.55rem;color:var(--dim);letter-spacing:0.05em;">empirical interventions</div>
+        <div class="header-step-sub" style="font-size:0.55rem;color:var(--dim);letter-spacing:0.05em;">empirical interventions · <span id="episode-count">--</span> episodes<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-hero')" title="What are Steps &amp; Episodes?" aria-label="Help: Steps and Episodes" style="margin-left:3px;">?</button></div>
       </div>
       <div>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;">
@@ -2461,6 +2465,10 @@ function render(d) {
   const prevStepEl = document.getElementById('step-count');
   if (prevStepEl && prevStepEl.textContent !== newStepCount) flashEl('step-count');
   setEl('step-count', newStepCount);
+
+  /* episodes */
+  const newEpisodes = d.episodes !== undefined ? Number(d.episodes).toLocaleString() : '--';
+  setEl('episode-count', newEpisodes);
 
   /* mode */
   const mode = (d.cognitive_mode || 'unknown').toUpperCase();
@@ -4006,6 +4014,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Total Empirical Steps</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
         The cumulative count of <strong>every real action ARMINTA has taken on the host machine</strong> since it started. Each "step" is a concrete OS-level intervention — killing a process, adjusting CPU governor, compacting memory — not a simulation. A higher number means more field experience and a richer causal model.
+        <br><br><strong>Episodes</strong> — the number of completed training episodes the agent has run through. An episode ends and resets when a terminal condition is reached (e.g. a major resource crisis or a manual restart); steps continue accumulating across episodes, while the episode count tracks how many such cycles have occurred.
       </div>
     </div>
 
