@@ -1600,12 +1600,320 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   #wish-list { max-height: 150px; }
 }
 
+
+/* ══════════════════════════════════════════════════════════
+   v8 VISUAL ENHANCEMENTS — making it shine
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Richer atmospheric background ── */
+body {
+  background:
+    radial-gradient(ellipse 80% 40% at 15% 0%, rgba(0,30,10,0.55) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 50% at 85% 100%, rgba(0,10,30,0.45) 0%, transparent 100%),
+    #060a0e;
+}
+
+/* ── Crisper scanlines ── */
+body::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.1) 2px,
+    rgba(0,0,0,0.1) 3px
+  );
+  z-index: 1001;
+}
+body::after { opacity: 0.5; }
+
+/* ── LOGO: deep glow ── */
+.logo {
+  text-shadow:
+    0 0 14px rgba(57,255,20,0.9),
+    0 0 40px rgba(57,255,20,0.5),
+    0 0 90px rgba(57,255,20,0.2),
+    0 2px 0 rgba(0,0,0,0.9);
+  letter-spacing: 0.18em;
+}
+
+/* ── Loading: glitch-flicker effect ── */
+#loading {
+  color: var(--green);
+  font-size: 0.92rem;
+  letter-spacing: 0.4em;
+  text-shadow: 0 0 18px rgba(57,255,20,0.8);
+  animation: loading-glitch 1.6s ease-in-out infinite;
+}
+@keyframes loading-glitch {
+  0%,100% { opacity: 1; text-shadow: 0 0 18px rgba(57,255,20,0.7); }
+  10%      { opacity: 0.6; text-shadow: none; transform: translateX(1px); }
+  11%      { opacity: 1; text-shadow: 0 0 28px rgba(57,255,20,1); transform: translateX(0); }
+  50%      { text-shadow: 0 0 30px rgba(57,255,20,0.9), 0 0 60px rgba(57,255,20,0.3); }
+  90%      { opacity: 0.88; }
+}
+
+/* ── Header: bottom glow line ── */
+header {
+  position: relative;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 5%; right: 5%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(57,255,20,0.35), rgba(0,229,255,0.25), transparent);
+}
+
+/* ── STEP COUNT: breathe + deep glow ── */
+#step-count {
+  text-shadow: 0 0 20px rgba(57,255,20,0.9), 0 0 50px rgba(57,255,20,0.35);
+  animation: step-breathe 3.5s ease-in-out infinite;
+}
+@keyframes step-breathe {
+  0%,100% { text-shadow: 0 0 20px rgba(57,255,20,0.7), 0 0 50px rgba(57,255,20,0.2); }
+  50%      { text-shadow: 0 0 32px rgba(57,255,20,1), 0 0 80px rgba(57,255,20,0.4), 0 0 150px rgba(57,255,20,0.12); }
+}
+
+/* ── COCKPIT STRIP: animated accent beam ── */
+.cockpit-strip {
+  border: 1px solid var(--border2);
+  box-shadow: 0 4px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(57,255,20,0.06);
+  position: relative;
+  overflow: hidden;
+}
+.cockpit-strip::before {
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--green) 20%, var(--cyan) 50%, var(--green) 80%, transparent 100%);
+  background-size: 200% 100%;
+  animation: beam-slide 8s linear infinite;
+  opacity: 0.8;
+}
+@keyframes beam-slide {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ── COCKPIT VALS: glow ── */
+.cockpit-val { text-shadow: 0 0 18px currentColor; }
+.cockpit-val.reward-pos       { text-shadow: 0 0 20px rgba(57,255,20,0.8); }
+.cockpit-val.reward-recovering{ text-shadow: 0 0 16px rgba(0,229,255,0.7); }
+.cockpit-val.reward-neg       { text-shadow: 0 0 14px rgba(255,179,0,0.7); }
+
+/* ── ADVISORY: coloured left-border inset ── */
+.cockpit-advisory.adv-green  { box-shadow: inset 3px 0 0 rgba(57,255,20,0.4),  inset 0 0 24px rgba(57,255,20,0.04); }
+.cockpit-advisory.adv-yellow { box-shadow: inset 3px 0 0 rgba(255,179,0,0.6),  inset 0 0 24px rgba(255,179,0,0.06); }
+.cockpit-advisory.adv-red    { box-shadow: inset 3px 0 0 rgba(255,61,61,0.8),  inset 0 0 24px rgba(255,61,61,0.08); }
+
+/* ── ADVISORY DOT: pulsing ring on red ── */
+.cockpit-adv-dot.red {
+  animation: dot-ring 1s ease-in-out infinite;
+}
+@keyframes dot-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(255,61,61,0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(255,61,61,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,61,61,0); }
+}
+
+/* ── STATUS PILL: active glow pulse ── */
+.status-pill.active {
+  animation: pill-active 3s ease-in-out infinite;
+}
+@keyframes pill-active {
+  0%,100% { box-shadow: none; }
+  50%      { box-shadow: 0 0 14px rgba(57,255,20,0.35), 0 0 28px rgba(57,255,20,0.1); }
+}
+
+/* ── TIER DIVIDERS: brighter, spaced more ── */
+.tier-divider { margin: 52px 0 26px; }
+.tier-divider-label {
+  font-size: 0.57rem;
+  letter-spacing: 0.55em;
+  color: var(--cyan);
+  border: 1px solid rgba(0,229,255,0.22);
+  background: rgba(0,229,255,0.04);
+  text-shadow: 0 0 18px rgba(0,229,255,0.8), 0 0 40px rgba(0,229,255,0.2);
+  animation: tier-glow 5s ease-in-out infinite;
+}
+@keyframes tier-glow {
+  0%,100% { text-shadow: 0 0 12px rgba(0,229,255,0.5); }
+  50%      { text-shadow: 0 0 24px rgba(0,229,255,1), 0 0 50px rgba(0,229,255,0.3); box-shadow: 0 0 20px rgba(0,229,255,0.1); }
+}
+.tier-divider-line {
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.25), transparent);
+}
+
+/* ── SECTION LABELS: cyan glow ── */
+.section-label {
+  font-size: 0.72rem;
+  color: var(--cyan);
+  border-left: 3px solid var(--cyan);
+  text-shadow: 0 0 10px rgba(0,229,255,0.4);
+}
+
+/* ── CARDS: lift + subtle inner light ── */
+.card {
+  box-shadow: 0 2px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.02);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.25s;
+  will-change: transform;
+}
+.card:hover {
+  border-color: rgba(0,229,255,0.28);
+  box-shadow: 0 6px 40px rgba(0,0,0,0.65), 0 0 30px rgba(0,229,255,0.07);
+  transform: translateY(-2px);
+}
+
+/* ── STAT VALUES: colored glows ── */
+.stat-value.green  { text-shadow: 0 0 16px rgba(57,255,20,0.55); }
+.stat-value.cyan   { text-shadow: 0 0 16px rgba(0,229,255,0.55); }
+.stat-value.amber  { text-shadow: 0 0 14px rgba(255,179,0,0.55); }
+.stat-value.purple { text-shadow: 0 0 14px rgba(179,157,219,0.55); }
+.stat-value.pink   { text-shadow: 0 0 14px rgba(255,128,171,0.55); }
+.stat-value.red    { text-shadow: 0 0 14px rgba(255,61,61,0.55); }
+
+/* ── HERO NUMBER ── */
+.hero-metric {
+  background: linear-gradient(180deg, rgba(57,255,20,0.07) 0%, rgba(0,229,255,0.02) 60%, transparent 100%);
+  box-shadow: inset 0 0 60px rgba(57,255,20,0.04), 0 0 0 1px rgba(57,255,20,0.07);
+}
+.hero-metric::before {
+  height: 2px;
+  animation: hero-beam-slide 5s linear infinite;
+  background: linear-gradient(90deg, transparent 0%, var(--cyan) 20%, var(--green) 50%, var(--cyan) 80%, transparent 100%);
+  background-size: 200% 100%;
+}
+@keyframes hero-beam-slide {
+  0%   { background-position: 0% 50%; opacity: 0.7; }
+  50%  { opacity: 1; }
+  100% { background-position: 200% 50%; opacity: 0.7; }
+}
+
+/* ── EMOTION BARS: smooth animated fills ── */
+.emotion-bar-fill {
+  box-shadow: 0 0 8px currentColor;
+  transition: width 1.3s cubic-bezier(0.23,1,0.32,1);
+}
+
+/* ── CAUSAL EDGE BARS ── */
+.edge-fill  { box-shadow: 0 0 6px currentColor; }
+.rew-bar    { box-shadow: 0 0 6px currentColor; }
+
+/* ── CMC BEST CELL: pulse ── */
+.cmc-cell.best {
+  animation: cmc-pulse 2.8s ease-in-out infinite;
+}
+@keyframes cmc-pulse {
+  0%,100% { border-color: rgba(0,229,255,0.5); box-shadow: none; }
+  50%      { border-color: rgba(0,229,255,0.9); box-shadow: 0 0 20px rgba(0,229,255,0.18), inset 0 0 14px rgba(0,229,255,0.07); }
+}
+
+/* ── LOG: terminal atmosphere ── */
+.log-wrap {
+  background: #040810;
+  border: 1px solid rgba(0,229,255,0.08);
+  box-shadow: inset 0 2px 20px rgba(0,0,0,0.6);
+}
+.log-line { line-height: 1.9; }
+
+/* ── SMART PANEL health states ── */
+.smart-panel.smart-ok  { box-shadow: 0 0 20px rgba(57,255,20,0.06); }
+.smart-panel.smart-warn { animation: warn-pulse 2.2s ease-in-out infinite; }
+@keyframes warn-pulse {
+  0%,100% { box-shadow: 0 0 0 1px rgba(255,61,61,0.25); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,61,61,0.6), 0 0 20px rgba(255,61,61,0.1); }
+}
+
+/* ── CONTINUITY DOTS ── */
+.continuity-dot.green  { box-shadow: 0 0 12px rgba(57,255,20,0.7); }
+.continuity-dot.yellow { box-shadow: 0 0 12px rgba(255,179,0,0.7); }
+.continuity-dot.red    { box-shadow: 0 0 12px rgba(255,61,61,0.7); }
+
+/* ── DEEP DIVE TOGGLE: sweep hover ── */
+.deep-section-toggle {
+  background: rgba(0,229,255,0.02);
+  border: 1px solid rgba(0,229,255,0.18);
+  box-shadow: 0 0 16px rgba(0,229,255,0.04);
+  overflow: hidden;
+}
+.deep-section-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.06) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.23,1,0.32,1);
+}
+.deep-section-toggle:hover::before { transform: translateX(100%); }
+.deep-section-toggle:hover {
+  border-color: rgba(0,229,255,0.5);
+  box-shadow: 0 0 30px rgba(0,229,255,0.14);
+}
+
+/* ── OPEN QUESTION high-priority pulse ── */
+.q-item.q-high {
+  animation: q-pulse 3.5s ease-in-out infinite;
+}
+@keyframes q-pulse {
+  0%,100% { border-left-color: var(--red); }
+  50%      { border-left-color: rgba(255,61,61,0.45); box-shadow: -3px 0 10px rgba(255,61,61,0.2); }
+}
+
+/* ── VALUE FLASH: more dramatic ── */
+@keyframes valflash {
+  0%   { opacity: 0.2; background: rgba(0,229,255,0.2); }
+  40%  { opacity: 1;   background: rgba(0,229,255,0.07); }
+  100% { opacity: 1;   background: transparent; }
+}
+
+/* ── HELP PANEL ── */
+.help-panel-title { text-shadow: 0 0 18px rgba(0,229,255,0.7); }
+#help-panel {
+  background: #06101a;
+  border-left: 1px solid rgba(0,229,255,0.13);
+  box-shadow: -16px 0 80px rgba(0,0,0,0.95);
+}
+
+/* ── SCM PULSE: stronger ── */
+.scm-spidey-pulse {
+  animation: spidey-ping 1.6s ease-in-out infinite;
+}
+@keyframes spidey-ping {
+  0%,100% { box-shadow: 0 0 8px var(--green), 0 0 18px rgba(57,255,20,0.3); opacity:1; }
+  50%      { box-shadow: none; opacity:0.25; }
+}
+
+/* ── WISH STAT VALS: glow ── */
+.wish-stat-val { text-shadow: 0 0 10px currentColor; }
+
+/* ── SCROLLBARS: teal theme ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.18); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.4); }
+
+/* ── NET PROBE DOT GLOW ── */
+#net-probe-strip div { transition: opacity 0.2s; }
+
+/* ── Respect reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
+}
+
 </style>
 </head>
 <body>
 <div class="wrapper">
 
-<div id="loading">INITIALIZING TELEMETRY UPLINK...</div>
+<div id="loading">INITIALIZING TELEMETRY UPLINK<span id="loading-dots"></span></div>
+<script>
+// Animate loading dots
+(function(){
+  var el = document.getElementById('loading-dots');
+  if (!el) return;
+  var i = 0;
+  setInterval(function(){ el.textContent = ['...','....','.','..',' '][i++ % 5]; }, 280);
+})();
+</script>
 <div id="error-banner" style="display:none"></div>
 
 <div id="dashboard">
@@ -1639,7 +1947,12 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   <!-- HERO STEP moved to header badge -->
 
   <!-- COCKPIT STRIP — Tier 1: At-a-glance status -->
-  <div class="cockpit-strip" id="cockpit-strip">
+  <div class="cockpit-strip" id="cockpit-strip" style="position:relative;">
+    <!-- HUD corner brackets -->
+    <span style="position:absolute;top:4px;left:4px;width:14px;height:14px;border-top:2px solid rgba(57,255,20,0.5);border-left:2px solid rgba(57,255,20,0.5);pointer-events:none;z-index:2;"></span>
+    <span style="position:absolute;top:4px;right:4px;width:14px;height:14px;border-top:2px solid rgba(57,255,20,0.5);border-right:2px solid rgba(57,255,20,0.5);pointer-events:none;z-index:2;"></span>
+    <span style="position:absolute;bottom:4px;left:4px;width:14px;height:14px;border-bottom:2px solid rgba(57,255,20,0.3);border-left:2px solid rgba(57,255,20,0.3);pointer-events:none;z-index:2;"></span>
+    <span style="position:absolute;bottom:4px;right:4px;width:14px;height:14px;border-bottom:2px solid rgba(57,255,20,0.3);border-right:2px solid rgba(57,255,20,0.3);pointer-events:none;z-index:2;"></span>
     <div class="cockpit-main">
 
       <!-- Cognitive Mode -->
