@@ -2590,12 +2590,11 @@ function render(d) {
       } else {
         list.innerHTML = scmTop.map(([emo, weight]) => {
           const w = +weight;
-          const pct = (w * 100).toFixed(1);
-          const col = w >= 0.6 ? 'var(--green)' : w >= 0.3 ? 'var(--amber)' : 'var(--muted)';
+          const pct = Math.max(w * 100, 4).toFixed(1);  // floor width so color is always visible
           const emoCol = domColors[emo] || 'var(--dim)';
           return `<div class="scm-signal-row">
             <div class="scm-emotion-name" style="color:${emoCol}">${emo}</div>
-            <div class="scm-bar-bg"><div class="scm-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+            <div class="scm-bar-bg"><div class="scm-bar-fill" style="width:${pct}%;background:${emoCol}"></div></div>
             <div class="scm-weight-val">${w.toFixed(2)}</div>
           </div>`;
         }).join('');
