@@ -2444,6 +2444,12 @@ header::after {
         <div id="wl-queried" style="font-size:1.4rem;color:#c678dd;font-family:var(--font-mono);" title="recently queried symbols (TTL window)">--</div>
       </div>
     </div>
+    <div id="wl-status-row" style="display:flex;align-items:center;gap:16px;margin:10px 0 8px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
+      <span style="color:var(--dim);">NEXT FETCH</span>
+      <span id="wl-next-fetch" style="color:var(--cyan);">--</span>
+      <span style="color:var(--dim);margin-left:8px;">QUEUE</span>
+      <span id="wl-queue-contents" style="color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">empty</span>
+    </div>
     <div class="log-header">
       <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:0;">learning session log — recent fetch &amp; discovery events</div>
       <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -2458,7 +2464,7 @@ header::after {
     </div>
   </div>
   <div class="card card-pad mb28" id="weblearn-empty" style="color:var(--dim);font-size:0.7rem;">
-    Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~400 steps in INVESTIGATE mode.
+    Web learner not yet active — fires on concept curiosity (high-weight / low-context symbols) every ~250 steps in INVESTIGATE and DREAM modes.
   </div>
 
   <!-- HOBBYCORE — Voluntary External Engagement -->
@@ -4144,6 +4150,21 @@ function render(d) {
     }
     // Scroll to top — disc[0] is the most recent discovery (appendleft deque)
     logWrap.scrollTop = 0;
+
+    // Next-fetch countdown
+    const nextFetchEl = document.getElementById('wl-next-fetch');
+    const queueEl     = document.getElementById('wl-queue-contents');
+    if (nextFetchEl && typeof wl.last_learn_step === 'number' && typeof wl.search_interval === 'number') {
+      const currentStep = d.step_count || 0;
+      const stepsUntil  = Math.max(0, (wl.last_learn_step + wl.search_interval) - currentStep);
+      nextFetchEl.textContent = stepsUntil === 0 ? 'ready' : `in ${stepsUntil} steps`;
+      nextFetchEl.style.color = stepsUntil === 0 ? 'var(--green)' : 'var(--cyan)';
+    }
+    if (queueEl) {
+      const q = wl.hypothesis_queue || [];
+      queueEl.textContent = q.length ? q.join(' · ') : 'empty';
+      queueEl.title = q.length ? q.join('\n') : 'no queued concepts';
+    }
   } else {
     wlPanel.style.display = 'none';
     wlEmpty.style.display = 'block';
@@ -4726,20 +4747,21 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <em>Open questions</em> — statements that could not be resolved against available data, held rather than discarded. Wonder as a data structure (up to 120 questions held concurrently).
         <br><br>Reflection runs every 500 steps: Arminta reads her own action/emotion/mode history, updates symbol weights, forms new statements, and checks whether any open question can now be resolved by a recently formed statement.
         <br><br>
-        <strong>WebLearner</strong> — autonomous web exploration, triggering every ~400 steps. Query generation uses two paths:
-        <br>· Primary: selects high-weight, low-context symbols from LexicalCore (concepts observed frequently but understood poorly) and translates them via an internal concept table. Internal metric names (nvme_spare_pct, psi_cpu_some, sess_proc_cpu_dilution, etc.) are blacklisted from query generation — they have no useful web representation.
-        <br>· Fallback: extracts action/state tokens from the oldest unresolved open question.
-        <br>· <em>Concept-curiosity</em> (primary) — selects symbols from LexicalCore with high weight but sparse co-occurrence context: things observed frequently but understood poorly. Translates through an internal action→concept table (e.g. <code>renice_chrome</code> → <em>nice process priority Unix</em>) into a searchable query. A 30% stochastic pool sample ensures exploration beyond the single top-weight symbol.
+        <strong>WebLearner</strong> — autonomous web exploration, triggering every ~250 steps in INVESTIGATE or DREAM mode (rate-limited to 15 pages/hour). Query generation uses three paths, in priority order:
+        <br>· <em>Hypothesis queue</em> (highest priority) — when the DreamCycle generates a new hypothesis, its mechanism text is parsed and queued here. Only concepts with 2+ meaningful tokens of length ≥ 4 that are not internal metric names or action node identifiers pass the filter. Single-token noise ('gpu', 'net', 'sin') and metric fragments ('net latency cloudflare', 'nvme media errors') are dropped before queuing.
+        <br>· <em>Concept-curiosity</em> (primary) — selects symbols from LexicalCore with high weight but sparse co-occurrence context: things observed frequently but understood poorly. Translates through an internal action→concept table (e.g. <code>renice_chrome</code> → <em>nice process priority Unix</em>) into a searchable query. A 30% stochastic pool sample ensures exploration beyond the single top-weight symbol. Internal metric names (<code>nvme_spare_pct</code>, <code>psi_cpu_some</code>, <code>sess_proc_cpu_dilution</code>, etc.) are blacklisted.
         <br>· <em>Question-term translation</em> (fallback) — when the symbol table is sparse, extracts tokens from the oldest unresolved open question instead.
-        <br><br>Sources are restricted to a whitelist of structured knowledge domains: Wikipedia, Wiktionary, arXiv, MDN Web Docs, linux.die.net (Linux command/system references), Plato Stanford Encyclopedia of Philosophy, and Wolfram MathWorld. A hard rate cap of 8 pages/hour prevents runaway fetching. Reward is proportional to genuinely new symbols absorbed (information gain), decayed by repeat visits to the same domain.
+        <br><br>Sources are restricted to a whitelist of structured knowledge domains: Wikipedia, Wiktionary, arXiv, MDN Web Docs, linux.die.net (Linux command/system references), Plato Stanford Encyclopedia of Philosophy, and Wolfram MathWorld. Reward is proportional to genuinely new symbols absorbed (information gain), decayed by repeat visits to the same domain.
         <br><br>
         <strong>QuestionResolver</strong> — runs after each WebLearner cycle. Checks whether newly absorbed text answers any of LexicalCore's open questions via token overlap. Resolved questions graduate into the lexicon as confirmed statements with a valence tag (positive or negative, based on the reward context in which they arose).
         <br><br>
-        <strong>Dashboard counters:</strong>
+        <strong>Dashboard counters and status row:</strong>
         <br>· <strong>Pages Read</strong> — total web pages fetched lifetime
         <br>· <strong>New Symbols</strong> — cumulative unique vocabulary items absorbed from external sources
         <br>· <strong>Lexicon Size</strong> — distinct symbols currently active in LexicalCore's weight table
-        <br>· <strong>Concepts Mapped</strong> — distinct action/state symbols looked up at least once (suppresses re-querying the same concept)
+        <br>· <strong>Active Queries</strong> — symbols currently suppressed from re-querying within the TTL window (resets after ~2000 steps)
+        <br>· <strong>Next Fetch</strong> — steps remaining until the interval gate clears; turns green when ready
+        <br>· <strong>Queue</strong> — hypothesis-driven concepts waiting in the priority queue; hover for full list
         <br><br>The session log shows each fetch/learn cycle: query generated → article retrieved → symbols absorbed (with sample) → reward impact. Log colours: <span style="color:var(--cyan)">cyan</span> = fetch, <span style="color:var(--green)">green</span> = learn (new symbols), <span style="color:var(--amber)">amber</span> = concept/skip, <span style="color:var(--purple)">purple</span> = reward delta.
       </div>
     </div>
