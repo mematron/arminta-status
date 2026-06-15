@@ -2019,6 +2019,7 @@ header::after {
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">WIFI PHY Mbps</div><div id="sig-wifi-tx" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">negotiated TX rate</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">EARLYOOM<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-earlyoom')" title="What is earlyoom_ct?" aria-label="Help: earlyoom" style="margin-left:3px;">?</button></div><div id="sig-earlyoom-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">kills / step</div></div>
+      <div id="sig-gpu-cell" style="text-align:center;display:none;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">GPU %</div><div id="sig-gpu-util" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div id="sig-gpu-detail" style="font-size:0.58rem;color:var(--dim);">--</div></div>
     </div>
   </div>
 
@@ -3404,6 +3405,30 @@ function render(d) {
         elEarlyoom.style.color = eoct >= 2 ? 'var(--red)' : eoct >= 1 ? 'var(--amber)' : 'var(--green)';
       }
     }
+
+    // OBSERVE-GPU: util/mem/temp from the same last_action_context source as the
+    // other system signals. Cell stays hidden on machines with no supported GPU
+    // (gpu_util undefined) rather than showing a permanent '--'.
+    const gpuUtil = lm.gpu_util;
+    const gpuMem  = lm.gpu_mem_pct;
+    const gpuTemp = lm.gpu_temp_c;
+    const elGpuCell   = document.getElementById('sig-gpu-cell');
+    const elGpuUtil   = document.getElementById('sig-gpu-util');
+    const elGpuDetail = document.getElementById('sig-gpu-detail');
+    if (elGpuCell) {
+      if (gpuUtil !== undefined) {
+        elGpuCell.style.display = '';
+        elGpuUtil.textContent = gpuUtil.toFixed(0) + '%';
+        elGpuUtil.style.color = gpuUtil >= 90 ? 'var(--amber)' : 'var(--green)';
+        const _detailParts = [];
+        if (gpuTemp !== undefined) _detailParts.push(gpuTemp.toFixed(0) + '°C');
+        if (gpuMem  !== undefined) _detailParts.push('VRAM ' + gpuMem.toFixed(0) + '%');
+        elGpuDetail.textContent = _detailParts.length ? _detailParts.join(' · ') : 'GPU load';
+        elGpuDetail.style.color = (gpuTemp !== undefined && gpuTemp >= 80) ? 'var(--red)' : 'var(--dim)';
+      } else {
+        elGpuCell.style.display = 'none';
+      }
+    }
   }
   // FIX: RETIRED_ACTIONS filter removed — kill_extension_renderers is now suppressed
   // pre-dispatch by QuestionResolver (inhibition weight 0.75), so questions about it
@@ -3876,11 +3901,11 @@ function render(d) {
 
   // Triggering metric chips
   const _ctxKeys = ['cpu','mem','temp_c','psi_cpu_some','net_recv_kbps','sess_proc_cpu_dilution','nvme_temp_c','load',
-                    'cpu_core_max','wifi_tx_mbps','disk_io_lat_ms','earlyoom_ct'];
+                    'cpu_core_max','wifi_tx_mbps','disk_io_lat_ms','earlyoom_ct','gpu_util','gpu_mem_pct','gpu_temp_c'];
   const _ctxLabels = {cpu:'CPU%',mem:'MEM%',temp_c:'Temp°C',psi_cpu_some:'PSI-cpu',
     net_recv_kbps:'Net-in',sess_proc_cpu_dilution:'Dilution',nvme_temp_c:'NVMe°C',load:'Load',
     cpu_core_max:'CoreMax%',wifi_tx_mbps:'WiFi-PHY',disk_io_lat_ms:'DiskLat',
-    earlyoom_ct:'EarlyOOM'};
+    earlyoom_ct:'EarlyOOM',gpu_util:'GPU%',gpu_mem_pct:'GPU-MEM%',gpu_temp_c:'GPU°C'};
   const _ctxChips = _ctxKeys
     .filter(k => _lastCtx[k] !== undefined && _lastCtx[k] !== null && !(k === 'earlyoom_ct' && _lastCtx[k] === 0))
     .map(k => `<span class="why-ctx-chip">${_ctxLabels[k]||k}: ${Number(_lastCtx[k]).toFixed(1)}</span>`);
@@ -4802,12 +4827,14 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry" id="help-system-signals">
       <div class="help-entry-title"><span>System Signals</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        Four hardware and OS-level metrics that feed into causal edge learning as contextual signals. Arminta reads them every step and includes them in the metric snapshot used for causal graph updates.
+        Hardware and OS-level metrics that feed into causal edge learning as contextual signals. Arminta reads them every step (GPU on a slower cadence — see below) and includes them in the metric snapshot used for causal graph updates.
         <br><br>· <strong>CORE MAX %</strong> — the highest CPU utilisation across all individual cores at the moment of sampling, rather than the blended average. A high core-max with a low average-CPU means a single-threaded bottleneck. This is the metric most relevant to interactive latency, not throughput.
         <br>· <strong>WIFI PHY Mbps</strong> — the 802.11 negotiated physical-layer TX rate reported by the wireless driver. This reflects link quality and antenna proximity, not actual throughput. A drop here (e.g. from 300 to 54 Mbps) tells Arminta that the radio environment has degraded, even if no bytes are currently being sent.
         <br>· <strong>DISK LAT ms</strong> — IO queue wait time in milliseconds, derived from the kernel block layer. Sustained values above ~10ms indicate storage pressure; above 50ms typically means the IO scheduler is saturated. Arminta uses this to detect when disk-bound actions (memory compaction, log flushes) are causing more harm than good.
         <br>· <strong>EARLYOOM</strong> — process kills per step by the earlyoom daemon. See the EARLYOOM entry below for full details.
-        <br><br>These signals are included in the causal context window so that edges learned under poor WiFi, high disk latency, or active OOM pressure are tagged correctly and not confused with edges learned under idle conditions.
+        <br>· <strong>GPU %</strong> — GPU utilization, VRAM usage, and temperature, polled roughly every 25 seconds via <code>nvidia-smi</code> (NVIDIA) or sysfs (AMD <code>amdgpu</code>, including integrated APU graphics like Vega/Lucienne). This cell only appears on machines with a supported GPU. On integrated GPUs, <strong>VRAM %</strong> reflects the small carved-out VRAM/GTT allocation, not overall system memory — the <strong>mem</strong> signal already covers that.
+        <br><br><strong>GPU-informed standing-down:</strong> when GPU utilization is above ~15% (genuinely decoding/rendering, not idle compositing), Arminta treats this the same as her existing "streaming session — CPU load intentional, standing down" logic — i.e. she won't escalate to killing or reprioritizing processes over CPU/load/temp pressure that's a side-effect of active GPU work. This is the one place GPU telemetry currently <em>changes</em> a decision, and it only ever makes her <em>more</em> conservative (downgrades an escalation to "monitor"), never more aggressive. <code>set_gpu_performance</code> itself remains untouched — isn't yet routed to react to these values, to avoid the same kind of reward confound documented for <code>set_ac_max_perf</code> (an action that legitimately changes a metric in the "wrong" direction shouldn't be penalized for working correctly).
+        <br><br>These signals are included in the causal context window so that edges learned under poor WiFi, high disk latency, active OOM pressure, or heavy GPU load are tagged correctly and not confused with edges learned under idle conditions.
       </div>
     </div>
 
