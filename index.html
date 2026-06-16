@@ -491,7 +491,7 @@ header {
 }
 .why-cf { color: var(--amber); font-style: italic; }
 .why-mech {
-  color: var(--dim);
+  color: var(--text);
   font-style: italic;
   border-left: 2px solid var(--border);
   padding-left: 8px;
@@ -3946,7 +3946,7 @@ function render(d) {
       const [mechBase, mechExtra] = hasBridge ? mechText.split(/;(?= learned|; weblearn)/, 2) : [mechText, null];
       el.innerHTML = `<span style="color:var(--text)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
         + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${m.fitness}, step ${m.step})</span>`
-        + `<br><span style="color:var(--amber-dim, #b8860b)">${mechBase}</span>`
+        + `<br><span style="color:#c8a96e">${mechBase}</span>`
         + (mechExtra ? `<br><span style="color:var(--purple);font-size:0.62rem">▸ ${mechExtra.trim()}</span>` : '');
       whyMechs.appendChild(el);
     });
@@ -3970,7 +3970,7 @@ function render(d) {
       el.className = 'why-mech';
       el.style.cssText = 'margin-top:3px;font-size:0.63rem';
       el.innerHTML = `<span style="color:var(--cyan)">${metric.replace(/_/g,' ')}</span>: `
-        + `<span style="color:var(--amber-dim, #9a8a5a)">${base}</span>`
+        + `<span style="color:#c8a96e">${base}</span>`
         + (extra ? `<br><span style="color:var(--purple);font-size:0.61rem">▸ ${extra.trim()}</span>` : '');
       whyMechs.appendChild(el);
     });
