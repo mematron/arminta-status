@@ -2020,6 +2020,7 @@ header::after {
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">DISK LAT ms</div><div id="sig-disk-lat" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">IO queue wait</div></div>
       <div style="text-align:center;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">EARLYOOM<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-earlyoom')" title="What is earlyoom_ct?" aria-label="Help: earlyoom" style="margin-left:3px;">?</button></div><div id="sig-earlyoom-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div style="font-size:0.58rem;color:var(--dim);">kills / step</div></div>
       <div id="sig-gpu-cell" style="text-align:center;display:none;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">GPU %</div><div id="sig-gpu-util" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div id="sig-gpu-detail" style="font-size:0.58rem;color:var(--dim);">--</div></div>
+      <div id="sig-ep-drop-cell" style="text-align:center;display:none;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">LOG DROPS<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-episodic-drops')" title="What are episodic log drops?" aria-label="Help: episodic drops" style="margin-left:3px;">?</button></div><div id="sig-ep-drop-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div id="sig-ep-drop-reason" style="font-size:0.58rem;color:var(--dim);">--</div></div>
     </div>
   </div>
 
@@ -3433,6 +3434,29 @@ function render(d) {
         elGpuDetail.style.color = (gpuTemp !== undefined && gpuTemp >= 80) ? 'var(--red)' : 'var(--dim)';
       } else {
         elGpuCell.style.display = 'none';
+      }
+    }
+
+    // FIX-EPISODIC-SILENT-DROP: episodic.record() previously swallowed every
+    // failure with zero visibility. Now that failures are counted, surface them
+    // here -- but only show the cell when there's actually something to flag
+    // (drops are expected to be rare/zero in healthy operation), so this stays
+    // out of the way on every normal refresh.
+    const epDropped = d.episodic_dropped;
+    const epReason   = d.episodic_drop_reason;
+    const elEpCell   = document.getElementById('sig-ep-drop-cell');
+    const elEpCt      = document.getElementById('sig-ep-drop-ct');
+    const elEpReason  = document.getElementById('sig-ep-drop-reason');
+    if (elEpCell) {
+      if (epDropped !== undefined && epDropped > 0) {
+        elEpCell.style.display = '';
+        elEpCt.textContent = Math.round(epDropped);
+        // a handful over a long session is unremarkable transient lock contention;
+        // a fast-climbing count is the thing actually worth investigating
+        elEpCt.style.color = epDropped >= 10 ? 'var(--red)' : 'var(--amber)';
+        elEpReason.textContent = epReason ? epReason.slice(0, 28) : 'this session';
+      } else {
+        elEpCell.style.display = 'none';
       }
     }
   }
@@ -4907,6 +4931,17 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <span style="color:var(--amber)">amber 1</span> — one process killed; memory pressure event; watch for repeat
         <br>· <span style="color:var(--red)">red 2+</span> — multiple kills in a single step; sustained OOM pressure; Arminta should be acting proactively
         <br><br>On systems without earlyoom installed or where journalctl is not accessible, this value stays at 0 silently — no error, no noise in the causal graph.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-episodic-drops">
+      <div class="help-entry-title"><span>Episodic Log Drops</span><span class="tag" style="background:rgba(255,80,80,0.12);color:var(--red);border-color:rgba(255,80,80,0.3);">diagnostic</span></div>
+      <div class="help-entry-body">
+        Every action, dream, hypothesis, and self-assessment Arminta records gets written to the episodic SQLite database. For a long time, any write failure there — most commonly transient lock contention under WAL mode when a background thread touches the database at the same moment — was silently discarded with zero visibility, including to Arminta herself. The episode would simply never appear in the log, with no trace that anything went wrong.
+        <br><br>This count tracks how many writes failed even after a short automatic retry. It only appears on the dashboard when nonzero — a healthy session typically shows none at all.
+        <br><br>· <span style="color:var(--amber)">amber, low count</span> — a handful of transient misses over a long session is unremarkable; SQLite lock contention happens occasionally and mostly self-resolves on retry.
+        <br>· <span style="color:var(--red)">red, climbing fast</span> — worth investigating. Could indicate sustained lock contention, a failing disk, or the episodic database approaching some other limit.
+        <br><br>A nonzero count here doesn't mean any in-memory state was lost — Arminta's live behavior (governor escalation, PriorityShift, lag overrides, etc.) all continue correctly regardless. It specifically means the <em>historical record</em> of those events has a gap, which matters most for retrospective analysis and for Arminta's own self-assessment, which relies on episodic completeness.
       </div>
     </div>
 
