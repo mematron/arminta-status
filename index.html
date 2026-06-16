@@ -3940,9 +3940,38 @@ function render(d) {
     _mechs.forEach(m => {
       const el = document.createElement('div');
       el.className = 'why-mech';
+      // Check if mechanism has been lexically enriched (contains '; learned context:' or '; weblearn[')
+      const mechText = m.mechanism || '';
+      const hasBridge = mechText.includes('; learned context:') || mechText.includes('; weblearn[');
+      const [mechBase, mechExtra] = hasBridge ? mechText.split(/;(?= learned|; weblearn)/, 2) : [mechText, null];
       el.innerHTML = `<span style="color:var(--text)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
         + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${m.fitness}, step ${m.step})</span>`
-        + `<br><span style="color:var(--dim)">${m.mechanism}</span>`;
+        + `<br><span style="color:var(--amber-dim, #b8860b)">${mechBase}</span>`
+        + (mechExtra ? `<br><span style="color:var(--purple);font-size:0.62rem">▸ ${mechExtra.trim()}</span>` : '');
+      whyMechs.appendChild(el);
+    });
+  }
+
+  // Edge mechanisms: structural WHY annotations on causal edges.
+  // Show mechanisms for the current action's edges, enriched with lexical bridges.
+  const _edgeMechs = d.edge_mechanisms || {};
+  const _emKeys = Object.keys(_edgeMechs).filter(k => k.startsWith((_lastAction || '') + '|'));
+  if (_emKeys.length > 0) {
+    const _emHeader = document.createElement('div');
+    _emHeader.style.cssText = 'color:var(--dim);font-size:0.64rem;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px';
+    _emHeader.textContent = 'Causal Edge Mechanisms';
+    whyMechs.appendChild(_emHeader);
+    _emKeys.slice(0, 5).forEach(k => {
+      const metric = k.split('|')[1] || k;
+      const mech   = _edgeMechs[k] || '';
+      const hasBridge = mech.includes('; learned context:') || mech.includes('; weblearn[');
+      const [base, extra] = hasBridge ? mech.split(/;(?= learned|; weblearn)/, 2) : [mech, null];
+      const el = document.createElement('div');
+      el.className = 'why-mech';
+      el.style.cssText = 'margin-top:3px;font-size:0.63rem';
+      el.innerHTML = `<span style="color:var(--cyan)">${metric.replace(/_/g,' ')}</span>: `
+        + `<span style="color:var(--amber-dim, #9a8a5a)">${base}</span>`
+        + (extra ? `<br><span style="color:var(--purple);font-size:0.61rem">▸ ${extra.trim()}</span>` : '');
       whyMechs.appendChild(el);
     });
   }
@@ -4563,6 +4592,12 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br>The right panel is a horizontal bar chart of <strong>mean reward per action</strong> over the last 30 executions. Actions left of centre have been net-negative recently; actions right of centre have been beneficial. This is ARMINTA's exploitation guide. Idle-maintenance actions (<code>compact_memory</code>, <code>log_ss_stats</code>, <code>restore_renderer_nice</code>, <code>clean_trash_orphans</code> — reward target: <code>orphans_removed</code>, 0 for no-op runs), hardware-tuning actions (<code>nvme_thermal_tune</code> — EC-gated on OEM laptops; only fires above temp threshold), and observational reads (<code>web_fetch</code>) now appear here as well — their edges are fully poison-guarded at write time so only legitimate causal signals accumulate.
         <br><br>The <strong>GRAPH ✦</strong> tab shows a force-directed graph of the same edges. Use the <strong>FILTER SIT</strong> dropdown to see which edges are relevant to a specific workload situation — see <a href="#" onclick="openHelp('help-d3-filter');return false;" style="color:var(--cyan);">D3 Graph Situation Filter</a>.
         <br>The <strong>TIMELINE</strong> tab shows reward bars colour-coded by situation over the last 150 steps. Use the scrubber to scroll back through history — see <a href="#" onclick="openHelp('help-timeline-scrubber');return false;" style="color:var(--cyan);">Timeline Scrubber</a>.
+        <br><br>
+        <strong>Edge Mechanisms</strong> — each edge now carries a <em>mechanism annotation</em>: a phrase explaining WHY the action affects that metric. Built in three layers:
+        <br>· <em>Template</em> — assigned when the edge is first written by <code>intervene()</code>, from a structured lookup of action type and metric class.
+        <br>· <em>Lexical bridge</em> — during DreamCycle, symbols in LexicalCore's co-occurrence table that appear in contexts where both the action node and the metric node were mentioned are appended as "learned context: ...". Words Arminta absorbed from reading, now connected to her operational behavior.
+        <br>· <em>WebLearner enrichment</em> — when <code>maybe_learn()</code> absorbs text mapping to causal nodes, new symbols are queued and written onto matching edges by the next DreamCycle as "weblearn[query]: symbol1, symbol2, ...".
+        <br><br>Mechanisms accumulate over time. Open questions in LexicalCore that mention a known action and metric are resolved when a mechanism annotation with ≥3 supporting observations exists — graduating from wonder to confirmed knowledge.
       </div>
     </div>
 
@@ -4673,7 +4708,9 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br>
         <strong>Differs from past</strong> — counterfactual explanation. When an action produces an unexpectedly good or bad outcome compared to similar past episodes, Arminta identifies which metrics changed between now and then. For example: "worked before (step 366400, r=+0.71) but now: CPU higher by 48, dilution higher by 0.4". This is Layer 3 causal reasoning — not just what happened, but what was structurally different.
         <br><br>
-        <strong>Active Hypothesis Mechanisms</strong> — the last five hypotheses the HypothesisEngine generated, each annotated with a plain-language mechanism story. This is Layer 2: Arminta doesn't just notice that A correlates with B — she commits to a proposed explanation of why. Mechanisms are tested against subsequent observations and either confirmed or pruned.
+        <strong>Active Hypothesis Mechanisms</strong> — the last five hypotheses the HypothesisEngine generated, each annotated with a mechanism story. Mechanisms now have two layers: a template base (<em>"increased X loads the scheduler"</em>) and an optional lexical bridge from WebLearner (<em>"learned context: scheduler, preemption, timeslice"</em>). When WebLearner absorbs text that co-occurs with both the cause node and the effect node, those bridging symbols are appended. The enriched mechanism is shown in <span style="color:var(--purple)">purple</span> below the base text. This means the WHY isn't just a template — it reflects vocabulary Arminta built from reading.
+        <br><br>
+        <strong>Causal Edge Mechanisms</strong> — a new section showing the structural WHY annotation for each edge involving the current action. Edge mechanisms are written at three points: (1) when <code>intervene()</code> first establishes a causal edge (template); (2) when DreamCycle refines it using lexical co-occurrence bridges; (3) when WebLearner absorbs text bridging the two nodes and the DreamCycle writes it back. These persist across restarts in the pkl.
         <br><br>
         All four layers feed back into the episodic memory database (<code>arminta_episodic.db</code>) with context, so Arminta can replay past decisions and compare them against current conditions as she matures.
       </div>
