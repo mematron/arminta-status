@@ -2448,6 +2448,10 @@ header::after {
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">VECTOR SPACE</div>
         <div id="wl-semantic" style="font-size:1.4rem;color:#56b6c2;font-family:var(--font-mono);" title="symbols with a distributional vector built from her own co-occurrence statistics; dims = vector dimensionality">--</div>
       </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">GROUNDED</div>
+        <div id="wl-grounded" style="font-size:1.4rem;color:#98c379;font-family:var(--font-mono);" title="words actually tested against her own sensor data and confirmed, not just statistically associated">--</div>
+      </div>
     </div>
     <div id="wl-status-row" style="display:flex;align-items:center;gap:16px;margin:10px 0 8px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);">NEXT FETCH</span>
@@ -2458,6 +2462,10 @@ header::after {
     <div id="wl-relevance-row" style="display:none;align-items:center;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);">RELEVANCE-DISCOUNTED</span>
       <span id="wl-discounted" style="color:#e06c75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;" title="symbols absorbed from a recent fetch that scored as off-topic against the query's own concept space, and were kept at reduced weight rather than full strength">--</span>
+    </div>
+    <div id="wl-grounded-row" style="display:none;align-items:flex-start;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
+      <span style="color:var(--dim);white-space:nowrap;padding-top:2px;">GROUNDED WORDS</span>
+      <span id="wl-grounded-list" style="color:#98c379;display:flex;gap:10px;flex-wrap:wrap;" title="word — metric it predicts, confidence, confirmed/refuted count. Confirmed against her own real sensor data, not just co-occurrence.">--</span>
     </div>
     <div class="log-header">
       <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:0;">learning session log — recent fetch &amp; discovery events</div>
@@ -4192,6 +4200,41 @@ function render(d) {
       relRow.style.display = 'none';
     }
 
+    // [v8-lang] Grounded-words tile + row -- words actually tested against
+    // her own sensor data (LexicalGrounding), distinct from the semantic
+    // vector space which is statistics-only. A word here has survived a
+    // falsifiable prediction check, not just frequent company.
+    const wlGroundedEl = document.getElementById('wl-grounded');
+    if (wlGroundedEl) {
+      const groundedCount = wl.grounded_count || 0;
+      const pendingCount  = wl.grounding_pending || 0;
+      if (groundedCount > 0) {
+        wlGroundedEl.textContent = fmt(groundedCount);
+        wlGroundedEl.title = `${groundedCount} words confirmed against real sensor data; ${pendingCount} predictions still pending`;
+      } else if (pendingCount > 0) {
+        wlGroundedEl.textContent = `0 (${pendingCount} pending)`;
+        wlGroundedEl.title = `${pendingCount} predictions open, waiting on the check window before they can confirm or refute`;
+      } else {
+        wlGroundedEl.textContent = '—';
+        wlGroundedEl.title = 'no words have an open or confirmed grounding test yet';
+      }
+    }
+
+    const groundRow  = document.getElementById('wl-grounded-row');
+    const groundList = document.getElementById('wl-grounded-list');
+    const groundedWords = wl.grounded_words || {};
+    const groundedKeys  = Object.keys(groundedWords);
+    if (groundRow && groundList && groundedKeys.length) {
+      groundRow.style.display = 'flex';
+      groundList.innerHTML = groundedKeys.map(word => {
+        const g = groundedWords[word];
+        const conf = typeof g.confidence === 'number' ? g.confidence.toFixed(2) : '?';
+        return `<span title="confirmed ${g.confirmations}x, refuted ${g.refutations}x">${word} → ${g.metric} (${conf})</span>`;
+      }).join('');
+    } else if (groundRow) {
+      groundRow.style.display = 'none';
+    }
+
     const disc    = wl.recent_discoveries || [];
     const logWrap = document.getElementById('wl-log-wrap');
     if (disc.length) {
@@ -4852,13 +4895,21 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br>
         <strong>QuestionResolver</strong> — runs after each WebLearner cycle. Checks whether newly absorbed text answers any of LexicalCore's open questions via token overlap. Resolved questions graduate into the lexicon as confirmed statements with a valence tag (positive or negative, based on the reward context in which they arose).
         <br><br>
+        <strong>SemanticSpace</strong> — a distributional vector space built from her own co-occurrence statistics (PPMI-weighted, reduced via a from-scratch truncated SVD — no pretrained embeddings, no external model, no network call). This is what lets her detect that two symbols are conceptually related even if they never directly co-occurred in any single absorbed passage — pure statistics about which words keep similar company, nothing more. It's also what powers relevance gating in absorb_text(): new vocabulary is checked against the existing concept-neighborhood of the search query that produced it, so a search mismatch (e.g. a "latency portal" query returning an unrelated Wikipedia article) gets its vocabulary kept at reduced weight rather than absorbed at full strength as if it were genuinely relevant. <em>Honest limit: this is geometry, not comprehension — a word can sit in exactly the right neighborhood without her knowing what it refers to.</em>
+        <br><br>
+        <strong>LexicalGrounding</strong> — the one part of her language system that touches something outside language. When an absorbed word fuzzy-matches one of her own real sensor metrics (via a small hand-authored synonym table — e.g. "thermal" → <code>temp_c</code>) and a direction can be read from co-occurring words (increase/decrease, rise/fall, etc.), she opens a falsifiable prediction: "this word implies the metric moves this way." ~2000 steps later, the prediction gets checked against what her own <code>_metric_history</code> actually did. Confirmed repeatedly → the word earns grounded status, visible separately from its vector. Refuted → confidence drops and a fresh hypothesis can retire outright. <em>Honest limits, stated rather than hidden: only works for words mappable onto a real measured metric (most vocabulary never qualifies); direction extraction is a crude bag-of-words heuristic, not real sentence comprehension; the word↔metric synonym table is hand-authored, the one place a human supplied structure she couldn't have derived herself, since "thermal" and <code>temp_c</code> share no characters for any self-built method to connect.</em>
+        <br><br>
         <strong>Dashboard counters and status row:</strong>
         <br>· <strong>Pages Read</strong> — total web pages fetched lifetime
         <br>· <strong>New Symbols</strong> — cumulative unique vocabulary items absorbed from external sources
         <br>· <strong>Lexicon Size</strong> — distinct symbols currently active in LexicalCore's weight table
         <br>· <strong>Active Queries</strong> — symbols currently suppressed from re-querying within the TTL window (resets after ~2000 steps)
+        <br>· <strong>Vector Space</strong> — symbols with a built distributional vector, and its dimensionality; "—" means not enough co-occurrence data yet to be worth building
+        <br>· <strong>Grounded</strong> — words confirmed against real sensor data (not just statistics), with pending predictions shown when nothing's confirmed yet
         <br>· <strong>Next Fetch</strong> — steps remaining until the interval gate clears; turns green when ready
         <br>· <strong>Queue</strong> — hypothesis-driven concepts waiting in the priority queue; hover for full list
+        <br>· <strong>Relevance-discounted</strong> (shown only when non-empty) — symbols from a recent fetch that scored as off-topic against the query's own concept space
+        <br>· <strong>Grounded words</strong> (shown only when non-empty) — word → metric (confidence), hover for confirm/refute counts
         <br><br>The session log shows each fetch/learn cycle: query generated → article retrieved → symbols absorbed (with sample) → reward impact. Log colours: <span style="color:var(--cyan)">cyan</span> = fetch, <span style="color:var(--green)">green</span> = learn (new symbols), <span style="color:var(--amber)">amber</span> = concept/skip, <span style="color:var(--purple)">purple</span> = reward delta.
       </div>
     </div>
