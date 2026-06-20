@@ -791,6 +791,7 @@ button:focus-visible, a:focus-visible {
 }
 .log-line.causal-stmt { color: #80cbc4; }      /* [LEXICAL][CAUSAL] lines */
 .log-line.obs-lex { color: #66b2b2; }         /* [LEXICAL][OBS] observable-edge language */
+.log-line.chain-lex { color: #4dd0e1; }       /* [LEXICAL][CHAIN] multi-hop composed statements */
 .log-line.dream { color: var(--purple); opacity: 0.85; }
 
 /* ── WEB LEARNER LOG ── */
@@ -3844,6 +3845,7 @@ function render(d) {
       else if (l.includes('[hobby]'))                                   cls += ' hobby';
       else if (l.includes('[lexical][causal]'))                         cls += ' causal-stmt';
       else if (l.includes('[lexical][obs]'))                            cls += ' obs-lex';
+      else if (l.includes('[lexical][chain]'))                          cls += ' chain-lex';
       else if (l.includes('[lexical]') || l.includes('[lex]'))         cls += ' lex';
       else if (l.includes('[weblearn]'))                                cls += ' lex';
       else if (l.includes('[resolver]') || l.includes('[resolve]'))    cls += ' res';
@@ -4791,6 +4793,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <span style="color:#4a8080">Teal</span> — observation events (<code>[OBS]</code>)
         <br>· <span style="color:#80cbc4">Teal-green</span> — causal graph language (<code>[LEXICAL][CAUSAL]</code>) — statements formed from interventional edges
         <br>· <span style="color:#66b2b2">Teal-mid</span> — observable-edge language (<code>[LEXICAL][OBS]</code>) — uses <em>tracks</em> / <em>correlates-with</em> to preserve the observational/interventional distinction
+        <br>· <span style="color:#4dd0e1">Bright cyan</span> — multi-hop composed statements (<code>[LEXICAL][CHAIN]</code>) — walks her own sequence grammar 2-3 hops from a seed symbol to assemble a chained statement she's never made before, not just a single fact lookup
         <br>· <span style="color:var(--amber)">Amber</span> — actions taken (set_, drop_, sync, compact…)
         <br>· <span style="color:var(--purple)">Purple</span> — curiosity / dream events
         <br>· <span style="color:var(--red)">Red</span> — errors and warnings (including <code>renice_chrome</code> consecutive-failure suppression)
