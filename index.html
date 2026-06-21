@@ -2367,9 +2367,14 @@ header::after {
       <div class="stat-sub" id="arminta-age-sub">since first run</div>
     </div>
     <div class="stat-card">
+      <div class="stat-label">Uptime<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="Total time actually running across all sessions" aria-label="Help: Uptime">?</button></div>
+      <div class="stat-value cyan" id="uptime-display">--</div>
+      <div class="stat-sub">time actually running</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-label">Sessions<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What are Sessions?" aria-label="Help: Sessions / SelfModel">?</button></div>
       <div class="stat-value" id="session-count">--</div>
-      <div class="stat-sub" id="uptime-sub">total uptime --</div>
+      <div class="stat-sub" id="uptime-sub"></div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Novelty Hunger<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-selfmodel')" title="What is Novelty Hunger?" aria-label="Help: Novelty Hunger / SelfModel">?</button></div>
@@ -3091,9 +3096,10 @@ function render(d) {
   }
   if (d.session_count !== undefined) {
     setAndFlash('session-count', d.session_count);
-    const uptimeSub = document.getElementById('uptime-sub');
-    if (uptimeSub && d.total_uptime_s !== undefined)
-      uptimeSub.textContent = 'uptime ' + fmtAge(d.total_uptime_s);
+    if (d.total_uptime_s !== undefined) {
+      const uptimeEl = document.getElementById('uptime-display');
+      if (uptimeEl) { uptimeEl.textContent = fmtAge(d.total_uptime_s); uptimeEl.style.color = 'var(--cyan)'; }
+    }
   }
   if (d.novelty_hunger !== undefined) {
     const nh = +d.novelty_hunger;
