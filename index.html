@@ -5185,6 +5185,38 @@ function _desktopAutoRender() {
 }
 window.addEventListener('load', _desktopAutoRender);
 
+// Re-apply mobile/desktop causal-panel layout and re-fit visible charts on
+// resize. Without this, panel visibility and D3/Chart.js sizing are only
+// ever computed once at initial load (_isCausalMobile() check above, plus
+// the one-shot clientWidth read inside renderD3CausalGraph) -- resizing the
+// browser window, rotating a device, or testing with devtools' responsive
+// mode after the page has loaded leaves the layout stuck at whatever it was
+// on first paint, including the wrong panel-visibility mode if the resize
+// crosses the 720px mobile breakpoint. Debounced so a drag-resize doesn't
+// thrash re-renders on every intermediate frame.
+let _causalResizeTimer = null;
+function _handleCausalResize() {
+  clearTimeout(_causalResizeTimer);
+  _causalResizeTimer = setTimeout(() => {
+    const mobile = _isCausalMobile();
+    const activeTab = _ALL_CAUSAL_PANELS.find(id => {
+      const tab = document.getElementById('tab-' + id);
+      return tab && tab.classList.contains('active');
+    }) || 'edges';
+    _ALL_CAUSAL_PANELS.forEach(id => {
+      const panel = document.getElementById('causal-panel-' + id);
+      if (!panel) return;
+      panel.style.display = mobile ? (id === activeTab ? '' : 'none') : '';
+    });
+    // Only re-fit charts that are actually visible at the new size: always
+    // on desktop (grid shows every panel), or when their tab is the active
+    // one on mobile.
+    if (!mobile || activeTab === 'graph')    renderD3CausalGraph();
+    if (!mobile || activeTab === 'timeline') renderTimeline();
+  }, 150);
+}
+window.addEventListener('resize', _handleCausalResize);
+
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
 let _d3Simulation = null;
 let _d3Zoom = null;
