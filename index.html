@@ -1567,6 +1567,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 .wish-status-deployed { color: var(--green); }
 .wish-status-staged   { color: var(--cyan); }
 .wish-status-shopping { color: var(--amber); }
+.wish-status-exhausted { color: var(--red); }
 
 @media (max-width: 600px) {
   .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
@@ -3031,9 +3032,10 @@ function render(d) {
     // wish detail rows
     const wishList = document.getElementById('wish-list');
     if (wishList && Array.isArray(d.wish_details) && d.wish_details.length) {
-      const statusClass = s => s === 'deployed' ? 'wish-status-deployed'
-                             : s === 'staged'   ? 'wish-status-staged'
-                             : s === 'shopping' ? 'wish-status-shopping' : '';
+      const statusClass = s => s === 'deployed'  ? 'wish-status-deployed'
+                             : s === 'staged'    ? 'wish-status-staged'
+                             : s === 'shopping'  ? 'wish-status-shopping'
+                             : s === 'exhausted' ? 'wish-status-exhausted' : '';
       wishList.innerHTML = d.wish_details.map(w =>
         `<div class="wish-row">
           <span class="wish-trigger-badge wish-trigger-${w.trigger}">${w.trigger.replace('_',' ')}</span>
