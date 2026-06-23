@@ -2678,11 +2678,16 @@ header::after {
         <div class="wish-stat-val" id="wish-wins" style="color:var(--green);">--</div>
         <div class="wish-stat-label">wins</div>
       </div>
+      <div class="wish-stat" title="WIN rate among decided evals (WIN/TIE/LOSE)">
+        <div class="wish-stat-val" id="wish-win-rate" style="color:var(--green);">--</div>
+        <div class="wish-stat-label">win rate</div>
+      </div>
       <div class="wish-stat" id="wish-review-stat" style="border-color:rgba(255,179,0,0.3);">
         <div class="wish-stat-val" id="wish-pending-review" style="color:var(--amber);">--</div>
         <div class="wish-stat-label">awaiting review</div>
       </div>
     </div>
+    <div id="wish-evolver-trend" style="margin-top:6px;font-size:0.68rem;color:var(--dim);"></div>
     <div id="wish-list">
       <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
     </div>
@@ -3000,6 +3005,31 @@ function render(d) {
     setAndFlash('wish-sit-gaps',  d.wish_sit_gaps   || 0);
     setAndFlash('wish-staged',    d.wish_items_staged || 0);
     setAndFlash('wish-wins',      d.wish_wins || 0);
+
+    // [W4] evolver summary: win rate + rolling improvement trend
+    const winRateEl = document.getElementById('wish-win-rate');
+    const trendEl   = document.getElementById('wish-evolver-trend');
+    const we = d.wish_evolver_summary;
+    if (we && winRateEl) {
+      winRateEl.textContent = we.decided_count > 0
+        ? Math.round(we.win_rate * 100) + '%'
+        : '--';
+    }
+    if (we && trendEl) {
+      if (we.decided_count > 0) {
+        const imp = we.rolling_improvement;
+        const impStr = (imp >= 0 ? '+' : '') + Math.round(imp * 1000) / 10 + '%';
+        trendEl.textContent =
+          `evolver: ${we.decided_count} decided · ` +
+          `${Math.round(we.win_rate*100)}% WIN / ${Math.round(we.tie_rate*100)}% TIE / ` +
+          `${Math.round(we.lose_rate*100)}% LOSE · rolling improvement ${impStr}` +
+          (we.evaluating_count ? ` · ${we.evaluating_count} evaluating` : '');
+      } else {
+        trendEl.textContent = we.evaluating_count
+          ? `evolver: ${we.evaluating_count} evaluating, no verdicts yet`
+          : '';
+      }
+    }
 
     // staging / win badges
     const stagingBadge = document.getElementById('wish-staging-badge');
