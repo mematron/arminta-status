@@ -848,6 +848,28 @@ button:focus-visible, a:focus-visible {
 .mb12 { margin-bottom: 12px; }
 .mb28 { margin-bottom: 28px; }
 
+/* ── SYSTEM ALERTS BANNER (Enhancement 4) ── */
+#system-alerts-banner {
+  display: none;
+  border: 1px solid rgba(255,200,0,0.45);
+  background: rgba(255,200,0,0.07);
+  padding: 10px 18px;
+  font-size: 0.74rem;
+  letter-spacing: 0.07em;
+  margin-bottom: 18px;
+  line-height: 1.7;
+}
+#system-alerts-banner .sa-header {
+  color: var(--yellow, #ffc800);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+#system-alerts-banner .sa-item {
+  color: var(--yellow, #ffc800);
+  opacity: 0.88;
+}
+#system-alerts-banner .sa-item::before { content: '▶ '; opacity: 0.6; }
+
 /* ── DREAM THROTTLE BADGE ── */
 .dream-throttle-badge {
   display: inline-block;
@@ -1917,6 +1939,10 @@ header::after {
 })();
 </script>
 <div id="error-banner" style="display:none"></div>
+<div id="system-alerts-banner">
+  <div class="sa-header">⚠ SYSTEM ALERTS</div>
+  <div id="system-alerts-body"></div>
+</div>
 
 <div id="dashboard">
 
@@ -2781,6 +2807,22 @@ function render(d) {
   document.getElementById('error-banner').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   _dashboardRevealed = true; // allow refresh() to re-show after error recovery
+
+  /* [Enhancement 4] system_alerts banner */
+  (function renderSystemAlerts() {
+    const banner = document.getElementById('system-alerts-banner');
+    const body   = document.getElementById('system-alerts-body');
+    if (!banner || !body) return;
+    const alerts = Array.isArray(d.system_alerts) ? d.system_alerts : [];
+    if (alerts.length === 0) {
+      banner.style.display = 'none';
+      return;
+    }
+    body.innerHTML = alerts.map(a =>
+      `<div class="sa-item">[${(a.code||'ALERT').toUpperCase()}] ${a.message||''}</div>`
+    ).join('');
+    banner.style.display = 'block';
+  })();
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
   const mins = staleness(d.updated_ts);
