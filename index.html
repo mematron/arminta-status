@@ -1526,7 +1526,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 /* ── Wish Pipeline panel ────────────────────────────────────────────────── */
 .wish-stat-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 10px;
 }
 .wish-stat {
@@ -1591,14 +1591,6 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 .wish-status-shopping { color: var(--amber); }
 .wish-status-exhausted { color: var(--red); }
 
-@media (max-width: 600px) {
-  .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 380px) {
-  .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
-}
-
-
 /* ── Wish review pending animation ─────────────────────────────────────── */
 @keyframes pulse-amber {
   0%, 100% { opacity: 1; }
@@ -1609,8 +1601,6 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 @media (max-width: 600px) {
   /* help panel: full-width on mobile */
   #help-panel { width: 100vw; border-left: none; }
-  /* wish stat row: 3 cols on mobile */
-  .wish-stat-row { grid-template-columns: repeat(3, 1fr); }
   #wish-review-stat { grid-column: span 3; }
   /* wish row: stack on narrow */
   .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
@@ -1620,7 +1610,6 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 }
 @media (max-width: 380px) {
   #help-panel { width: 100vw; }
-  .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
   #wish-list { max-height: 150px; }
 }
 
@@ -2707,6 +2696,10 @@ header::after {
         <div class="wish-stat-val" id="wish-sit-gaps" style="color:var(--purple);">--</div>
         <div class="wish-stat-label">sit. gaps</div>
       </div>
+      <div class="wish-stat" title="Metrics Arminta can observe but has zero causal coverage for">
+        <div class="wish-stat-val" id="wish-blind-spots" style="color:var(--cyan);">--</div>
+        <div class="wish-stat-label">blind spots</div>
+      </div>
       <div class="wish-stat">
         <div class="wish-stat-val" id="wish-staged" style="color:var(--cyan);">--</div>
         <div class="wish-stat-label">in staging</div>
@@ -3072,6 +3065,7 @@ function render(d) {
     setAndFlash('wish-active',    d.wish_active);
     setAndFlash('wish-dead-zones',d.wish_dead_zones || 0);
     setAndFlash('wish-sit-gaps',  d.wish_sit_gaps   || 0);
+    setAndFlash('wish-blind-spots', d.wish_blind_spots || 0);
     setAndFlash('wish-staged',    d.wish_items_staged || 0);
     setAndFlash('wish-wins',      d.wish_wins || 0);
 
@@ -3135,10 +3129,15 @@ function render(d) {
                              : s === 'staged'    ? 'wish-status-staged'
                              : s === 'shopping'  ? 'wish-status-shopping'
                              : s === 'exhausted' ? 'wish-status-exhausted' : '';
+      const triggerLabel = t => t.replace(/_/g, ' ');
+      const failBadge = w => (w.fail_count > 0)
+        ? `<span style="font-size:0.58rem;color:var(--red);font-family:var(--font-mono);flex-shrink:0;" title="LOSE/TIE eval attempts">✕${w.fail_count}</span>`
+        : '';
       wishList.innerHTML = d.wish_details.map(w =>
         `<div class="wish-row">
-          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${w.trigger.replace('_',' ')}</span>
+          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${triggerLabel(w.trigger)}</span>
           <span class="wish-target">${w.target}</span>
+          ${failBadge(w)}
           <span class="wish-status ${statusClass(w.status)}">${w.status} · step ${Number(w.step).toLocaleString()}</span>
         </div>`
       ).join('');
@@ -5224,12 +5223,13 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Wish Pipeline (W1–W4)</span><span class="tag tag-meta">META</span></div>
       <div class="help-entry-body">
         The Wish Pipeline is how ARMINTA identifies her own capability gaps and proposes ways to fill them — a self-directed development loop that runs alongside normal operation. Nothing deploys without surviving all four phases.
-        <br><br><strong>W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode after the lexical reflection pass, gated by a ~3000-step cooldown. It scans for two classes of deficit:
+        <br><br><strong>W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode after the lexical reflection pass, gated by a ~3000-step cooldown. It scans for three classes of deficit:
         <br>· <strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over 500+ samples. She knows something is wrong and can't fix it. Current dead zone: <code>renice_chrome</code> (structural — fires when only 1 eligible renderer exists; suppressed after 3 consecutive failures). Resolved dead zones: <code>kill_top_proc</code> → <code>wish_log_top_proc</code>; <code>sync</code> → <code>handle_io_bound</code>; <code>set_ac_max_perf</code> → <code>wish_set_ac_max_perf</code>; <code>priorityshift_restore</code> → <code>wish_priorityshift_restore</code>; <code>compact_memory</code> → <code>wish_compact_memory</code>; <code>restore_renderer_nice</code> → <code>wish_restore_renderer_nice</code>. <code>drop_slab</code> is now a first-class selectable action (previously only fired as a sub-step inside <code>handle_idle</code>); its causal graph edges and reward routing are now live, so the wish system can address any dead zone it develops.
         <br>· <strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. All current gaps have real implementations: <code>handle_idle_v2</code>, <code>handle_streaming_v2</code>, <code>handle_compile_v2</code>, <code>handle_io_bound</code>, <code>handle_browser_compute_v2</code>, <code>throttle_torrent_v2</code>.
-        <br><br><strong>W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a ~5000-step cooldown: first actions in the existing registry, scored against the wish by causal affinity (real measured edges from <code>situated_edges</code> dominate) with lexical name overlap as a cold-start fallback — no fixed wish→action lookup table, so an unanticipated situation still gets scored against the whole registry; then system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…) picked by the same scoring against capability domains, as a fallback when no action scores.
-        <br><br><strong>W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2000 steps (~83 min). The candidate observes live metrics, predicts decisions, never executes. Three disqualification gates: out-of-registry action proposal, resource threshold breach, or fire rate outside 1%–80% of steps.
-        <br><br><strong>W4 — Evolutionary Grading</strong> evaluates passed shadows over 5000 steps. WIN = target metric improves &gt;10% sustained with no degradation elsewhere. TIE/LOSE = candidate retired, nothing changes. A WIN marks the wish <code>deployed</code> in W1.
+        <br>· <strong>Metric Blind Spots</strong> — metrics with ≥20 observations in telemetry but zero interventional edges (no action has ever produced a measured causal effect on this axis). ARMINTA can see the metric moving but has no policy reach into it — structural coverage gap, not a bad action.
+        <br><br><strong>W2 — Shopping List</strong> searches for procurement candidates in priority order, gated by a ~5000-step cooldown: first actions in the existing registry, scored against the wish by causal affinity (real measured edges from <code>situated_edges</code> dominate) with lexical name overlap as a cold-start fallback — no fixed wish→action lookup table, so an unanticipated situation still gets scored against the whole registry; then system utilities on PATH (<code>ionice</code>, <code>taskset</code>, <code>tc</code>, <code>numactl</code>…) picked by the same scoring against capability domains, as a fallback when no action scores. After a LOSE/TIE verdict, existing shopper items are retired so the next pass can try a genuinely different candidate.
+        <br><br><strong>W3 — Staging Ring</strong> runs each candidate in shadow mode for ~2000 steps (~83 min). The candidate observes live metrics, predicts decisions, never executes. Three disqualification gates: out-of-registry action proposal, resource threshold breach, or fire rate outside 1%–95% of steps.
+        <br><br><strong>W4 — Evolutionary Grading</strong> evaluates passed shadows over 5000 steps. Relevance-gated: reward samples only accumulate when the current situation or dispatched action shares tokens with the wish's target metric, preventing unrelated steps from diluting the signal. If fewer than 50 relevant samples arrive in the first window, grading defers up to 10 000 steps before forcing a TIE. WIN = target metric improves &gt;10% sustained with no degradation elsewhere. TIE/LOSE = candidate retired; the <span style="color:var(--red);">✕N</span> counter on each wish row shows how many failed attempts that wish has accumulated (exhausted after 3). A WIN marks the wish <code>deployed</code> in W1.
         <br><br><strong style="color:var(--amber);">W4b — Code Generation</strong> fires on every WIN. Reads her own source file via AST and scores every <code>action_*</code> function as a donor candidate against the wish — causal affinity from <code>situated_edges</code> (real measured effect) dominates, lexical name/docstring overlap is the cold-start fallback; no fixed target→donor table, so an unanticipated wish target still gets scored against the full action library rather than falling back to a wrong default. The donor body is then mutated generically: numeric thresholds (ionice/nice values, percentages, timeouts) are perturbed in the direction causal data says helps, or a small seeded exploratory step when there's no signal yet; any process/name strings the gap detector actually observed in the wish's evidence get added to the donor's name-sets if missing. Validates syntax, backs up the current source file, and appends to <code>arminta_v7_staged_actions.py</code> alongside the script. No external API — generation is deterministic, derived from real causal/reward data, not a hand-written per-target patch. Each variant is genuinely distinct at the code level; the dedup guard rejects clones. Staged actions accumulate — they never auto-deploy. The <strong style="color:var(--amber);">REVIEW NEEDED</strong> badge and counter show how many are waiting. To merge: open <code>arminta_merge_tool.html</code>, drop in <code>arminta_v7.py</code> and <code>arminta_v7_staged_actions.py</code>, review each pending function, approve or reject, then download the merged file. The tool handles ACTIONS list registration, dispatch wiring, and function insertion automatically.
         <br><br>The reward evaluator formula is never modified. ARMINTA can acquire new capabilities — she cannot redefine what counts as good.
         <br><br><strong>When to expect data:</strong> First wishes appear within the first <code>SELF_ASSESS</code> window after restart (~3–10 min). Shopping runs ~3.5 hrs later. Each staging pass takes ~83 min. Grading takes ~3.5 hrs after staging clears.
