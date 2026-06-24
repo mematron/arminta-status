@@ -2103,6 +2103,10 @@ header::after {
       <span class="why-label">Differs from</span>
       <span class="why-value why-cf" id="why-cf"></span>
     </div>
+    <div class="why-row" id="why-pe-row" style="display:none">
+      <span class="why-label">Pred. Error</span>
+      <span class="why-value" id="why-pe"></span>
+    </div>
     <div id="why-mechanisms" style="margin-top:6px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent"></div>
   </div>
 
@@ -4008,6 +4012,18 @@ function render(d) {
     whyCfRow.style.display = 'flex';
   } else {
     whyCfRow.style.display = 'none';
+  }
+
+  // World-model prediction error for the last step
+  const whyPeRow = document.getElementById('why-pe-row');
+  const whyPe    = document.getElementById('why-pe');
+  const _predErr = d.pred_error;
+  if (_predErr !== undefined && _predErr !== null) {
+    const _peCol = _predErr >= 0.5 ? 'var(--red)' : _predErr >= 0.2 ? 'var(--amber)' : 'var(--green)';
+    whyPe.innerHTML = `<span style="color:${_peCol}">${_predErr.toFixed(3)}</span>`;
+    whyPeRow.style.display = 'flex';
+  } else {
+    whyPeRow.style.display = 'none';
   }
 
   // Hypothesis mechanisms (last 5)
