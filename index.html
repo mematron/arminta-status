@@ -2362,7 +2362,8 @@ header::after {
       <div class="stat-sub" id="hyp-validation-sub" style="display:none">
         <span id="hyp-val-supported" style="color:var(--green)">--</span> confirmed ·
         <span id="hyp-val-refuted" style="color:var(--dim)">--</span> refuted ·
-        <span id="hyp-val-pending" style="color:var(--amber)">--</span> pending
+        <span id="hyp-val-pending" style="color:var(--amber)">--</span> pending ·
+        <span id="hyp-val-unverifiable" style="color:var(--muted)">--</span> unverifiable
       </div>
     </div>
     <div class="stat-card">
@@ -3043,15 +3044,21 @@ function render(d) {
   setAndFlash('causal-edges', fmt(d.causal_edges));
   setAndFlash('dreams', fmt(d.dream_count));
   setAndFlash('hypotheses', fmt(d.hypotheses));
-  // hyp_validation: supported/refuted/pending breakdown for HypothesisEngine
-  // verdicts — absent on older gist snapshots, so the sub-line stays hidden
-  // until the backend has actually started forwarding it.
+  // hyp_validation: supported/refuted/pending/unverifiable breakdown for
+  // HypothesisEngine verdicts — absent on older gist snapshots, so the
+  // sub-line stays hidden until the backend has actually started forwarding
+  // it. 'unverifiable' is included deliberately: it's the dominant bucket
+  // (legacy hypotheses whose schema predates the current verdict logic, and
+  // FalsificationScheduler's terminal call for stale hypotheses that never
+  // accumulated edge data) — hiding it would make confirmed/refuted look
+  // more complete than they are.
   if (d.hyp_validation && typeof d.hyp_validation === 'object') {
     const _hv = d.hyp_validation;
     document.getElementById('hyp-validation-sub').style.display = 'block';
-    setAndFlash('hyp-val-supported', fmt(_hv.supported || 0));
-    setAndFlash('hyp-val-refuted',   fmt(_hv.refuted || 0));
-    setAndFlash('hyp-val-pending',   fmt(_hv.pending || 0));
+    setAndFlash('hyp-val-supported',    fmt(_hv.supported || 0));
+    setAndFlash('hyp-val-refuted',      fmt(_hv.refuted || 0));
+    setAndFlash('hyp-val-pending',      fmt(_hv.pending || 0));
+    setAndFlash('hyp-val-unverifiable', fmt(_hv.unverifiable || 0));
   }
   setAndFlash('interventions', fmt(d.interventions));
   setAndFlash('self-mods', fmt(d.self_mods));
@@ -4715,7 +4722,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         Six counters that track the size of ARMINTA's learned world-model:
         <br><br>· <strong>Causal Edges</strong> — confirmed directed relationships in the interventional graph. Each edge says "action X reliably changes metric Y by amount Z."
         <br>· <strong>Dreams</strong> — offline counterfactual simulations run (no real hardware actions). Used to pre-test hypotheses cheaply before committing.
-        <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded. The breakdown beneath the count — <em>confirmed / refuted / pending</em> — comes from <code>HypothesisEngine.validation_summary()</code>: <em>confirmed</em> means a real interventional edge formed with the predicted sign; <em>refuted</em> means the edge formed with the opposite sign, or no edge ever formed before the validation window expired; <em>pending</em> means still under active observation. A <em>confirmed</em> count stuck at zero for a long time is a sign worth investigating — it can mean the relationships being proposed are too sparse to ever accumulate enough evidence before timing out, not that her reasoning is bad.
+        <br>· <strong>Hypotheses</strong> — candidate causal relationships generated and currently under test. High numbers are normal; they get promoted to edges or discarded. The breakdown beneath the count — <em>confirmed / refuted / pending / unverifiable</em> — comes from <code>HypothesisEngine.validation_summary()</code>: <em>confirmed</em> means a real interventional edge formed with the predicted sign; <em>refuted</em> means the edge formed with the opposite sign, or no edge ever formed before the validation window expired; <em>pending</em> means still under active observation; <em>unverifiable</em> means a stale hypothesis was given a terminal "no data, never will be" verdict by <code>FalsificationScheduler</code> — distinct from <em>refuted</em>, which is a real (if negative) finding. A <em>confirmed</em> count stuck at zero for a long time is a sign worth investigating — it can mean the relationships being proposed are too sparse to ever accumulate enough evidence before timing out, not that her reasoning is bad.
         <br>· <strong>Interventions</strong> — total real OS actions executed (subset of Total Steps that actually changed system state).
         <br>· <strong>Self-Modifications</strong> — times ARMINTA rewrote part of its own source code autonomously via AST patching. Tunable targets (all bounded by hard min/max guards): <code>STEP_RATE_DEFAULT</code> [1.5–4.0], <code>STEP_RATE_MAX</code>, <code>STEP_RATE_MIN</code> (pacing), <code>CURIOSITY_STALE_STEPS</code>, <code>CURIOSITY_PROBE_COOLDOWN</code> (exploration aggression), <code>DISCO_INTERVAL</code>, <code>TUNE_INTERVAL</code> (scheduling), and <code>PSI_CPU/MEM/IO_ACTION_THRESH</code> (pressure sensitivity). A non-zero value means the agent has changed its own behaviour at runtime.
         <br>· <strong>Mosaic Hypotheses</strong> — cross-domain correlations discovered by the Mosaic sub-system (e.g. "humidity sensor correlates with CPU temperature"). These are environment↔system links, not action↔metric links.
