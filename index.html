@@ -2734,11 +2734,34 @@ header::after {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
+const DEFAULT_GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
+const GIST_URL = (
+  new URLSearchParams(window.location.search).get('stats') ||
+  localStorage.getItem('ARMINTA_STATS_URL') ||
+  DEFAULT_GIST_URL
+).trim();
 const REFRESH_MS = 75000; // 75 seconds — matches Gist push interval (~75s at 30 steps × 2.5s/step)
+const CACHE_KEY = 'arminta:last-good-payload:v1';
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function safeClassToken(s) {
+  return String(s ?? 'unknown').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+}
+function cachePayload(d) {
+  try { if (d && d.step_count) localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (_) {}
+}
+function loadCachedPayload() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) { return null; }
+}
 
 function staleness(ts) {
   if (!ts) return null;
@@ -2820,7 +2843,7 @@ function render(d) {
       return;
     }
     body.innerHTML = alerts.map(a =>
-      `<div class="sa-item">[${(a.code||'ALERT').toUpperCase()}] ${a.message||''}</div>`
+      `<div class="sa-item">[${esc((a.code||'ALERT').toUpperCase())}] ${esc(a.message||'')}</div>`
     ).join('');
     banner.style.display = 'block';
   })();
@@ -2851,7 +2874,7 @@ function render(d) {
   const isStale = lastUpdatedTs && currentTs && currentTs === lastUpdatedTs;
   const luEl = document.getElementById('last-updated');
   if (luEl) {
-    luEl.innerHTML = 'DATA: ' + (currentTs || '--') +
+    luEl.innerHTML = 'DATA: ' + esc(currentTs || '--') +
       (isStale ? ' <span class="stale-badge" title="Data unchanged since last refresh — agent may be paused">CACHED</span>' : '');
   }
   lastUpdatedTs = currentTs;
@@ -2883,8 +2906,9 @@ function render(d) {
     else if (sitConfVal >= 0.30) sitConfClass = ' sit-conf-mid';
     else sitConfClass = ' sit-conf-low';
   }
+  const sitToken = safeClassToken(sit);
   document.getElementById('situation-badge').innerHTML =
-    `<span class="sit-badge sit-${sit}${sitConfClass}" title="confidence: ${sitConfVal !== null ? (sitConfVal*100).toFixed(1)+'%' : 'unknown'}">${sit.toUpperCase()}${sitConfStr}</span>`;
+    `<span class="sit-badge sit-${sitToken}${sitConfClass}" title="confidence: ${sitConfVal !== null ? (sitConfVal*100).toFixed(1)+'%' : 'unknown'}">${esc(String(sit).toUpperCase())}${esc(sitConfStr)}</span>`;
 
   /* reward — prefer rolling_avg_reward (150-step window); fall back to total_reward */
   const rollingR = d.rolling_avg_reward !== undefined ? d.rolling_avg_reward : null;
@@ -3130,16 +3154,16 @@ function render(d) {
                              : s === 'staged'    ? 'wish-status-staged'
                              : s === 'shopping'  ? 'wish-status-shopping'
                              : s === 'exhausted' ? 'wish-status-exhausted' : '';
-      const triggerLabel = t => t.replace(/_/g, ' ');
+      const triggerLabel = t => esc(String(t || '').replace(/_/g, ' '));
       const failBadge = w => (w.fail_count > 0)
         ? `<span style="font-size:0.58rem;color:var(--red);font-family:var(--font-mono);flex-shrink:0;" title="LOSE/TIE eval attempts">✕${w.fail_count}</span>`
         : '';
       wishList.innerHTML = d.wish_details.map(w =>
         `<div class="wish-row">
-          <span class="wish-trigger-badge wish-trigger-${w.trigger}">${triggerLabel(w.trigger)}</span>
-          <span class="wish-target">${w.target}</span>
+          <span class="wish-trigger-badge wish-trigger-${safeClassToken(w.trigger)}">${triggerLabel(w.trigger)}</span>
+          <span class="wish-target">${esc(w.target)}</span>
           ${failBadge(w)}
-          <span class="wish-status ${statusClass(w.status)}">${w.status} · step ${Number(w.step).toLocaleString()}</span>
+          <span class="wish-status ${statusClass(w.status)}">${esc(w.status)} · step ${Number(w.step).toLocaleString()}</span>
         </div>`
       ).join('');
     } else if (wishList && d.wish_active === 0) {
@@ -3600,8 +3624,8 @@ function render(d) {
   if (qs.length) {
     qs.slice(0, 6).forEach((q, i) => {
       const cls = i < 2 ? 'q-high' : i < 4 ? 'q-med' : 'q-low';
-      const _qt = (q.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const _qv = (q.via||'?').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const _qt = esc(q.text || '');
+      const _qv = esc(q.via || '?');
       const _rev = q.revisits !== undefined ? q.revisits : '?';
       const _nearGrad = typeof _rev === 'number' && _rev >= 40;
       const _revStyle = _nearGrad ? ' style="color:var(--amber)"' : '';
@@ -3914,7 +3938,7 @@ function render(d) {
   const kiList = document.getElementById('ki-list');
   kiList.innerHTML = '';
   if (ki.length) {
-    ki.forEach(name => { kiList.innerHTML += `<div class="ki-item">⚠ ${name}</div>`; });
+    ki.forEach(name => { kiList.innerHTML += `<div class="ki-item">⚠ ${esc(name)}</div>`; });
   } else {
     kiList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">none flagged</div>';
   }
@@ -3939,7 +3963,7 @@ function render(d) {
     if (lastObs) filtered.push(lastObs);
 
     filtered.slice(-50).forEach(line => {
-      const safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const safe = esc(line);
       let cls = 'log-line';
       const l = line.toLowerCase();
       if (l.includes('[obs]'))                                          cls += ' obs';
@@ -4045,7 +4069,7 @@ function render(d) {
   const _mechs      = d.hypothesis_mechanisms || [];
 
   if (_lastAction && _lastAction !== 'monitor') {
-    whyAction.innerHTML = `<span style="color:var(--cyan);font-weight:600">${_lastAction.toUpperCase()}</span>`;
+    whyAction.innerHTML = `<span style="color:var(--cyan);font-weight:600">${esc(String(_lastAction).toUpperCase())}</span>`;
   } else if (_lastAction === 'monitor') {
     whyAction.innerHTML = `<span style="color:var(--dim)">MONITOR — no intervention warranted</span>`;
   } else {
@@ -4105,10 +4129,10 @@ function render(d) {
       const mechText = m.mechanism || '';
       const hasBridge = mechText.includes('; learned context:') || mechText.includes('; weblearn[');
       const [mechBase, mechExtra] = hasBridge ? mechText.split(/;(?= learned|; weblearn)/, 2) : [mechText, null];
-      el.innerHTML = `<span style="color:var(--text)">${m.node1} <span style="color:var(--cyan)">${m.link.replace(/_/g,' ')}</span> ${m.node2}</span>`
-        + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${m.fitness}, step ${m.step})</span>`
-        + `<br><span style="color:#c8a96e">${mechBase}</span>`
-        + (mechExtra ? `<br><span style="color:var(--purple);font-size:0.62rem">▸ ${mechExtra.trim()}</span>` : '');
+      el.innerHTML = `<span style="color:var(--text)">${esc(m.node1)} <span style="color:var(--cyan)">${esc(String(m.link || '').replace(/_/g,' '))}</span> ${esc(m.node2)}</span>`
+        + ` <span style="color:var(--dim);font-size:0.63rem">(fit=${Number(m.fitness || 0).toFixed(3)}, step ${fmt(m.step)})</span>`
+        + `<br><span style="color:#c8a96e">${esc(mechBase)}</span>`
+        + (mechExtra ? `<br><span style="color:var(--purple);font-size:0.62rem">▸ ${esc(mechExtra.trim())}</span>` : '');
       whyMechs.appendChild(el);
     });
   }
@@ -4394,7 +4418,7 @@ function render(d) {
 
       // If we have a last_query not already shown in discoveries, prepend a pending line
       if (wl.last_query && disc.length && !disc[disc.length-1].query) {
-        lines.push(`<div class="wl-log-line concept">[QUERY]  pending → "${wl.last_query}"</div>`);
+        lines.push(`<div class="wl-log-line concept">[QUERY]  pending → "${esc(wl.last_query)}"</div>`);
       }
 
       logWrap.innerHTML = lines.join('');
@@ -4454,7 +4478,7 @@ function render(d) {
           const isFocus   = name === hobby.current_focus;
           const barColor  = dormant ? 'var(--dim)' :
                             isFocus ? 'var(--cyan)' : 'var(--green)';
-          const label     = name.replace(/_/g, ' ');
+          const label     = esc(String(name).replace(/_/g, ' '));
           const tag       = !available ? '<span style="color:var(--dim);font-size:0.6rem;margin-left:6px;">offline</span>'
                           : dormant    ? '<span style="color:var(--dim);font-size:0.6rem;margin-left:6px;">dormant</span>'
                           : isFocus    ? '<span style="color:var(--cyan);font-size:0.6rem;margin-left:6px;">▶ active</span>'
@@ -4486,7 +4510,7 @@ function render(d) {
                      e.mean <= -0.03 ? 'var(--red)' : 'var(--dim)';
         const verb = e.mean >= 0.04 ? 'tracks' :
                      e.mean <= -0.04 ? 'correlates-with' : '~';
-        return `<div>${e.ext} <span style="color:var(--dim);font-size:0.62rem;">${verb}</span> ${e.sys} `
+        return `<div>${esc(e.ext)} <span style="color:var(--dim);font-size:0.62rem;">${verb}</span> ${esc(e.sys)} `
              + `<span style="color:${col}">${sign}${e.mean.toFixed(3)}</span> `
              + `<span style="color:var(--dim);font-size:0.6rem;">(n=${e.n})</span></div>`;
       }).join('');
@@ -4608,6 +4632,7 @@ let _dashboardRevealed = false;
 async function refresh() {
   try {
     const data = await fetchData();
+    cachePayload(data);
     render(data);
     _cockpitPostRender(data);
     document.getElementById('error-banner').style.display = 'none';
@@ -4618,7 +4643,14 @@ async function refresh() {
       document.getElementById('dashboard').style.display = 'block';
     }
   } catch(e) {
-    showError(e.message);
+    const cached = loadCachedPayload();
+    if (!_dashboardRevealed && cached && cached.step_count) {
+      render(cached);
+      _cockpitPostRender(cached);
+      showError(e.message + ' — displaying last cached snapshot');
+    } else {
+      showError(e.message);
+    }
   } finally {
     // Chain next refresh with setTimeout so overlapping calls can never stack.
     // Add ±5 s jitter so multiple open tabs don't hit the Gist endpoint in lockstep.
