@@ -344,6 +344,7 @@ header {
 }
 .sit-idle             { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
 .sit-io_bound         { color: var(--amber);  border-color: rgba(255,179,0,0.3);   background: rgba(255,179,0,0.07); }
+.sit-cpu_bound        { color: var(--pink);   border-color: rgba(255,128,171,0.4); background: rgba(255,128,171,0.07); }
 .sit-compile          { color: var(--purple); border-color: rgba(179,157,219,0.3); background: rgba(179,157,219,0.07); }
 .sit-streaming        { color: var(--cyan);   border-color: rgba(0,229,255,0.3);   background: rgba(0,229,255,0.07); }
 .sit-browser_compute  { color: var(--amber);  border-color: rgba(255,179,0,0.4);   background: rgba(255,179,0,0.08); }
@@ -4701,16 +4702,18 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-situation">
       <div class="help-entry-title"><span>Situation Classification</span><span class="tag tag-learn">LEARNED</span></div>
       <div class="help-entry-body">
-        ARMINTA continuously classifies the current workload into one of nine named situations from metric history (not snapshots). Each situation has its own causal edge weights, so knowledge learned during streaming doesn't pollute compile-time decisions.
+        ARMINTA continuously classifies the current workload into one of eleven named situations from metric history (not snapshots). Each situation has its own causal edge weights, so knowledge learned during streaming doesn't pollute compile-time decisions.
         <br><br>· <strong>idle</strong> — low CPU, low net, minimal process activity
         <br>· <strong>streaming</strong> — browser GPU/renderer pressure + moderate CPU + asymmetric network (or buffered: net quiet, GPU decode active). YouTube, cloud gaming, remote desktop. HW decode runs in Chrome's GPU process — network may be near-zero during buffer playback.
         <br>· <strong>browser_compute</strong> — browser pegging cores (high dilution, renderer pressure) with minimal network. JS compute, WebGL, local video decode. System CPU looks deceptively low because Chrome's multi-process architecture hides per-core saturation.
         <br>· <strong>compile</strong> — high dilution + high system CPU + low net. Build systems, ML training, video encode.
         <br>· <strong>memory_pressure</strong> — RAM above 75%, swap active.
         <br>· <strong>io_bound</strong> — high iowait and PSI IO stall. Disk-heavy writes or reads.
+        <br>· <strong>cpu_bound</strong> — sustained single/multi-core saturation without significant IO or renderer pressure.
         <br>· <strong>network_saturated</strong> — very high bidirectional net traffic (P2P, large upload/download).
         <br>· <strong>irq_storm</strong> — hardware interrupt rate spiking (typically wireless driver bursts).
         <br>· <strong>thermal_stress</strong> — sustained high temperature under load.
+        <br>· <strong>torrenting</strong> — high, relatively symmetric network activity with low browser renderer pressure.
         <br><br>Confidence score (shown in parens) reflects how cleanly the current metrics match that profile. Low confidence means the situation is transitioning or ambiguous.
       </div>
     </div>
@@ -5052,7 +5055,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Situation Distribution</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
         A fuzzy blend of the last 50 steps' situation weights — not a hard single-label, but a proportional view of how much each workload type was active in the recent window.
-        <br><br>Arminta classifies every step into one of nine named situations based on metric history (not just snapshots). Because workloads overlap — a compile session can also be thermal-stressed — the weights can sum to more than 100% when multiple situations co-occur.
+        <br><br>Arminta classifies every step into one of eleven named situations based on metric history (not just snapshots). Because workloads overlap — a compile session can also be thermal-stressed — the weights can sum to more than 100% when multiple situations co-occur.
         <br><br>· <strong>idle</strong> — low CPU, low memory churn, no active workload
         <br>· <strong>compile</strong> — sustained CPU bursts typical of build tools (make, gcc, cargo, webpack)
         <br>· <strong>memory_pressure</strong> — high RSS, swap activity, or PSI memory stalls
@@ -5063,6 +5066,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <strong>irq_storm</strong> — high hardware interrupt rate overwhelming softirq processing
         <br>· <strong>thermal_stress</strong> — CPU temperature above safe range; throttling likely or imminent
         <br>· <strong>network_saturated</strong> — near-saturation of the interface's observed bandwidth ceiling
+        <br>· <strong>torrenting</strong> — high, symmetric P2P-style network activity with low browser renderer pressure
         <br><br>This distribution panel is what feeds the <strong>FILTER SIT</strong> dropdown on the D3 causal graph — selecting a situation shows which edges were learned under those conditions.
       </div>
     </div>
