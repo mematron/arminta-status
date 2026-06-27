@@ -4873,7 +4873,7 @@ async function refresh() {
   } finally {
     // Chain next refresh with setTimeout so overlapping calls can never stack.
     // Add ±5 s jitter so multiple open tabs don't hit the Gist endpoint in lockstep.
-    const jitter = (Math.random() - 0.5) * 10000;
+    const jitter = (Math.random() - 0.5) * 40000;
     setTimeout(refresh, REFRESH_MS + jitter);
   }
 }
