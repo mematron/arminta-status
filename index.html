@@ -2168,6 +2168,31 @@ header::after {
   </div>
 
 
+  <div class="card card-pad mb28" id="passive-evidence-panel" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">
+      Passive Evidence Integrator
+    </div>
+    <div class="net-prof-head">
+      <div>
+        <div class="net-prof-k">Dominant Role</div>
+        <div class="net-prof-v" id="pe-top-role">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Open Plans</div>
+        <div class="net-prof-v" id="pe-open-plans">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">GA Seeds</div>
+        <div class="net-prof-v" id="pe-ga-seeds">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">browser-agnostic workload roles</div>
+    <div class="net-prof-top" id="pe-roles"></div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-top:12px;margin-bottom:8px;letter-spacing:0.05em;">diagnostic toll / question evidence</div>
+    <div class="net-prof-signals" id="pe-detail"></div>
+  </div>
+
+
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
   <!-- Continuity panel kept hidden — JS still updates it; cockpit syncs from it -->
   <div style="display:none;" aria-hidden="true">
@@ -4269,6 +4294,52 @@ function render(d) {
       }
     } else {
       netProfPanel.style.display = 'none';
+    }
+  }
+
+
+  /* ── PASSIVE EVIDENCE INTEGRATOR ── */
+  const pe = d.passive_evidence || {};
+  const pePanel = document.getElementById('passive-evidence-panel');
+  if (pePanel) {
+    const roles = Array.isArray(pe.top_roles) ? pe.top_roles : [];
+    const plans = Array.isArray(pe.question_plans) ? pe.question_plans : [];
+    const seeds = Array.isArray(pe.hypothesis_seed_history) ? pe.hypothesis_seed_history : [];
+    const toll  = Array.isArray(pe.diagnostic_toll) ? pe.diagnostic_toll : [];
+    const hasPe = roles.length || plans.length || seeds.length || toll.length;
+    if (hasPe) {
+      pePanel.style.display = '';
+      const topRole = roles[0] || {};
+      const topRoleEl = document.getElementById('pe-top-role');
+      const openPlansEl = document.getElementById('pe-open-plans');
+      const gaSeedsEl = document.getElementById('pe-ga-seeds');
+      if (topRoleEl) topRoleEl.textContent = String(topRole.role || 'mixed').replace(/_/g,' ').toUpperCase();
+      if (openPlansEl) openPlansEl.textContent = fmt(plans.length);
+      if (gaSeedsEl) gaSeedsEl.textContent = fmt(seeds.length);
+
+      const roleEl = document.getElementById('pe-roles');
+      if (roleEl) {
+        roleEl.innerHTML = roles.slice(0,6).map(r => `<div class="insight-row">
+          <span class="insight-chip">${esc(String(r.role || 'unknown').replace(/_/g,' '))}</span>
+          <span class="insight-main">${fmt(r.n || 0)} samples</span>
+        </div>`).join('') || '<div style="color:var(--dim);font-size:0.68rem;">waiting for role samples</div>';
+      }
+
+      const detEl = document.getElementById('pe-detail');
+      if (detEl) {
+        const tollRows = toll.slice(0,3).map(r => `<div class="insight-row">
+          <span class="insight-chip amber">${esc(r.action || 'diagnostic')}</span>
+          <span class="insight-main">avg_r=${Number(r.avg_reward || 0).toFixed(3)} cost=${Number(r.avg_cost || 0).toFixed(3)}</span>
+        </div>`);
+        const planRows = plans.slice(0,2).map(p => `<div class="insight-row">
+          <span class="insight-chip green">question</span>
+          <span class="insight-main">${esc(p.text || '')}</span>
+          <span class="insight-sub">${fmt(p.matches || 0)} matches</span>
+        </div>`);
+        detEl.innerHTML = [...tollRows, ...planRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no toll or question evidence yet</div>';
+      }
+    } else {
+      pePanel.style.display = 'none';
     }
   }
 
