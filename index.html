@@ -1524,6 +1524,91 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   }
 }
 
+
+/* ── Insight panels for wish target proxies / open-question resolution / network profiling ── */
+.insight-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 3px;
+  background: rgba(0,229,255,0.025);
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.insight-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,229,255,0.24);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.06);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.insight-chip.amber { color: var(--amber); border-color: rgba(255,179,0,0.28); background: rgba(255,179,0,0.06); }
+.insight-chip.green { color: var(--green); border-color: rgba(57,255,20,0.28); background: rgba(57,255,20,0.05); }
+.insight-chip.red   { color: var(--red);   border-color: rgba(255,61,61,0.30); background: rgba(255,61,61,0.06); }
+.insight-main { color: var(--text); font-family: var(--font-mono); word-break: break-word; overflow-wrap: anywhere; }
+.insight-sub  { color: var(--dim);  font-size: 0.62rem; margin-left: auto; }
+#net-prof-panel {
+  border-color: rgba(0,229,255,0.18);
+  background: linear-gradient(180deg, rgba(0,229,255,0.035), var(--surface));
+}
+.net-prof-head {
+  display: grid;
+  grid-template-columns: minmax(150px,1.1fr) repeat(2, minmax(90px,0.5fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.net-prof-k {
+  font-size: 0.58rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.net-prof-v {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--cyan);
+  font-size: 1.12rem;
+  line-height: 1.15;
+  word-break: break-word;
+}
+.net-prof-signals, .net-prof-top, .wish-proxy-list, .oq-resolution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wish-proxy-row .progress {
+  flex: 1;
+  min-width: 90px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.wish-proxy-row .bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--cyan);
+  box-shadow: 0 0 6px currentColor;
+}
+.oq-resolution-list {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 620px) {
+  .net-prof-head { grid-template-columns: 1fr; }
+  .insight-sub { margin-left: 0; width: 100%; }
+}
+
 /* ── Wish Pipeline panel ────────────────────────────────────────────────── */
 .wish-stat-row {
   display: grid;
@@ -2057,6 +2142,31 @@ header::after {
     </div>
   </div>
 
+  <div class="card card-pad mb28" id="net-prof-panel" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">
+      Network Saturation Cause Profile
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-netprofile')" title="What is the Network Saturation Cause Profile?" aria-label="Help: Network Saturation Cause Profile" style="margin-left:6px;">?</button>
+    </div>
+    <div class="net-prof-head">
+      <div>
+        <div class="net-prof-k">Current Cause</div>
+        <div class="net-prof-v" id="net-prof-cause">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Confidence</div>
+        <div class="net-prof-v" id="net-prof-conf">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Samples</div>
+        <div class="net-prof-v" id="net-prof-samples">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">top causes seen during network_saturated windows</div>
+    <div class="net-prof-top" id="net-prof-top"></div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-top:12px;margin-bottom:8px;letter-spacing:0.05em;">active evidence signals</div>
+    <div class="net-prof-signals" id="net-prof-signals"></div>
+  </div>
+
 
   <!-- REWARD HISTORY SPARKLINES [02] — three stacked: raw / rolling avg / reward variance -->
   <!-- Continuity panel kept hidden — JS still updates it; cockpit syncs from it -->
@@ -2435,6 +2545,7 @@ header::after {
       <div class="q-list" id="q-list">
         <div style="color:var(--dim);font-size:0.7rem">no data</div>
       </div>
+      <div class="oq-resolution-list" id="oq-resolution-list" style="display:none;"></div>
     </div>
     <div class="card card-pad">
       <div style="font-size:0.62rem;color:var(--dim);margin-bottom:12px;letter-spacing:0.05em;">autonomously discovered environment↔system correlations</div>
@@ -2719,6 +2830,10 @@ header::after {
       </div>
     </div>
     <div id="wish-evolver-trend" style="margin-top:6px;font-size:0.68rem;color:var(--dim);"></div>
+    <div id="wish-target-proxy-panel" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">target-adapter evaluations · concrete proxy metrics for vague wishes</div>
+      <div class="wish-proxy-list" id="wish-target-proxy-list"></div>
+    </div>
     <div id="wish-list">
       <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
     </div>
@@ -3170,6 +3285,36 @@ function render(d) {
       wishList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem;">no active wishes</div>';
     }
   }
+
+    // target adapter proxy rows
+    const proxyPanel = document.getElementById('wish-target-proxy-panel');
+    const proxyList  = document.getElementById('wish-target-proxy-list');
+    const proxies = Array.isArray(d.wish_target_proxies) ? d.wish_target_proxies : [];
+    if (proxyPanel && proxyList) {
+      if (proxies.length) {
+        proxyPanel.style.display = '';
+        proxyList.innerHTML = proxies.map(p => {
+          const imp = (p.improvement !== null && p.improvement !== undefined) ? Number(p.improvement) : null;
+          const impPct = imp !== null ? Math.round(imp * 1000) / 10 : null;
+          const impCol = imp === null ? 'var(--dim)' : imp >= 0.02 ? 'var(--green)' : imp < -0.02 ? 'var(--red)' : 'var(--amber)';
+          const width = imp === null ? 4 : Math.max(4, Math.min(100, Math.abs(imp) * 200));
+          const metrics = Array.isArray(p.metrics) && p.metrics.length
+            ? `<span class="insight-chip">${p.metrics.slice(0,4).map(esc).join(' · ')}</span>` : '';
+          const current = p.current === null || p.current === undefined ? '--' : Number(p.current).toFixed(4);
+          const baseline = p.baseline === null || p.baseline === undefined ? '--' : Number(p.baseline).toFixed(4);
+          return `<div class="insight-row wish-proxy-row">
+            <span class="insight-chip ${p.verdict === 'WIN' ? 'green' : p.verdict === 'LOSE' ? 'red' : p.verdict === 'TIE' ? 'amber' : ''}">${esc(p.verdict || 'evaluating')}</span>
+            <span class="insight-main">${esc(p.item || '')} → ${esc(p.target || '')}</span>
+            <span class="insight-chip amber">${esc(p.proxy || '')}</span>
+            ${metrics}
+            <span class="progress" title="proxy improvement"><span class="bar" style="width:${width}%;background:${impCol};color:${impCol};"></span></span>
+            <span class="insight-sub">base ${baseline} · now ${current} · ${impPct === null ? 'Δ --' : 'Δ ' + (impPct >= 0 ? '+' : '') + impPct + '%'} · n=${p.samples || 0}</span>
+          </div>`;
+        }).join('');
+      } else {
+        proxyPanel.style.display = 'none';
+      }
+    }
 
   // slow-effect queue + adaptive lag overrides
   if (d.pending_obs_count !== undefined) setAndFlash('pending-obs-count', d.pending_obs_count);
@@ -3640,6 +3785,28 @@ function render(d) {
     qList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem">no anomalies recorded</div>';
   }
 
+  const oqResList = document.getElementById('oq-resolution-list');
+  const oqRes = Array.isArray(d.open_question_resolutions) ? d.open_question_resolutions : [];
+  if (oqResList) {
+    if (oqRes.length) {
+      oqResList.style.display = '';
+      oqResList.innerHTML =
+        '<div style="font-size:0.62rem;color:var(--green);margin-bottom:8px;letter-spacing:0.05em;">recently resolved by anomaly evidence</div>' +
+        oqRes.slice().reverse().map(r => {
+          const evBits = Array.isArray(r.evidence) ? r.evidence.slice(0,2) : [];
+          const evidence = evBits.map(e => `<span class="insight-chip green">${esc(e)}</span>`).join('');
+          return `<div class="insight-row">
+            <span class="insight-chip">${esc(r.action || 'unknown')}</span>
+            <span class="insight-main">${esc(r.situation || 'unknown')}</span>
+            ${evidence}
+            <span class="insight-sub">step ${fmt(r.step)}</span>
+          </div>`;
+        }).join('');
+    } else {
+      oqResList.style.display = 'none';
+    }
+  }
+
   /* ── MOSAIC HYPOTHESES ── */
   const hyps = d.mosaic_hypotheses || [];
   const hypList = document.getElementById('hyp-list');
@@ -4051,6 +4218,58 @@ function render(d) {
   } else {
     probeStatus.textContent = 'no data yet';
     strip.innerHTML = '<span style="color:var(--dim);font-size:0.65rem">probes will appear once Arminta has been idle</span>';
+  }
+
+  /* ── NETWORK SATURATION CAUSE PROFILE ── */
+  const nsp = d.network_saturation_profile || {};
+  const netProfPanel = document.getElementById('net-prof-panel');
+  if (netProfPanel) {
+    const hasNetProfile = nsp && (nsp.cause || (Array.isArray(nsp.top_causes) && nsp.top_causes.length));
+    if (hasNetProfile) {
+      netProfPanel.style.display = '';
+      const cause = nsp.cause || 'nominal';
+      const conf  = nsp.confidence !== undefined && nsp.confidence !== null ? Number(nsp.confidence) : null;
+      const sampleCount = nsp.sample_count !== undefined ? nsp.sample_count : (nsp.samples || 0);
+      const causeEl = document.getElementById('net-prof-cause');
+      const confEl  = document.getElementById('net-prof-conf');
+      const samplesEl = document.getElementById('net-prof-samples');
+      if (causeEl) {
+        causeEl.textContent = String(cause).replace(/_/g, ' ').toUpperCase();
+        causeEl.style.color = cause === 'nominal' ? 'var(--dim)' : 'var(--cyan)';
+      }
+      if (confEl) {
+        confEl.textContent = conf === null ? '--' : Math.round(conf * 100) + '%';
+        confEl.style.color = conf !== null && conf >= 0.7 ? 'var(--green)' : conf !== null && conf >= 0.45 ? 'var(--amber)' : 'var(--dim)';
+      }
+      if (samplesEl) samplesEl.textContent = fmt(sampleCount);
+
+      const topEl = document.getElementById('net-prof-top');
+      if (topEl) {
+        const tops = Array.isArray(nsp.top_causes) ? nsp.top_causes : [];
+        topEl.innerHTML = tops.length ? tops.map(row => {
+          const name = Array.isArray(row) ? row[0] : row.cause;
+          const ct   = Array.isArray(row) ? row[1] : row.count;
+          return `<div class="insight-row">
+            <span class="insight-chip">${esc(String(name || 'unknown').replace(/_/g,' '))}</span>
+            <span class="insight-main">${fmt(ct)} observations</span>
+          </div>`;
+        }).join('') : '<div style="color:var(--dim);font-size:0.68rem;">waiting for network_saturated observations</div>';
+      }
+
+      const sigEl = document.getElementById('net-prof-signals');
+      if (sigEl) {
+        const signals = nsp.signals && typeof nsp.signals === 'object' ? Object.entries(nsp.signals) : [];
+        sigEl.innerHTML = signals.length ? signals.map(([k,v]) => {
+          const val = (typeof v === 'number') ? Number(v).toFixed(2) : esc(v);
+          return `<div class="insight-row">
+            <span class="insight-chip amber">${esc(String(k).replace(/_/g,' '))}</span>
+            <span class="insight-main">${val}</span>
+          </div>`;
+        }).join('') : '<div style="color:var(--dim);font-size:0.68rem;">no dominant signal reported</div>';
+      }
+    } else {
+      netProfPanel.style.display = 'none';
+    }
   }
 
   /* ── CAUSAL REASONING / WHY PANEL ── */
@@ -4890,6 +5109,16 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       </div>
     </div>
 
+    
+    <div class="help-entry" id="help-netprofile">
+      <div class="help-entry-title"><span>Network Saturation Cause Profile</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel is a read-only classifier for <code>network_saturated</code> windows. It does not add network authority or dispatch new actions; it only explains which existing telemetry currently looks most responsible.
+        <br><br>Possible causes include <code>interface_drops</code>, <code>local_wifi_rf</code>, <code>gateway_latency</code>, <code>dns_resolution</code>, <code>wan_latency</code>, <code>disk_coupled_net_io</code>, <code>socket_or_peer_pressure</code>, and <code>nominal</code>.
+        <br><br>The <strong>current cause</strong> is the latest classified window, <strong>confidence</strong> is the classifier's local certainty, <strong>samples</strong> is the number of remembered network-saturated windows, and <strong>active evidence signals</strong> shows the telemetry that drove the label.
+      </div>
+    </div>
+
     <div class="help-entry" id="help-questions">
       <div class="help-entry-title"><span>Open Questions / Unresolved Anomalies</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
@@ -4898,6 +5127,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <em>emotion_shift</em> — a mode transition during a situation produced an unexpected emotional state
         <br>· <em>stressed_retreat</em> — a mode transition away from a stressed state followed an unexpected path
         <br><br>Each entry shows the question text, the step it formed, how many reflection cycles it has been revisited, and which action it concerns (<em>via</em>).
+        <br><br>The lower sub-list appears when <code>OpenQuestionAnomalyResolver</code> closes an emotion-shift question using repeated anomaly/probe evidence. Those rows are explanations only; they do not dispatch actions.
         <br><br><strong>Lifecycle:</strong> questions form in <code>LexicalCore.reflect()</code> and are held (up to 120 at once). Every 50 steps, <code>QuestionResolver</code> evaluates reward_reversal questions against the causal graph. If the action is observational (net_probe, log_*, flush_dns, log_ss_stats, web_fetch — these reflect ambient noise, not real harm), or if the action has confirmed global or situational harm above threshold, the question is marked resolved and purged from the list. Resolved questions graduate into the lexicon as statements with a valence tag that can influence future action selection. Questions that remain unresolved after 50 revisits are force-graduated as neutral conditional statements (<em>"X has context-dependent outcomes"</em>) — accepting irreducible ambiguity rather than holding it forever.
         <br><br>Border colour is display order only: <span style="color:var(--red)">red</span> = questions 1–2, <span style="color:var(--amber)">amber</span> = 3–4, grey = 5–8. It is not a priority score assigned by the agent.
         <br><br>The right panel shows <strong>Mosaic Hypotheses</strong> — autonomously discovered correlations between environmental sensors and internal system metrics. Correlation strength shown as a bar; candidates for future causal investigation, not confirmed cause-and-effect.
@@ -5259,6 +5489,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-title"><span>Wish Pipeline (W1–W4)</span><span class="tag tag-meta">META</span></div>
       <div class="help-entry-body">
         The Wish Pipeline is how ARMINTA identifies her own capability gaps and proposes ways to fill them — a self-directed development loop that runs alongside normal operation. Nothing deploys without surviving all four phases.
+        <br><br>The <strong>target-adapter</strong> rows show when a vague wish target such as <code>network_saturated</code> or <code>cpu_bound</code> is being graded against concrete telemetry proxies instead of reward alone.
         <br><br><strong>W1 — Wish Generation</strong> fires during <code>SELF_ASSESS</code> mode after the lexical reflection pass, gated by a ~3000-step cooldown. It scans for three classes of deficit:
         <br>· <strong>Causal Dead Zones</strong> — actions where mean reward has been persistently negative (below −0.05) with no improving trend over 500+ samples. She knows something is wrong and can't fix it. Current dead zone: <code>renice_chrome</code> (structural — fires when only 1 eligible renderer exists; suppressed after 3 consecutive failures). Resolved dead zones: <code>kill_top_proc</code> → <code>wish_log_top_proc</code>; <code>sync</code> → <code>handle_io_bound</code>; <code>set_ac_max_perf</code> → <code>wish_set_ac_max_perf</code>; <code>priorityshift_restore</code> → <code>wish_priorityshift_restore</code>; <code>compact_memory</code> → <code>wish_compact_memory</code>; <code>restore_renderer_nice</code> → <code>wish_restore_renderer_nice</code>. <code>drop_slab</code> is now a first-class selectable action (previously only fired as a sub-step inside <code>handle_idle</code>); its causal graph edges and reward routing are now live, so the wish system can address any dead zone it develops.
         <br>· <strong>Situation Gaps</strong> — situations the classifier fires on confidently but where no dedicated policy action exists. All current gaps have real implementations: <code>handle_idle_v2</code>, <code>handle_streaming_v2</code>, <code>handle_compile_v2</code>, <code>handle_io_bound</code>, <code>handle_browser_compute_v2</code>, <code>throttle_torrent_v2</code>.
