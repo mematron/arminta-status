@@ -1555,6 +1555,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 .insight-chip.red   { color: var(--red);   border-color: rgba(255,61,61,0.30); background: rgba(255,61,61,0.06); }
 .insight-main { color: var(--text); font-family: var(--font-mono); word-break: break-word; overflow-wrap: anywhere; }
 .insight-sub  { color: var(--dim);  font-size: 0.62rem; margin-left: auto; }
+.insight-metrics { display: inline-flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }
 #net-prof-panel {
   border-color: rgba(0,229,255,0.18);
   background: linear-gradient(180deg, rgba(0,229,255,0.035), var(--surface));
@@ -1687,12 +1688,24 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 @media (max-width: 600px) {
   /* help panel: full-width on mobile */
   #help-panel { width: 100vw; border-left: none; }
-  #wish-review-stat { grid-column: span 3; }
+  #wish-review-stat { grid-column: span 2; }
   /* wish row: stack on narrow */
   .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
   .wish-status { margin-left: 0; }
   /* wish list: slightly shorter on small screens */
   #wish-list { max-height: 180px; }
+  /* wish stat grid: avoid cramped tiny tiles on narrow phones */
+  .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
+  /* target-adapter proxy rows + other insight rows: stack into a readable column */
+  .insight-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .insight-sub { margin-left: 0; width: 100%; }
+  .insight-row .progress { width: 100%; min-width: 0; }
+  .wish-panel-header-row, #wish-panel > div:first-child { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 400px) {
+  .wish-stat-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .wish-stat { padding: 8px 6px; }
+  .wish-stat-val { font-size: 1.15rem; }
 }
 @media (max-width: 380px) {
   #help-panel { width: 100vw; }
@@ -2171,6 +2184,7 @@ header::after {
   <div class="card card-pad mb28" id="passive-evidence-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Passive Evidence Integrator
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-passive-evidence')" title="What is the Passive Evidence Integrator?" aria-label="Help: Passive Evidence Integrator" style="margin-left:6px;">?</button>
     </div>
     <div class="net-prof-head">
       <div>
@@ -3324,7 +3338,7 @@ function render(d) {
           const impCol = imp === null ? 'var(--dim)' : imp >= 0.02 ? 'var(--green)' : imp < -0.02 ? 'var(--red)' : 'var(--amber)';
           const width = imp === null ? 4 : Math.max(4, Math.min(100, Math.abs(imp) * 200));
           const metrics = Array.isArray(p.metrics) && p.metrics.length
-            ? `<span class="insight-chip">${p.metrics.slice(0,4).map(esc).join(' · ')}</span>` : '';
+            ? `<span class="insight-metrics">${p.metrics.slice(0,4).map(m => `<span class="insight-chip">${esc(m)}</span>`).join('')}</span>` : '';
           const current = p.current === null || p.current === undefined ? '--' : Number(p.current).toFixed(4);
           const baseline = p.baseline === null || p.baseline === undefined ? '--' : Number(p.baseline).toFixed(4);
           return `<div class="insight-row wish-proxy-row">
@@ -5187,6 +5201,17 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         This panel is a read-only classifier for <code>network_saturated</code> windows. It does not add network authority or dispatch new actions; it only explains which existing telemetry currently looks most responsible.
         <br><br>Possible causes include <code>interface_drops</code>, <code>local_wifi_rf</code>, <code>gateway_latency</code>, <code>dns_resolution</code>, <code>wan_latency</code>, <code>disk_coupled_net_io</code>, <code>active_connection_load</code>, and <code>nominal</code>.
         <br><br><code>active_connection_load</code> means many active network connections are creating load or waiting on responses.<br><br>The <strong>current cause</strong> is the latest classified window, <strong>confidence</strong> is the classifier's local certainty, <strong>samples</strong> is the number of remembered network-saturated windows, and <strong>active evidence signals</strong> shows the telemetry that drove the label.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-passive-evidence">
+      <div class="help-entry-title"><span>Passive Evidence Integrator</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel is read-only, like the Network Saturation Cause Profile above it — it integrates evidence ARMINTA collects passively (without dispatching a probe or action) about what's actually running on the host, browser-agnostic.
+        <br><br><strong>Dominant Role</strong> — the workload role (e.g. streaming, compiling, browsing, idle) the integrator currently judges most likely from passive signals, independent of the situation classifier.
+        <br><br><strong>Open Plans</strong> — diagnostic toll/question evidence chains that are still gathering signal before they can resolve to a confident role or conclusion.
+        <br><br><strong>GA Seeds</strong> — passively-observed evidence that has been handed to the GA hypothesis engine as a seed, giving it a real-world starting point instead of a purely random one.
+        <br><br>The two lists below break this down further: <strong>browser-agnostic workload roles</strong> shows the role distribution this integrator has built up, and <strong>diagnostic toll/question evidence</strong> shows the underlying signals it is weighing.
       </div>
     </div>
 
