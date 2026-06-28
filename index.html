@@ -2641,11 +2641,11 @@ header::after {
       <span style="color:var(--dim);">NEXT FETCH</span>
       <span id="wl-next-fetch" style="color:var(--cyan);">--</span>
       <span style="color:var(--dim);margin-left:8px;">QUEUE</span>
-      <span id="wl-queue-contents" style="color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">empty</span>
+      <span id="wl-queue-contents" style="color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(320px, 60vw);">empty</span>
     </div>
     <div id="wl-relevance-row" style="display:none;align-items:center;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);">RELEVANCE-DISCOUNTED</span>
-      <span id="wl-discounted" style="color:#e06c75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;" title="symbols absorbed from a recent fetch that scored as off-topic against the query's own concept space, and were kept at reduced weight rather than full strength">--</span>
+      <span id="wl-discounted" style="color:#e06c75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(420px, 65vw);" title="symbols absorbed from a recent fetch that scored as off-topic against the query's own concept space, and were kept at reduced weight rather than full strength">--</span>
     </div>
     <div id="wl-grounded-row" style="display:none;align-items:flex-start;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);white-space:nowrap;padding-top:2px;">GROUNDED WORDS</span>
