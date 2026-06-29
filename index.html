@@ -874,6 +874,70 @@ button:focus-visible, a:focus-visible {
 }
 #system-alerts-banner .sa-item::before { content: '▶ '; opacity: 0.6; }
 
+/* ── SELF-CHECK STATUS BANNER ── */
+#self-check-banner {
+  display: none;
+  border: 1px solid rgba(57,255,20,0.28);
+  background: rgba(57,255,20,0.045);
+  color: var(--green);
+  padding: 8px 16px;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  margin-bottom: 18px;
+  line-height: 1.55;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+#self-check-banner.warn {
+  border-color: rgba(255,179,0,0.42);
+  background: rgba(255,179,0,0.07);
+  color: var(--amber);
+}
+#self-check-banner.unknown {
+  border-color: var(--border2);
+  background: rgba(90,122,154,0.06);
+  color: var(--dim);
+}
+#self-check-banner .sc-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+#self-check-banner .sc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
+}
+#self-check-banner .sc-label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+#self-check-banner .sc-msg,
+#self-check-banner .sc-time {
+  color: var(--dim);
+  font-size: 0.62rem;
+}
+@media (max-width: 520px) {
+  #self-check-banner {
+    align-items: flex-start;
+    font-size: 0.62rem;
+    padding: 8px 12px;
+  }
+  #self-check-banner .sc-left {
+    width: 100%;
+  }
+}
+
+
 /* ── DREAM THROTTLE BADGE ── */
 .dream-throttle-badge {
   display: inline-block;
@@ -2127,6 +2191,14 @@ header::after {
   <div class="sa-header">⚠ SYSTEM ALERTS</div>
   <div id="system-alerts-body"></div>
 </div>
+<div id="self-check-banner" aria-live="polite">
+  <div class="sc-left">
+    <span class="sc-dot"></span>
+    <span class="sc-label">SELF-CHECK UNKNOWN</span>
+    <span class="sc-msg">waiting for agent payload</span>
+  </div>
+  <div class="sc-time"></div>
+</div>
 
 <div id="dashboard">
 
@@ -3145,6 +3217,40 @@ function render(d) {
       `<div class="sa-item">[${esc((a.code||'ALERT').toUpperCase())}] ${esc(a.message||'')}</div>`
     ).join('');
     banner.style.display = 'block';
+  })();
+
+  /* Dashboard payload/self-check indicator */
+  (function renderDashboardSelfCheck() {
+    const banner = document.getElementById('self-check-banner');
+    if (!banner) return;
+    const health = d.dashboard_self_check || null;
+    const labelEl = banner.querySelector('.sc-label');
+    const msgEl   = banner.querySelector('.sc-msg');
+    const timeEl  = banner.querySelector('.sc-time');
+
+    let status = health && health.status ? String(health.status).toLowerCase() : 'unknown';
+    if (!['ok', 'warn', 'unknown'].includes(status)) status = 'unknown';
+
+    banner.classList.remove('warn', 'unknown');
+    if (status === 'warn') banner.classList.add('warn');
+    if (status === 'unknown') banner.classList.add('unknown');
+
+    if (labelEl) {
+      labelEl.textContent = health && health.label
+        ? health.label
+        : (status === 'ok' ? 'SELF-CHECK PASSED' : status === 'warn' ? 'SELF-CHECK WARNING' : 'SELF-CHECK UNKNOWN');
+    }
+    if (msgEl) {
+      msgEl.textContent = health && health.message
+        ? health.message
+        : (status === 'unknown' ? 'waiting for updated agent payload' : '');
+    }
+    if (timeEl) {
+      timeEl.textContent = health && health.checked_ts
+        ? `checked ${health.checked_ts}`
+        : '';
+    }
+    banner.style.display = 'flex';
   })();
 
   /* staleness — primary: updated_ts; secondary: step_count increasing means agent is running */
