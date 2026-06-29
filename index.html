@@ -2186,6 +2186,164 @@ header::after {
   }
 }
 
+
+/* ── SYSTEM DEPENDENCY CHECK — clear operator-facing card ─────────────── */
+#self-check-banner {
+  padding: 12px 18px;
+  margin-bottom: 10px;
+  border-left-width: 3px;
+  font-size: 0.72rem;
+}
+#self-check-banner .sc-label {
+  font-size: 0.76rem;
+}
+#self-check-banner .sc-msg {
+  flex-basis: 100%;
+  margin-left: 16px;
+  line-height: 1.55;
+}
+
+.system-dependency-card {
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--cyan);
+  background: linear-gradient(180deg, rgba(0,229,255,0.045), rgba(0,229,255,0.015));
+  padding: 14px 16px 16px;
+  margin: 0 0 24px 0;
+  color: var(--text);
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.system-dependency-card.ok {
+  border-left-color: var(--green);
+  background: linear-gradient(180deg, rgba(57,255,20,0.045), rgba(57,255,20,0.015));
+}
+.system-dependency-card.warn {
+  border-left-color: var(--amber);
+  background: linear-gradient(180deg, rgba(255,179,0,0.07), rgba(255,179,0,0.02));
+}
+.system-dependency-card.unknown {
+  border-left-color: var(--muted);
+  background: linear-gradient(180deg, rgba(90,122,154,0.055), rgba(90,122,154,0.015));
+}
+.sdc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sdc-title {
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+.system-dependency-card.ok .sdc-title { color: var(--green); }
+.system-dependency-card.warn .sdc-title { color: var(--amber); }
+.system-dependency-card.unknown .sdc-title { color: var(--dim); }
+.sdc-subtitle {
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+}
+.sdc-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.sdc-summary-cell {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.18);
+  padding: 9px 11px;
+  min-width: 0;
+}
+.sdc-summary-label {
+  color: var(--dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.sdc-summary-value {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.06em;
+}
+.sdc-note {
+  color: var(--dim);
+  font-size: 0.66rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--border2);
+  background: rgba(0,0,0,0.12);
+}
+.sdc-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 7px;
+}
+.host-cap-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  border: 1px solid var(--border2);
+  background: rgba(90,122,154,0.06);
+  color: var(--dim);
+  padding: 7px 9px;
+  border-radius: 2px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.host-cap-chip.ok {
+  border-color: rgba(57,255,20,0.32);
+  background: rgba(57,255,20,0.055);
+  color: var(--green);
+}
+.host-cap-chip.warn {
+  border-color: rgba(255,179,0,0.42);
+  background: rgba(255,179,0,0.07);
+  color: var(--amber);
+}
+.host-cap-chip .hcc-status {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.68rem;
+  min-width: 28px;
+  flex-shrink: 0;
+}
+.host-cap-chip .hcc-label {
+  color: var(--text);
+  font-size: 0.66rem;
+}
+.host-cap-chip.ok .hcc-label { color: var(--text); }
+.host-cap-chip.warn .hcc-label { color: var(--amber); }
+.host-cap-chip .hcc-detail {
+  color: var(--dim);
+  display: block;
+  font-size: 0.58rem;
+  margin-top: 2px;
+}
+.host-cap-suppressed {
+  color: var(--amber);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .sdc-summary-grid { grid-template-columns: 1fr; }
+  .sdc-check-grid { grid-template-columns: 1fr; }
+  #self-check-banner .sc-msg { margin-left: 0; }
+}
+
 </style>
 </head>
 <body>
@@ -2219,15 +2377,31 @@ header::after {
 
 </div>
 
-<div id="host-capability-row" aria-live="polite"
-     style="font-size:0.6rem;color:var(--muted);letter-spacing:0.06em;margin:0 0 18px 0;display:flex;flex-wrap:wrap;gap:5px 9px;line-height:1.5;max-width:100%;overflow-wrap:anywhere;">
-  <span style="color:var(--dim);letter-spacing:0.12em;">SYSTEM DEPENDENCY DETAILS</span>
-  <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-systemdetails')"
-          title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
-  <span class="host-cap-chip"
-        style="border:1px solid var(--border2);background:rgba(90,122,154,0.06);color:var(--dim);padding:1px 5px;border-radius:2px;">
-    Waiting for startup dependency check…
-  </span>
+<div id="host-capability-row" class="system-dependency-card unknown" aria-live="polite">
+  <div class="sdc-header">
+    <div>
+      <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
+      <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checked before choosing actions.</div>
+    </div>
+    <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')"
+            title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
+  </div>
+  <div class="sdc-summary-grid">
+    <div class="sdc-summary-cell">
+      <div class="sdc-summary-label">CHECK STATUS</div>
+      <div class="sdc-summary-value">WAITING</div>
+    </div>
+    <div class="sdc-summary-cell">
+      <div class="sdc-summary-label">CHECKS PASSED</div>
+      <div class="sdc-summary-value">-- / --</div>
+    </div>
+    <div class="sdc-summary-cell">
+      <div class="sdc-summary-label">ACTIONS DISABLED</div>
+      <div class="sdc-summary-value">--</div>
+    </div>
+  </div>
+  <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
+  <div class="sdc-check-grid"></div>
 </div>
 
 <div id="dashboard">
@@ -3289,7 +3463,7 @@ function render(d) {
       label = status === 'warn'
         ? 'SYSTEM DEPENDENCY CHECK WARNING'
         : 'SYSTEM DEPENDENCY CHECK PASSED';
-      message = `Startup Linux system dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. See the SYSTEM DEPENDENCY DETAILS row directly under this status strip.`;
+      message = `Startup Linux system dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. The detailed dependency results are shown in the large SYSTEM DEPENDENCY DETAILS panel directly under this status strip.`;
       if (host.scanned_at) {
         try { checked = new Date(Number(host.scanned_at) * 1000).toLocaleString(); } catch(e) {}
       }
@@ -4397,52 +4571,102 @@ function render(d) {
   }
 
   /* ── SYSTEM DEPENDENCY DETAILS ── */
-  if (d.host_capabilities && d.host_capabilities.flags) {
-    const cap = d.host_capabilities;
-    const f = cap.flags || {};
-    let capEl = document.getElementById('host-capability-row');
-    if (!capEl) {
-      capEl = document.createElement('div');
-      capEl.id = 'host-capability-row';
-      capEl.setAttribute('aria-live', 'polite');
-      capEl.style.cssText = 'font-size:0.6rem;color:var(--muted);letter-spacing:0.06em;margin:0 0 18px 0;display:flex;flex-wrap:wrap;gap:5px 9px;line-height:1.5;max-width:100%;overflow-wrap:anywhere;';
-      const hwEl2 = document.getElementById('hw-profile-row') || document.getElementById('ga-divergence');
-      if (hwEl2 && hwEl2.parentNode) hwEl2.parentNode.insertBefore(capEl, hwEl2.nextSibling);
-    }
-    const depChecks = [
-      ['can_read_psi',        'Pressure files'],
-      ['has_cpufreq',         'CPU speed interface'],
-      ['can_write_governor',  'CPU speed control'],
-      ['has_systemd_journal', 'System log access'],
-      ['has_nvme_cli',        'NVMe tool'],
-      ['has_smartctl',        'Drive health tool'],
-      ['has_iw',              'WiFi tool'],
-      ['has_ss',              'Network socket tool'],
-      ['has_nvidia_smi',      'NVIDIA GPU tool'],
-      ['has_amdgpu_sysfs',    'AMD GPU interface'],
-      ['can_drop_caches',     'Memory cache control'],
-      ['can_renice',          'Process priority'],
-      ['can_ionice',          'Disk I/O priority'],
-      ['is_root',             'Root access'],
-      ['is_container',        'Not containerized'],
-      ['is_wsl',              'Not WSL']
-    ];
+  (function renderSystemDependencyDetails() {
+    const capEl = document.getElementById('host-capability-row');
+    if (!capEl) return;
+
+    const cap = d.host_capabilities || null;
+    const f = cap && cap.flags ? cap.flags : null;
+    const dep = d.system_dependency_check || null;
+
     const checkPassed = (k, on) => (k === 'is_container' || k === 'is_wsl') ? !on : !!on;
-    const chip = ([k, label]) => {
+    const depChecks = [
+      ['can_read_psi',        'Pressure monitoring',        'Kernel /proc/pressure files are readable.'],
+      ['has_cpufreq',         'CPU speed interface',        'CPU frequency/governor files exist.'],
+      ['can_write_governor',  'CPU speed control',          'Arminta can change CPU governor settings.'],
+      ['has_systemd_journal', 'System log access',          'journalctl/systemd logs are available.'],
+      ['has_nvme_cli',        'NVMe drive tool',            'nvme-cli is installed for NVMe health data.'],
+      ['has_smartctl',        'Drive health tool',          'smartctl is installed for S.M.A.R.T. data.'],
+      ['has_iw',              'WiFi tool',                  'iw/iwconfig tools are available.'],
+      ['has_ss',              'Network socket tool',        'ss is available for socket/network visibility.'],
+      ['has_nvidia_smi',      'NVIDIA GPU tool',            'nvidia-smi is available.'],
+      ['has_amdgpu_sysfs',    'AMD GPU interface',          'AMD GPU sysfs controls are visible.'],
+      ['can_drop_caches',     'Memory cache control',       'Arminta can request Linux cache cleanup.'],
+      ['can_compact_memory',  'Memory compaction control',  'Arminta can request kernel memory compaction.'],
+      ['can_renice',          'Process priority control',   'renice/process priority control is available.'],
+      ['can_ionice',          'Disk I/O priority control',  'ionice/disk I/O priority control is available.'],
+      ['is_root',             'Root access',                'Agent is running with root privileges.'],
+      ['is_container',        'Normal Linux environment',   'Not running inside a container.'],
+      ['is_wsl',              'Native Linux kernel',        'Not running inside WSL.']
+    ];
+
+    if (!f) {
+      capEl.className = 'system-dependency-card unknown';
+      capEl.innerHTML = `
+        <div class="sdc-header">
+          <div>
+            <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
+            <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checks before choosing actions.</div>
+          </div>
+          <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
+        </div>
+        <div class="sdc-summary-grid">
+          <div class="sdc-summary-cell"><div class="sdc-summary-label">CHECK STATUS</div><div class="sdc-summary-value">WAITING</div></div>
+          <div class="sdc-summary-cell"><div class="sdc-summary-label">CHECKS PASSED</div><div class="sdc-summary-value">-- / --</div></div>
+          <div class="sdc-summary-cell"><div class="sdc-summary-label">ACTIONS DISABLED</div><div class="sdc-summary-value">--</div></div>
+        </div>
+        <div class="sdc-note">Waiting for Arminta's startup dependency check payload. This should fill in after the agent restarts and publishes a fresh dashboard update.</div>
+        <div class="sdc-check-grid"></div>
+      `;
+      return;
+    }
+
+    const visibleChecks = depChecks.filter(([k]) => Object.prototype.hasOwnProperty.call(f, k));
+    const passed = visibleChecks.filter(([k]) => checkPassed(k, !!f[k])).length;
+    const total = visibleChecks.length;
+    const unsupported = cap && Array.isArray(cap.unsupported_actions) ? cap.unsupported_actions.length : 0;
+    const status = dep && dep.status ? String(dep.status).toLowerCase() : (f.is_linux === false ? 'warn' : 'ok');
+    const statusClass = status === 'warn' ? 'warn' : 'ok';
+    const statusText = status === 'warn' ? 'WARNING' : 'PASSED';
+    const checked = dep && dep.checked_ts ? String(dep.checked_ts) : (cap.scanned_at ? new Date(Number(cap.scanned_at) * 1000).toLocaleString() : '');
+
+    const chipHtml = visibleChecks.map(([k, label, detail]) => {
       const raw = !!f[k];
       const ok = checkPassed(k, raw);
-      const display = (k === 'is_container' || k === 'is_wsl') ? (raw ? 'no' : 'yes') : (raw ? 'yes' : 'no');
-      const color = ok ? 'var(--green)' : 'var(--amber)';
-      const border = ok ? 'var(--green-dim)' : 'rgba(255,179,0,0.4)';
-      const bg = ok ? 'rgba(57,255,20,0.06)' : 'rgba(255,179,0,0.08)';
-      return `<span class="host-cap-chip" title="${k}" style="border:1px solid ${border};background:${bg};color:${color};padding:1px 5px;border-radius:2px;">${label}: ${display}</span>`;
-    };
-    const unsupported = (cap.unsupported_actions || []).length;
-    capEl.innerHTML = '<span style="color:var(--dim);letter-spacing:0.12em;">SYSTEM DEPENDENCY DETAILS</span> '
-      + '<button class="help-btn inline" onclick="event.stopPropagation();openHelp(\'help-systemdetails\')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button> '
-      + depChecks.map(chip).join(' ')
-      + (unsupported ? ` <span class="host-cap-suppressed" style="color:var(--amber)">${unsupported} unavailable action(s) disabled</span>` : '');
-  }
+      const shown = (k === 'is_container' || k === 'is_wsl') ? (raw ? 'NO' : 'YES') : (raw ? 'YES' : 'NO');
+      return `
+        <div class="host-cap-chip ${ok ? 'ok' : 'warn'}" title="${esc(k)}">
+          <span class="hcc-status">${shown}</span>
+          <span>
+            <span class="hcc-label">${esc(label)}</span>
+            <span class="hcc-detail">${esc(detail)}</span>
+          </span>
+        </div>
+      `;
+    }).join('');
+
+    const note = unsupported
+      ? `<span class="host-cap-suppressed">${unsupported} unavailable action(s) disabled.</span> Arminta will skip actions that need missing tools, permissions, or hardware controls instead of repeatedly trying them.`
+      : `No unavailable actions are currently disabled by this dependency map.`;
+
+    capEl.className = `system-dependency-card ${statusClass}`;
+    capEl.innerHTML = `
+      <div class="sdc-header">
+        <div>
+          <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
+          <div class="sdc-subtitle">Plain-English breakdown of the startup Linux dependency check.</div>
+        </div>
+        <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
+      </div>
+      <div class="sdc-summary-grid">
+        <div class="sdc-summary-cell"><div class="sdc-summary-label">CHECK STATUS</div><div class="sdc-summary-value">${statusText}</div></div>
+        <div class="sdc-summary-cell"><div class="sdc-summary-label">CHECKS PASSED</div><div class="sdc-summary-value">${passed} / ${total}</div></div>
+        <div class="sdc-summary-cell"><div class="sdc-summary-label">ACTIONS DISABLED</div><div class="sdc-summary-value">${unsupported}</div></div>
+      </div>
+      <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
+      <div class="sdc-check-grid">${chipHtml}</div>
+    `;
+  })();
 
   /* ── MODE DISTRIBUTION DONUT ── */
   const modeHist = (d.operational_mode_history || []).slice(-200);
@@ -5877,14 +6101,14 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br><br><strong>Passed</strong> means the scan ran and Arminta has a live system dependency map. Missing optional tools do not automatically mean failure; unavailable actions are disabled so the policy does not keep trying controls this Linux system cannot perform.
         <br><br><strong>Warning</strong> means the scan found a structural mismatch that needs attention, or the WebUI data-contract check also detected <code>GIST_DRIFT</code>.
         <br><br><strong>Unknown</strong> means this WebUI has loaded, but it has not yet received the new dependency-scan payload from the running agent.
-        <br><br>The detailed results are shown in <strong>SYSTEM DEPENDENCY DETAILS</strong>. A separate internal <strong>WebUI data check</strong> still watches for dashboard/agent payload mismatch, but this top indicator is specifically the Linux system dependency check.
+        <br><br>The detailed results are shown in the large <strong>SYSTEM DEPENDENCY DETAILS</strong> panel directly under the top status strip. A separate internal <strong>WebUI data check</strong> still watches for dashboard/agent payload mismatch, but this top indicator is specifically the Linux system dependency check.
       </div>
     </div>
 
     <div class="help-entry" id="help-systemdetails">
       <div class="help-entry-title"><span>System Dependency Details</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        <strong>SYSTEM DEPENDENCY DETAILS</strong> is the plain-English breakdown of Arminta's startup Linux system dependency check. It tells you which files, tools, permissions, and hardware control paths this machine actually provides.
+        <strong>SYSTEM DEPENDENCY DETAILS</strong> is the plain-English panel directly below the top dependency status strip. It is the breakdown of Arminta's startup Linux system dependency check. It tells you which files, tools, permissions, and hardware control paths this machine actually provides.
         <br><br><strong>Green chips</strong> mean that dependency check passed. <strong>Amber chips</strong> mean that item is missing, read-only, or the environment is restricted. Missing optional items do not always mean Arminta is broken; they usually mean Arminta will avoid the actions that need that item.
         <br><br>Examples: <strong>Pressure files</strong> means kernel pressure-stall data is readable; <strong>CPU speed control</strong> means Arminta can write CPU governor settings; <strong>Drive health tool</strong> means S.M.A.R.T. tooling is installed; <strong>Root access</strong> means the agent is running with root privileges; <strong>Not containerized</strong> and <strong>Not WSL</strong> warn when the Linux environment may block low-level controls.
         <br><br><strong>Unavailable actions disabled</strong> counts actions Arminta removed from live selection because this system cannot safely perform them. Those actions are skipped before dispatch and redirected to <code>monitor</code>, so she does not waste learning cycles on predictable permission, tool, or hardware failures.
