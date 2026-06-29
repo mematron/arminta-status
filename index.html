@@ -2065,6 +2065,48 @@ header::after {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
 
+
+/* ── HOST CAPS RESPONSIVE HARDENING ── */
+#host-capability-row {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+#host-capability-row span,
+#host-capability-row button {
+  max-width: 100%;
+  min-width: 0;
+}
+.host-cap-chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.host-cap-suppressed {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.help-entry-body {
+  overflow-wrap: anywhere;
+}
+.help-entry-body code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  #host-capability-row {
+    gap: 4px 6px !important;
+    font-size: 0.56rem !important;
+    line-height: 1.65 !important;
+  }
+  .host-cap-chip {
+    padding: 1px 4px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4179,6 +4221,33 @@ function render(d) {
     hwEl.innerHTML = parts.join(' <span style="color:var(--border2)">·</span> ');
   }
 
+  /* ── HOST CAPABILITIES ── */
+  if (d.host_capabilities && d.host_capabilities.flags) {
+    const cap = d.host_capabilities;
+    const f = cap.flags || {};
+    let capEl = document.getElementById('host-capability-row');
+    if (!capEl) {
+      capEl = document.createElement('div');
+      capEl.id = 'host-capability-row';
+      capEl.setAttribute('aria-live', 'polite');
+      capEl.style.cssText = 'font-size:0.6rem;color:var(--muted);letter-spacing:0.06em;margin-top:6px;display:flex;flex-wrap:wrap;gap:5px 9px;line-height:1.5;';
+      const hwEl2 = document.getElementById('hw-profile-row') || document.getElementById('ga-divergence');
+      if (hwEl2 && hwEl2.parentNode) hwEl2.parentNode.insertBefore(capEl, hwEl2.nextSibling);
+    }
+    const capKeys = ['can_read_psi','can_write_governor','has_cpufreq','has_systemd_journal','has_nvme_cli','has_smartctl','has_iw','has_ss','has_nvidia_smi','has_amdgpu_sysfs','can_drop_caches','can_renice','can_ionice','is_container','is_wsl','is_root'];
+    const chip = (k) => {
+      const on = !!f[k];
+      const color = on ? 'var(--green)' : 'var(--red)';
+      const bg = on ? 'rgba(57,255,20,0.06)' : 'rgba(255,61,61,0.06)';
+      return `<span class="host-cap-chip" title="${k}" style="border:1px solid ${on ? 'var(--green-dim)' : 'rgba(255,61,61,0.35)'};background:${bg};color:${color};padding:1px 5px;border-radius:2px;">${k.replace(/^(can_|has_|is_)/,'')}:${on?'1':'0'}</span>`;
+    };
+    const unsupported = (cap.unsupported_actions || []).length;
+    capEl.innerHTML = '<span style="color:var(--dim);letter-spacing:0.12em;">HOST CAPS</span> '
+      + '<button class="help-btn inline" onclick="event.stopPropagation();openHelp(\'help-hostcaps\')" title="Help: Host capability profile" aria-label="Help: Host capability profile">?</button> '
+      + capKeys.map(chip).join(' ')
+      + (unsupported ? ` <span class="host-cap-suppressed" style="color:var(--amber)">${unsupported} action(s) suppressed</span>` : '');
+  }
+
   /* ── MODE DISTRIBUTION DONUT ── */
   const modeHist = (d.operational_mode_history || []).slice(-200);
   const modeCounts2 = {};
@@ -4287,6 +4356,7 @@ function render(d) {
       else if (l.includes('[warn]'))                                    cls += ' warn';
       else if (l.includes('[skip]'))                                    cls += ' gov';   // suppressed no-op — green (neutral, not failure)
       else if (l.includes('[hw_profile]'))                              cls += ' res';   // hardware detection — cyan
+      else if (l.includes('[capability]'))                              cls += ' res';   // host capability profile — cyan
       else if (l.includes('[memory]'))                                  cls += ' res';   // memory restore/purge notices — cyan
       else if (l.includes('[meta]'))                                    cls += ' meta';
       else if (l.includes('[hobby]'))                                   cls += ' hobby';
@@ -5602,7 +5672,17 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       </div>
     </div>
 
-    <div class="help-entry" id="help-earlyoom">
+        <div class="help-entry" id="help-hostcaps">
+      <div class="help-entry-title"><span>Host Capability Profile</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        The <strong>HOST CAPS</strong> row is Arminta's startup compatibility map for the current Linux host. Each chip is a live yes/no gate discovered from the machine rather than an assumption baked into the policy.
+        <br><br><strong>Green chips</strong> mean the feature, tool, or permission is available. <strong>Red chips</strong> mean Arminta should treat that control surface as missing or read-only on this host. Examples: <code>read_psi</code> checks kernel pressure-stall files, <code>write_governor</code> checks CPU governor write access, <code>nvme_cli</code>/<code>smartctl</code>/<code>iw</code>/<code>ss</code> check optional utilities, and <code>root</code>/<code>container</code>/<code>wsl</code> describe the execution environment.
+        <br><br><strong>Suppressed actions</strong> counts actions Arminta has removed from live selection because the host cannot safely perform them. Unsupported actions are skipped before dispatch and redirected to <code>monitor</code>, so she does not waste learning cycles on predictable permission or hardware failures.
+        <br><br>This panel is especially useful when moving Arminta between full desktops, laptops, servers, containers, WSL, and minimal Linux installs. The same agent can run, but the available intervention surface changes by machine.
+      </div>
+    </div>
+
+<div class="help-entry" id="help-earlyoom">
       <div class="help-entry-title"><span>EarlyOOM Observation Node</span><span class="tag tag-live">LIVE</span><span class="tag" style="background:rgba(255,160,0,0.15);color:var(--amber);border-color:rgba(255,160,0,0.3);">v6</span></div>
       <div class="help-entry-body">
         <strong>earlyoom_ct</strong> counts how many processes the <code>earlyoom</code> daemon killed between the previous step and this one. It is an <em>observational node</em> — Arminta reads it as a signal but cannot causally produce it. This asymmetry is enforced in the causal graph: all <code>action → earlyoom_ct</code> edges are poison-listed at write time, preventing spurious correlations like "compact_memory causes earlyoom to fire" (what actually happened: earlyoom fires because memory was already critically low, and compact_memory happened to run at the same moment).
