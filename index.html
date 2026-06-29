@@ -1605,6 +1605,16 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   padding-bottom: 7px;
   border-bottom: 1px solid var(--border);
 }
+.wish-subpanel-head-main {
+  min-width: 0;
+}
+.wish-subpanel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
 .wish-subpanel-title {
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -1617,6 +1627,10 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   color: var(--dim);
   letter-spacing: 0.04em;
   text-align: right;
+}
+.wish-scroll-btn {
+  font-size: 0.55rem;
+  padding: 3px 7px;
 }
 .wish-scroll-list {
   display: flex;
@@ -1729,6 +1743,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   /* wish lists: slightly shorter on small screens */
   .wish-scroll-list { max-height: 180px; }
   .wish-subpanel-head { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .wish-subpanel-actions { margin-left: 0; }
   .wish-subpanel-note { text-align: left; }
   /* wish stat grid: avoid cramped tiny tiles on narrow phones */
   .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
@@ -2907,15 +2922,25 @@ header::after {
     <div id="wish-evolver-trend" style="margin-top:6px;font-size:0.68rem;color:var(--dim);"></div>
     <div id="wish-target-proxy-panel" class="wish-subpanel" style="display:none;">
       <div class="wish-subpanel-head">
-        <div class="wish-subpanel-title">Target-Adapter Evaluations</div>
-        <div class="wish-subpanel-note">concrete proxy metrics for vague wishes</div>
+        <div class="wish-subpanel-head-main">
+          <div class="wish-subpanel-title">Target-Adapter Evaluations</div>
+          <div class="wish-subpanel-note">concrete proxy metrics for vague wishes</div>
+        </div>
+        <div class="wish-subpanel-actions">
+          <button class="log-lock-btn wish-scroll-btn" id="wish-proxy-scroll-btn" onclick="togglePanelScrollLock('wish-target-proxy-list', 'wish-proxy-scroll-btn')" aria-label="Lock target-adapter evaluation scroll position">SCROLL AUTO</button>
+        </div>
       </div>
       <div class="wish-proxy-list wish-scroll-list" id="wish-target-proxy-list"></div>
     </div>
     <div class="wish-subpanel">
       <div class="wish-subpanel-head">
-        <div class="wish-subpanel-title">Active Wish Queue</div>
-        <div class="wish-subpanel-note">open gaps and procurement attempts</div>
+        <div class="wish-subpanel-head-main">
+          <div class="wish-subpanel-title">Active Wish Queue</div>
+          <div class="wish-subpanel-note">newest wishes first</div>
+        </div>
+        <div class="wish-subpanel-actions">
+          <button class="log-lock-btn wish-scroll-btn" id="wish-list-scroll-btn" onclick="togglePanelScrollLock('wish-list', 'wish-list-scroll-btn')" aria-label="Lock active wish queue scroll position">SCROLL AUTO</button>
+        </div>
       </div>
       <div id="wish-list" class="wish-scroll-list">
         <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
@@ -2998,6 +3023,7 @@ function destroyCharts() {
 
 /* ── log scroll lock ── */
 let logLocked = false;
+const panelScrollLocks = {};
 function toggleLogLock() {
   logLocked = !logLocked;
   const btn = document.getElementById('log-lock-btn');
@@ -3006,6 +3032,35 @@ function toggleLogLock() {
     btn.classList.toggle('locked', logLocked);
     btn.setAttribute('aria-label', logLocked ? 'Unlock log scroll (currently locked)' : 'Lock log scroll position');
   }
+}
+function togglePanelScrollLock(panelId, btnId) {
+  panelScrollLocks[panelId] = !panelScrollLocks[panelId];
+  const locked = !!panelScrollLocks[panelId];
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.textContent = locked ? 'SCROLL LOCKED' : 'SCROLL AUTO';
+    btn.classList.toggle('locked', locked);
+    btn.setAttribute('aria-label', locked ? 'Unlock scroll auto' : 'Lock scroll position');
+  }
+}
+function autoScrollPanel(panelId, newestAt = 'top') {
+  if (panelScrollLocks[panelId]) return;
+  const el = document.getElementById(panelId);
+  if (!el) return;
+  el.scrollTop = newestAt === 'bottom' ? el.scrollHeight : 0;
+}
+function newestFirst(items, fields = ['step']) {
+  return (Array.isArray(items) ? items : [])
+    .map((item, idx) => ({ item, idx }))
+    .sort((a, b) => {
+      const av = fields.map(f => Number(a.item && a.item[f])).find(Number.isFinite);
+      const bv = fields.map(f => Number(b.item && b.item[f])).find(Number.isFinite);
+      if (Number.isFinite(av) || Number.isFinite(bv)) {
+        return (Number.isFinite(bv) ? bv : 0) - (Number.isFinite(av) ? av : 0);
+      }
+      return b.idx - a.idx;
+    })
+    .map(row => row.item);
 }
 
 /* ── value flash helper ── */
@@ -3349,6 +3404,7 @@ function render(d) {
     // wish detail rows
     const wishList = document.getElementById('wish-list');
     if (wishList && Array.isArray(d.wish_details) && d.wish_details.length) {
+      const wishRows = newestFirst(d.wish_details, ['step', 'generated_step']);
       const statusClass = s => s === 'deployed'  ? 'wish-status-deployed'
                              : s === 'staged'    ? 'wish-status-staged'
                              : s === 'shopping'  ? 'wish-status-shopping'
@@ -3357,7 +3413,7 @@ function render(d) {
       const failBadge = w => (w.fail_count > 0)
         ? `<span style="font-size:0.58rem;color:var(--red);font-family:var(--font-mono);flex-shrink:0;" title="LOSE/TIE eval attempts">✕${w.fail_count}</span>`
         : '';
-      wishList.innerHTML = d.wish_details.map(w =>
+      wishList.innerHTML = wishRows.map(w =>
         `<div class="wish-row">
           <span class="wish-trigger-badge wish-trigger-${safeClassToken(w.trigger)}">${triggerLabel(w.trigger)}</span>
           <span class="wish-target">${esc(w.target)}</span>
@@ -3365,8 +3421,10 @@ function render(d) {
           <span class="wish-status ${statusClass(w.status)}">${esc(w.status)} · step ${Number(w.step).toLocaleString()}</span>
         </div>`
       ).join('');
+      autoScrollPanel('wish-list', 'top');
     } else if (wishList && d.wish_active === 0) {
       wishList.innerHTML = '<div style="color:var(--dim);font-size:0.7rem;">no active wishes</div>';
+      autoScrollPanel('wish-list', 'top');
     }
   }
 
@@ -3377,7 +3435,8 @@ function render(d) {
     if (proxyPanel && proxyList) {
       if (proxies.length) {
         proxyPanel.style.display = '';
-        proxyList.innerHTML = proxies.map(p => {
+        const proxyRows = newestFirst(proxies, ['step', 'end_step', 'start_step', 'generated_step']);
+        proxyList.innerHTML = proxyRows.map(p => {
           const imp = (p.improvement !== null && p.improvement !== undefined) ? Number(p.improvement) : null;
           const impPct = imp !== null ? Math.round(imp * 1000) / 10 : null;
           const impCol = imp === null ? 'var(--dim)' : imp >= 0.02 ? 'var(--green)' : imp < -0.02 ? 'var(--red)' : 'var(--amber)';
@@ -3395,6 +3454,7 @@ function render(d) {
             <span class="insight-sub">base ${baseline} · now ${current} · ${impPct === null ? 'Δ --' : 'Δ ' + (impPct >= 0 ? '+' : '') + impPct + '%'} · n=${p.samples || 0}</span>
           </div>`;
         }).join('');
+        autoScrollPanel('wish-target-proxy-list', 'top');
       } else {
         proxyPanel.style.display = 'none';
       }
