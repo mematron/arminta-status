@@ -2641,7 +2641,7 @@ header::after {
     </div>
     <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
     
-<details class="sdc-disclosure">
+<details class="sdc-disclosure" id="sdc-dependency-disclosure-static" ontoggle="try{localStorage.setItem('arminta_dependency_lists_open', this.open ? '1' : '0')}catch(e){}">
       <summary class="sdc-disclosure-summary">
         <span class="sdc-disclosure-label-closed">Show dependency lists</span>
         <span class="sdc-disclosure-label-open">Hide dependency lists</span>
@@ -2657,6 +2657,17 @@ header::after {
     </details>
 
   </div>
+
+<script>
+(function(){
+  try {
+    var open = localStorage.getItem('arminta_dependency_lists_open') === '1';
+    var el = document.getElementById('sdc-dependency-disclosure-static');
+    if (el) el.open = open;
+  } catch(e) {}
+})();
+</script>
+
 
 
 
@@ -4727,6 +4738,10 @@ function render(d) {
     const pyRequired = pyDeps && Array.isArray(pyDeps.required) ? pyDeps.required : [];
     const dep = d.system_dependency_check || null;
 
+    const dependencyListOpen = (() => {
+      try { return localStorage.getItem('arminta_dependency_lists_open') === '1'; }
+      catch(e) { return false; }
+    })();
     const checkPassed = (k, on) => (k === 'is_container' || k === 'is_wsl') ? !on : !!on;
     const depChecks = [
       ['can_read_psi',        'Pressure monitoring',        'Kernel /proc/pressure files are readable.'],
@@ -4839,7 +4854,7 @@ function render(d) {
       </div>
       <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
       
-<details class="sdc-disclosure">
+<details class="sdc-disclosure" ${dependencyListOpen ? 'open' : ''} ontoggle="try{localStorage.setItem('arminta_dependency_lists_open', this.open ? '1' : '0')}catch(e){}">
         <summary class="sdc-disclosure-summary">
           <span class="sdc-disclosure-label-closed">Show dependency lists</span>
           <span class="sdc-disclosure-label-open">Hide dependency lists</span>
