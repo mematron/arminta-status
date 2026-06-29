@@ -2641,7 +2641,7 @@ header::after {
     </div>
     <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
     
-<details class="sdc-disclosure" id="sdc-dependency-disclosure-static" ontoggle="try{localStorage.setItem('arminta_dependency_lists_open', this.open ? '1' : '0')}catch(e){}">
+<details class="sdc-disclosure" id="sdc-dependency-disclosure-static" ontoggle="setDependencyListsOpen(this.open)">
       <summary class="sdc-disclosure-summary">
         <span class="sdc-disclosure-label-closed">Show dependency lists</span>
         <span class="sdc-disclosure-label-open">Hide dependency lists</span>
@@ -3444,6 +3444,7 @@ const GIST_URL = (
 ).trim();
 const REFRESH_MS = 75000; // 75 seconds — matches Gist push interval (~75s at 30 steps × 2.5s/step)
 const CACHE_KEY = 'arminta:last-good-payload:v1';
+const DEPENDENCY_LISTS_OPEN_KEY = 'arminta_dependency_lists_open';
 
 /* ── helpers ── */
 function fmt(n) { return (n === undefined || n === null || n === '') ? '--' : Number(n).toLocaleString(); }
@@ -3464,6 +3465,21 @@ function cachePayload(d) {
 function loadCachedPayload() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) { return null; }
 }
+let dependencyListsOpen = (() => {
+  try { return localStorage.getItem(DEPENDENCY_LISTS_OPEN_KEY) === '1'; }
+  catch (_) { return false; }
+})();
+function getDependencyListsOpen() {
+  return dependencyListsOpen;
+}
+function setDependencyListsOpen(open) {
+  dependencyListsOpen = !!open;
+  try { localStorage.setItem(DEPENDENCY_LISTS_OPEN_KEY, dependencyListsOpen ? '1' : '0'); } catch (_) {}
+}
+document.addEventListener('toggle', (e) => {
+  const el = e.target;
+  if (el && el.classList && el.classList.contains('sdc-disclosure')) setDependencyListsOpen(el.open);
+}, true);
 
 function staleness(ts) {
   if (!ts) return null;
@@ -4738,10 +4754,7 @@ function render(d) {
     const pyRequired = pyDeps && Array.isArray(pyDeps.required) ? pyDeps.required : [];
     const dep = d.system_dependency_check || null;
 
-    const dependencyListOpen = (() => {
-      try { return localStorage.getItem('arminta_dependency_lists_open') === '1'; }
-      catch(e) { return false; }
-    })();
+    const dependencyListOpen = getDependencyListsOpen();
     const checkPassed = (k, on) => (k === 'is_container' || k === 'is_wsl') ? !on : !!on;
     const depChecks = [
       ['can_read_psi',        'Pressure monitoring',        'Kernel /proc/pressure files are readable.'],
@@ -4854,7 +4867,7 @@ function render(d) {
       </div>
       <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
       
-<details class="sdc-disclosure" ${dependencyListOpen ? 'open' : ''} ontoggle="try{localStorage.setItem('arminta_dependency_lists_open', this.open ? '1' : '0')}catch(e){}">
+<details class="sdc-disclosure" ${dependencyListOpen ? 'open' : ''} ontoggle="setDependencyListsOpen(this.open)">
         <summary class="sdc-disclosure-summary">
           <span class="sdc-disclosure-label-closed">Show dependency lists</span>
           <span class="sdc-disclosure-label-open">Hide dependency lists</span>
