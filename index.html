@@ -2286,6 +2286,33 @@ header::after {
   border-left: 2px solid var(--border2);
   background: rgba(0,0,0,0.12);
 }
+.sdc-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  margin: 12px 0 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 11px;
+}
+.sdc-list-title {
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.system-dependency-card.ok .sdc-list-title { color: var(--green); }
+.system-dependency-card.warn .sdc-list-title { color: var(--amber); }
+.system-dependency-card.unknown .sdc-list-title { color: var(--dim); }
+.sdc-list-sub {
+  color: var(--dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
 .sdc-check-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
@@ -2340,6 +2367,7 @@ header::after {
 }
 @media (max-width: 640px) {
   .sdc-summary-grid { grid-template-columns: 1fr; }
+  .sdc-list-head { align-items: flex-start; }
   .sdc-check-grid { grid-template-columns: 1fr; }
   #self-check-banner .sc-msg { margin-left: 0; }
 }
@@ -2546,7 +2574,7 @@ header::after {
     <div class="sdc-header">
       <div>
         <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
-        <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checked before choosing actions.</div>
+        <div class="sdc-subtitle">Startup Linux dependency check: files, tools, permissions, and hardware controls Arminta relies on.</div>
       </div>
       <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')"
               title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
@@ -2566,6 +2594,10 @@ header::after {
       </div>
     </div>
     <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
+    <div class="sdc-list-head">
+      <div class="sdc-list-title">DEPENDENCIES CHECKED</div>
+      <div class="sdc-list-sub">This list fills in with pass/fail results after the startup check publishes.</div>
+    </div>
     <div class="sdc-check-grid"></div>
   </div>
 
@@ -3520,7 +3552,7 @@ function render(d) {
       label = status === 'warn'
         ? 'SYSTEM DEPENDENCY CHECK WARNING'
         : 'SYSTEM DEPENDENCY CHECK PASSED';
-      message = `Startup Linux system dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. Details are shown in the SYSTEM DEPENDENCY DETAILS panel under System Signals.`;
+      message = `Startup system and Python dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. Details are shown in the SYSTEM DEPENDENCY DETAILS panel under System Signals.`;
       if (host.scanned_at) {
         try { checked = new Date(Number(host.scanned_at) * 1000).toLocaleString(); } catch(e) {}
       }
@@ -4634,6 +4666,8 @@ function render(d) {
 
     const cap = d.host_capabilities || null;
     const f = cap && cap.flags ? cap.flags : null;
+    const pyDeps = cap && cap.python_modules ? cap.python_modules : null;
+    const pyRequired = pyDeps && Array.isArray(pyDeps.required) ? pyDeps.required : [];
     const dep = d.system_dependency_check || null;
 
     const checkPassed = (k, on) => (k === 'is_container' || k === 'is_wsl') ? !on : !!on;
@@ -4663,7 +4697,7 @@ function render(d) {
         <div class="sdc-header">
           <div>
             <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
-            <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checks before choosing actions.</div>
+            <div class="sdc-subtitle">Linux files, tools, permissions, hardware controls, and Python imports Arminta checks before choosing actions.</div>
           </div>
           <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
         </div>
@@ -4673,14 +4707,20 @@ function render(d) {
           <div class="sdc-summary-cell"><div class="sdc-summary-label">ACTIONS DISABLED</div><div class="sdc-summary-value">--</div></div>
         </div>
         <div class="sdc-note">Waiting for Arminta's startup dependency check payload. This should fill in after the agent restarts and publishes a fresh dashboard update.</div>
+        <div class="sdc-list-head">
+          <div class="sdc-list-title">DEPENDENCIES CHECKED</div>
+          <div class="sdc-list-sub">Linux dependency and Python import results fill in after the startup check publishes.</div>
+        </div>
         <div class="sdc-check-grid"></div>
       `;
       return;
     }
 
     const visibleChecks = depChecks.filter(([k]) => Object.prototype.hasOwnProperty.call(f, k));
-    const passed = visibleChecks.filter(([k]) => checkPassed(k, !!f[k])).length;
-    const total = visibleChecks.length;
+    const systemPassed = visibleChecks.filter(([k]) => checkPassed(k, !!f[k])).length;
+    const pyPassed = pyRequired.filter(m => m && m.available).length;
+    const passed = systemPassed + pyPassed;
+    const total = visibleChecks.length + pyRequired.length;
     const unsupported = cap && Array.isArray(cap.unsupported_actions) ? cap.unsupported_actions.length : 0;
     const status = dep && dep.status ? String(dep.status).toLowerCase() : (f.is_linux === false ? 'warn' : 'ok');
     const statusClass = status === 'warn' ? 'warn' : 'ok';
@@ -4702,6 +4742,26 @@ function render(d) {
       `;
     }).join('');
 
+    const pyHtml = pyRequired.length
+      ? pyRequired.map(m => {
+          const ok = !!(m && m.available);
+          const mod = m && m.module ? String(m.module) : 'unknown';
+          const kind = m && m.kind === 'third_party' ? 'Python package' : 'Python standard library';
+          const detail = ok
+            ? `${kind} import is available.`
+            : `${kind} import is missing; Arminta may fail to start or lose this feature.`;
+          return `
+            <div class="host-cap-chip ${ok ? 'ok' : 'warn'}" title="${esc(mod)}">
+              <span class="hcc-status">${ok ? 'YES' : 'NO'}</span>
+              <span>
+                <span class="hcc-label">${esc(mod)}</span>
+                <span class="hcc-detail">${esc(detail)}</span>
+              </span>
+            </div>
+          `;
+        }).join('')
+      : `<div class="host-cap-chip warn"><span class="hcc-status">--</span><span><span class="hcc-label">Python import list</span><span class="hcc-detail">Waiting for Python import dependency data from the agent.</span></span></div>`;
+
     const note = unsupported
       ? `<span class="host-cap-suppressed">${unsupported} unavailable action(s) disabled.</span> Arminta will skip actions that need missing tools, permissions, or hardware controls instead of repeatedly trying them.`
       : `No unavailable actions are currently disabled by this dependency map.`;
@@ -4711,7 +4771,7 @@ function render(d) {
       <div class="sdc-header">
         <div>
           <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
-          <div class="sdc-subtitle">Startup Linux dependency check details.</div>
+          <div class="sdc-subtitle">Startup dependency check: Linux capabilities and Python imports Arminta relies on.</div>
         </div>
         <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
       </div>
@@ -4721,7 +4781,16 @@ function render(d) {
         <div class="sdc-summary-cell"><div class="sdc-summary-label">ACTIONS DISABLED</div><div class="sdc-summary-value">${unsupported}</div></div>
       </div>
       <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
+      <div class="sdc-list-head">
+        <div class="sdc-list-title">LINUX DEPENDENCIES CHECKED</div>
+        <div class="sdc-list-sub">Files, command-line tools, permissions, and hardware control surfaces checked at startup.</div>
+      </div>
       <div class="sdc-check-grid">${chipHtml}</div>
+      <div class="sdc-list-head">
+        <div class="sdc-list-title">PYTHON IMPORTS CHECKED</div>
+        <div class="sdc-list-sub">Modules arminta_v7.py imports at startup, including standard-library modules and installed Python packages.</div>
+      </div>
+      <div class="sdc-check-grid">${pyHtml}</div>
     `;
   })();
 
@@ -6165,9 +6234,10 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-systemdetails">
       <div class="help-entry-title"><span>System Dependency Details</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        <strong>SYSTEM DEPENDENCY DETAILS</strong> is the system dependency panel directly below the main status area. It breaks down Arminta's startup Linux system dependency check. It tells you which files, tools, permissions, and hardware control paths this machine actually provides.
-        <br><br><strong>Green chips</strong> mean that dependency check passed. <strong>Amber chips</strong> mean that item is missing, read-only, or the environment is restricted. Missing optional items do not always mean Arminta is broken; they usually mean Arminta will avoid the actions that need that item.
-        <br><br>Examples: <strong>Pressure files</strong> means kernel pressure-stall data is readable; <strong>CPU speed control</strong> means Arminta can write CPU governor settings; <strong>Drive health tool</strong> means S.M.A.R.T. tooling is installed; <strong>Root access</strong> means the agent is running with root privileges; <strong>Not containerized</strong> and <strong>Not WSL</strong> warn when the Linux environment may block low-level controls.
+        <strong>SYSTEM DEPENDENCY DETAILS</strong> is the dependency panel near the System Signals area. It has two lists: <strong>LINUX DEPENDENCIES CHECKED</strong> for files, tools, permissions, and hardware control paths; and <strong>PYTHON IMPORTS CHECKED</strong> for modules <code>arminta_v7.py</code> imports at startup.
+        <br><br><strong>Green dependency items</strong> mean that check passed. <strong>Amber dependency items</strong> mean that item is missing, read-only, or the environment is restricted. Missing optional Linux items do not always mean Arminta is broken; they usually mean Arminta will avoid the actions that need that item. Missing required Python imports are more serious because the agent may fail to start or lose that runtime feature.
+        <br><br>Linux examples: <strong>Pressure monitoring</strong> means kernel pressure-stall data is readable; <strong>CPU speed control</strong> means Arminta can write CPU governor settings; <strong>Drive health tool</strong> means S.M.A.R.T. tooling is installed; <strong>Root access</strong> means the agent is running with root privileges; <strong>Normal Linux environment</strong> and <strong>Native Linux kernel</strong> warn when containers or WSL may block low-level controls.
+        <br><br>Python examples: <code>os</code>, <code>json</code>, <code>sqlite3</code>, <code>curses</code>, and <code>zlib</code> are Python runtime modules; <code>numpy</code> and <code>psutil</code> are installed Python packages Arminta depends on.
         <br><br><strong>Unavailable actions disabled</strong> counts actions Arminta removed from live selection because this system cannot safely perform them. Those actions are skipped before dispatch and redirected to <code>monitor</code>, so she does not waste learning cycles on predictable permission, tool, or hardware failures.
         <br><br>This section is especially useful when moving Arminta between desktops, laptops, servers, containers, WSL, and minimal Linux installs. The same agent can run, but the available system controls change by machine.
       </div>
