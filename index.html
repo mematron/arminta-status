@@ -4711,7 +4711,7 @@ function render(d) {
       <div class="sdc-header">
         <div>
           <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
-          <div class="sdc-subtitle">Plain-English breakdown of the startup Linux dependency check.</div>
+          <div class="sdc-subtitle">Startup Linux dependency check details.</div>
         </div>
         <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')" title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
       </div>
@@ -6165,7 +6165,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
     <div class="help-entry" id="help-systemdetails">
       <div class="help-entry-title"><span>System Dependency Details</span><span class="tag tag-live">LIVE</span></div>
       <div class="help-entry-body">
-        <strong>SYSTEM DEPENDENCY DETAILS</strong> is the plain-English panel directly below the top dependency status strip. It is the breakdown of Arminta's startup Linux system dependency check. It tells you which files, tools, permissions, and hardware control paths this machine actually provides.
+        <strong>SYSTEM DEPENDENCY DETAILS</strong> breaks down Arminta's startup Linux system dependency check. It tells you which files, tools, permissions, and hardware control paths this machine actually provides.
         <br><br><strong>Green chips</strong> mean that dependency check passed. <strong>Amber chips</strong> mean that item is missing, read-only, or the environment is restricted. Missing optional items do not always mean Arminta is broken; they usually mean Arminta will avoid the actions that need that item.
         <br><br>Examples: <strong>Pressure files</strong> means kernel pressure-stall data is readable; <strong>CPU speed control</strong> means Arminta can write CPU governor settings; <strong>Drive health tool</strong> means S.M.A.R.T. tooling is installed; <strong>Root access</strong> means the agent is running with root privileges; <strong>Not containerized</strong> and <strong>Not WSL</strong> warn when the Linux environment may block low-level controls.
         <br><br><strong>Unavailable actions disabled</strong> counts actions Arminta removed from live selection because this system cannot safely perform them. Those actions are skipped before dispatch and redirected to <code>monitor</code>, so she does not waste learning cycles on predictable permission, tool, or hardware failures.
