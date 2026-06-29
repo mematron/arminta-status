@@ -4150,7 +4150,9 @@ function render(d) {
       + _gRow('lr', 'learning_rate', 0.005) + ' &nbsp;·&nbsp; '
       + _gRow('γ',  'discount_factor', 0.005) + ' &nbsp;·&nbsp; '
       + _gRow('κ',  'curiosity_weight', 0.02) + ' &nbsp;·&nbsp; '
-      + _gRow('ṙ',  'reward_scale', 0.002);
+      + _gRow('ṙ',  'reward_scale', 0.002) + '<br>'
+      + _gRow('ε\u0307', 'exploration_decay', 0.0005) + ' &nbsp;·&nbsp; '
+      + _gRow('dream', 'dream_load_thresh', 1.0);
   } else if (gaDiv) {
     gaDiv.style.display = 'none';
   }
