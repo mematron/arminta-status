@@ -2344,6 +2344,58 @@ header::after {
   #self-check-banner .sc-msg { margin-left: 0; }
 }
 
+
+
+/* ── UX FIX: dependency check placement ──────────────────────────────────────
+   Passed startup checks are supporting context, not the primary live state.
+   The compact strip appears after the cockpit; the detailed panel lives with
+   System Signals. Real warnings still surface in SYSTEM ALERTS at the top. */
+#self-check-banner.dependency-preflight-strip {
+  margin: -4px 0 22px 0;
+  padding: 7px 11px;
+  border-left-width: 2px;
+  font-size: 0.61rem;
+  line-height: 1.45;
+  background: rgba(57,255,20,0.025);
+  box-shadow: none;
+}
+#self-check-banner.dependency-preflight-strip .sc-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+#self-check-banner.dependency-preflight-strip .sc-msg {
+  flex-basis: auto;
+  margin-left: 0;
+  line-height: 1.45;
+  color: var(--dim);
+}
+#self-check-banner.dependency-preflight-strip .sc-time {
+  font-size: 0.56rem;
+}
+#self-check-banner.dependency-preflight-strip .help-btn {
+  width: 18px;
+  height: 18px;
+  font-size: 0.58rem;
+}
+#host-capability-row.system-dependency-card {
+  margin: 0 0 28px 0;
+}
+#host-capability-row .sdc-title::before {
+  content: 'PRE-FLIGHT · ';
+  color: var(--muted);
+  font-weight: 400;
+}
+@media (max-width: 640px) {
+  #self-check-banner.dependency-preflight-strip {
+    margin-top: 0;
+    gap: 6px;
+  }
+  #self-check-banner.dependency-preflight-strip .sc-left,
+  #self-check-banner.dependency-preflight-strip .sc-right {
+    width: auto;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2364,46 +2416,6 @@ header::after {
   <div class="sa-header">⚠ SYSTEM ALERTS</div>
   <div id="system-alerts-body"></div>
 </div>
-<div id="self-check-banner" class="unknown" aria-live="polite">
-  <div class="sc-left">
-    <span class="sc-dot"></span>
-    <span class="sc-label">SYSTEM DEPENDENCY CHECK UNKNOWN</span>
-    <span class="sc-msg">Waiting for Arminta's startup Linux system dependency check.</span>
-  </div>
-  <div class="sc-right">
-    <div class="sc-time"></div>
-    <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdeps')" title="Help: System dependency check" aria-label="Help: System dependency check">?</button>
-  </div>
-
-</div>
-
-<div id="host-capability-row" class="system-dependency-card unknown" aria-live="polite">
-  <div class="sdc-header">
-    <div>
-      <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
-      <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checked before choosing actions.</div>
-    </div>
-    <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')"
-            title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
-  </div>
-  <div class="sdc-summary-grid">
-    <div class="sdc-summary-cell">
-      <div class="sdc-summary-label">CHECK STATUS</div>
-      <div class="sdc-summary-value">WAITING</div>
-    </div>
-    <div class="sdc-summary-cell">
-      <div class="sdc-summary-label">CHECKS PASSED</div>
-      <div class="sdc-summary-value">-- / --</div>
-    </div>
-    <div class="sdc-summary-cell">
-      <div class="sdc-summary-label">ACTIONS DISABLED</div>
-      <div class="sdc-summary-value">--</div>
-    </div>
-  </div>
-  <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
-  <div class="sdc-check-grid"></div>
-</div>
-
 <div id="dashboard">
 
   <header>
@@ -2495,6 +2507,21 @@ header::after {
     </div>
   </div>
 
+  <!-- STARTUP DEPENDENCY CHECK — compact status, after live cockpit -->
+  <div id="self-check-banner" class="unknown dependency-preflight-strip" aria-live="polite">
+    <div class="sc-left">
+      <span class="sc-dot"></span>
+      <span class="sc-label">SYSTEM DEPENDENCY CHECK UNKNOWN</span>
+      <span class="sc-msg">Waiting for Arminta's startup Linux system dependency check.</span>
+    </div>
+    <div class="sc-right">
+      <div class="sc-time"></div>
+      <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdeps')" title="Help: System dependency check" aria-label="Help: System dependency check">?</button>
+    </div>
+  
+  </div>
+
+
 
 
   <!-- SYSTEM SIGNALS -->
@@ -2512,6 +2539,36 @@ header::after {
       <div id="sig-ep-drop-cell" style="text-align:center;display:none;"><div style="font-size:0.58rem;color:var(--dim);letter-spacing:0.07em;margin-bottom:4px;">LOG DROPS<button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-episodic-drops')" title="What are episodic log drops?" aria-label="Help: episodic drops" style="margin-left:3px;">?</button></div><div id="sig-ep-drop-ct" style="font-size:1.3rem;font-family:var(--font-mono);color:var(--text);">--</div><div id="sig-ep-drop-reason" style="font-size:0.58rem;color:var(--dim);">--</div></div>
     </div>
   </div>
+
+
+  <!-- STARTUP DEPENDENCY DETAILS — belongs with system health, not above the app identity -->
+  <div id="host-capability-row" class="system-dependency-card unknown" aria-live="polite">
+    <div class="sdc-header">
+      <div>
+        <div class="sdc-title">SYSTEM DEPENDENCY DETAILS</div>
+        <div class="sdc-subtitle">Linux files, tools, permissions, and hardware controls Arminta checked before choosing actions.</div>
+      </div>
+      <button class="help-btn" onclick="event.stopPropagation();openHelp('help-systemdetails')"
+              title="Help: System dependency details" aria-label="Help: System dependency details">?</button>
+    </div>
+    <div class="sdc-summary-grid">
+      <div class="sdc-summary-cell">
+        <div class="sdc-summary-label">CHECK STATUS</div>
+        <div class="sdc-summary-value">WAITING</div>
+      </div>
+      <div class="sdc-summary-cell">
+        <div class="sdc-summary-label">CHECKS PASSED</div>
+        <div class="sdc-summary-value">-- / --</div>
+      </div>
+      <div class="sdc-summary-cell">
+        <div class="sdc-summary-label">ACTIONS DISABLED</div>
+        <div class="sdc-summary-value">--</div>
+      </div>
+    </div>
+    <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
+    <div class="sdc-check-grid"></div>
+  </div>
+
 
 
 
@@ -3463,7 +3520,7 @@ function render(d) {
       label = status === 'warn'
         ? 'SYSTEM DEPENDENCY CHECK WARNING'
         : 'SYSTEM DEPENDENCY CHECK PASSED';
-      message = `Startup Linux system dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. The detailed dependency results are shown in the large SYSTEM DEPENDENCY DETAILS panel directly under this status strip.`;
+      message = `Startup Linux system dependency check ran: ${s.passed}/${s.total} checks passed; ${suppressed} unavailable action(s) disabled. Details are shown in the SYSTEM DEPENDENCY DETAILS panel under System Signals.`;
       if (host.scanned_at) {
         try { checked = new Date(Number(host.scanned_at) * 1000).toLocaleString(); } catch(e) {}
       }
