@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>ARMINTA — Live Agent Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
@@ -41,6 +41,8 @@ body {
   font-family: var(--font-mono);
   min-height: 100vh;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Subtle scanline overlay */
@@ -71,6 +73,7 @@ body::after {
 }
 
 .wrapper {
+  width: 100%;
   max-width: 1140px;
   margin: 0 auto;
   padding: 40px 24px 80px;
@@ -5804,6 +5807,14 @@ window.addEventListener('resize', _handleCausalResize);
 // settles so cards, scroll panes, D3, and Chart.js canvases match the new
 // portrait/landscape dimensions without a manual refresh.
 let _dashboardViewportTimer = null;
+const _DASHBOARD_VIEWPORT_CONTENT =
+  'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover';
+function _resetDashboardViewportScale() {
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta && meta.getAttribute('content') !== _DASHBOARD_VIEWPORT_CONTENT) {
+    meta.setAttribute('content', _DASHBOARD_VIEWPORT_CONTENT);
+  }
+}
 function _resizeChartInstances() {
   [sparkChart, sparkRollingChart, sparkVarianceChart, circChart,
    window._modeDonutChart, _timelineChart].forEach(c => {
@@ -5811,9 +5822,11 @@ function _resizeChartInstances() {
   });
 }
 function _refitDashboardViewport() {
+  _resetDashboardViewportScale();
   clearTimeout(_dashboardViewportTimer);
   _dashboardViewportTimer = setTimeout(() => {
     requestAnimationFrame(() => {
+      _resetDashboardViewportScale();
       if (window._lastArmintaData) {
         render(window._lastArmintaData);
         _cockpitPostRender(window._lastArmintaData);
