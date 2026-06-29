@@ -1586,6 +1586,53 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   flex-direction: column;
   gap: 6px;
 }
+.wish-subpanel {
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  background: rgba(0,229,255,0.018);
+}
+.wish-subpanel + .wish-subpanel {
+  margin-top: 10px;
+}
+.wish-subpanel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--border);
+}
+.wish-subpanel-title {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.wish-subpanel-note {
+  font-size: 0.62rem;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+.wish-scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.wish-scroll-list::-webkit-scrollbar { width: 4px; }
+.wish-scroll-list::-webkit-scrollbar-track { background: transparent; }
+.wish-scroll-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.wish-proxy-list {
+  max-height: 260px;
+}
 .wish-proxy-row .progress {
   flex: 1;
   min-width: 90px;
@@ -1647,19 +1694,6 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   border: 1px solid var(--border);
   flex-wrap: wrap;
 }
-#wish-list {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 220px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-#wish-list::-webkit-scrollbar { width: 4px; }
-#wish-list::-webkit-scrollbar-track { background: transparent; }
-#wish-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .wish-trigger-badge {
   font-size: 0.58rem;
   font-family: var(--font-mono);
@@ -1692,8 +1726,10 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
   /* wish row: stack on narrow */
   .wish-row { flex-direction: column; gap: 4px; align-items: flex-start; }
   .wish-status { margin-left: 0; }
-  /* wish list: slightly shorter on small screens */
-  #wish-list { max-height: 180px; }
+  /* wish lists: slightly shorter on small screens */
+  .wish-scroll-list { max-height: 180px; }
+  .wish-subpanel-head { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .wish-subpanel-note { text-align: left; }
   /* wish stat grid: avoid cramped tiny tiles on narrow phones */
   .wish-stat-row { grid-template-columns: repeat(2, 1fr); }
   /* target-adapter proxy rows + other insight rows: stack into a readable column */
@@ -1709,7 +1745,7 @@ body.help-open { user-select: none; -webkit-user-select: none; overflow: hidden;
 }
 @media (max-width: 380px) {
   #help-panel { width: 100vw; }
-  #wish-list { max-height: 150px; }
+  .wish-scroll-list { max-height: 150px; }
 }
 
 
@@ -2869,12 +2905,21 @@ header::after {
       </div>
     </div>
     <div id="wish-evolver-trend" style="margin-top:6px;font-size:0.68rem;color:var(--dim);"></div>
-    <div id="wish-target-proxy-panel" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
-      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">target-adapter evaluations · concrete proxy metrics for vague wishes</div>
-      <div class="wish-proxy-list" id="wish-target-proxy-list"></div>
+    <div id="wish-target-proxy-panel" class="wish-subpanel" style="display:none;">
+      <div class="wish-subpanel-head">
+        <div class="wish-subpanel-title">Target-Adapter Evaluations</div>
+        <div class="wish-subpanel-note">concrete proxy metrics for vague wishes</div>
+      </div>
+      <div class="wish-proxy-list wish-scroll-list" id="wish-target-proxy-list"></div>
     </div>
-    <div id="wish-list">
-      <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
+    <div class="wish-subpanel">
+      <div class="wish-subpanel-head">
+        <div class="wish-subpanel-title">Active Wish Queue</div>
+        <div class="wish-subpanel-note">open gaps and procurement attempts</div>
+      </div>
+      <div id="wish-list" class="wish-scroll-list">
+        <div style="color:var(--dim);font-size:0.7rem;">no wishes generated yet</div>
+      </div>
     </div>
     <div id="wish-codegen-status" style="margin-top:10px;font-size:0.68rem;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;display:none;">
       <span id="wish-codegen-text"></span>
@@ -6443,4 +6488,3 @@ function _cockpitPostRender(d) {
 
 </body>
 </html>
-
