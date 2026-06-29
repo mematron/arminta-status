@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ARMINTA — Live Agent Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
@@ -5798,6 +5798,40 @@ function _handleCausalResize() {
   }, 150);
 }
 window.addEventListener('resize', _handleCausalResize);
+
+// Mobile browsers can report the old viewport for a short moment during
+// orientation changes.  Refit from the cached payload after the viewport
+// settles so cards, scroll panes, D3, and Chart.js canvases match the new
+// portrait/landscape dimensions without a manual refresh.
+let _dashboardViewportTimer = null;
+function _resizeChartInstances() {
+  [sparkChart, sparkRollingChart, sparkVarianceChart, circChart,
+   window._modeDonutChart, _timelineChart].forEach(c => {
+    try { if (c && typeof c.resize === 'function') c.resize(); } catch(e) {}
+  });
+}
+function _refitDashboardViewport() {
+  clearTimeout(_dashboardViewportTimer);
+  _dashboardViewportTimer = setTimeout(() => {
+    requestAnimationFrame(() => {
+      if (window._lastArmintaData) {
+        render(window._lastArmintaData);
+        _cockpitPostRender(window._lastArmintaData);
+      }
+      _handleCausalResize();
+      _resizeChartInstances();
+    });
+  }, 220);
+}
+function _scheduleViewportRefit() {
+  _refitDashboardViewport();
+  setTimeout(_refitDashboardViewport, 520);
+}
+window.addEventListener('orientationchange', _scheduleViewportRefit, { passive: true });
+window.addEventListener('resize', _refitDashboardViewport, { passive: true });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', _refitDashboardViewport, { passive: true });
+}
 
 /* ── [20] D3 FORCE-DIRECTED CAUSAL GRAPH ── */
 let _d3Simulation = null;
