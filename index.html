@@ -2314,6 +2314,51 @@ header::after {
   letter-spacing: 0.04em;
   line-height: 1.5;
 }
+
+.sdc-disclosure {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sdc-disclosure + .sdc-disclosure { margin-top: 8px; }
+.sdc-disclosure-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(0,229,255,0.04);
+  user-select: none;
+}
+.sdc-disclosure-summary::-webkit-details-marker { display: none; }
+.sdc-disclosure-summary::after {
+  content: '▸';
+  color: var(--dim);
+  font-size: 0.78rem;
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+.sdc-disclosure[open] .sdc-disclosure-summary::after { transform: rotate(90deg); color: var(--cyan); }
+.sdc-disclosure-summary:hover { background: rgba(0,229,255,0.07); }
+.sdc-disclosure-label-open { display: none; }
+.sdc-disclosure[open] .sdc-disclosure-label-open { display: inline; }
+.sdc-disclosure[open] .sdc-disclosure-label-closed { display: none; }
+.sdc-disclosure-body { padding: 12px; border-top: 1px solid var(--border); }
+.sdc-disclosure-note {
+  color: var(--dim);
+  font-size: 0.6rem;
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
 .sdc-check-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
@@ -2595,11 +2640,22 @@ header::after {
       </div>
     </div>
     <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
-    <div class="sdc-list-head">
-      <div class="sdc-list-title">DEPENDENCIES CHECKED</div>
-      <div class="sdc-list-sub">This list fills in with pass/fail results after the startup check publishes.</div>
-    </div>
-    <div class="sdc-check-grid"></div>
+    
+<details class="sdc-disclosure">
+      <summary class="sdc-disclosure-summary">
+        <span class="sdc-disclosure-label-closed">Show dependency lists</span>
+        <span class="sdc-disclosure-label-open">Hide dependency lists</span>
+      </summary>
+      <div class="sdc-disclosure-body">
+        <div class="sdc-disclosure-note">This section fills in with pass/fail results after Arminta's startup dependency check publishes.</div>
+        <div class="sdc-list-head">
+          <div class="sdc-list-title">DEPENDENCIES CHECKED</div>
+          <div class="sdc-list-sub">Waiting for the startup check payload.</div>
+        </div>
+        <div class="sdc-check-grid"></div>
+      </div>
+    </details>
+
   </div>
 
 
@@ -4782,16 +4838,26 @@ function render(d) {
         <div class="sdc-summary-cell"><div class="sdc-summary-label">ACTIONS DISABLED</div><div class="sdc-summary-value">${unsupported}</div></div>
       </div>
       <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
-      <div class="sdc-list-head">
-        <div class="sdc-list-title">LINUX DEPENDENCIES CHECKED</div>
-        <div class="sdc-list-sub">Files, command-line tools, permissions, and hardware control surfaces checked at startup.</div>
-      </div>
-      <div class="sdc-check-grid">${chipHtml}</div>
-      <div class="sdc-list-head">
-        <div class="sdc-list-title">PYTHON IMPORTS CHECKED</div>
-        <div class="sdc-list-sub">Modules arminta_v7.py imports at startup, including standard-library modules and installed Python packages.</div>
-      </div>
-      <div class="sdc-check-grid">${pyHtml}</div>
+      
+<details class="sdc-disclosure">
+        <summary class="sdc-disclosure-summary">
+          <span class="sdc-disclosure-label-closed">Show dependency lists</span>
+          <span class="sdc-disclosure-label-open">Hide dependency lists</span>
+        </summary>
+        <div class="sdc-disclosure-body">
+          <div class="sdc-disclosure-note">These are the exact Linux capabilities and Python imports Arminta checked at startup.</div>
+          <div class="sdc-list-head">
+            <div class="sdc-list-title">LINUX DEPENDENCIES CHECKED</div>
+            <div class="sdc-list-sub">Files, command-line tools, permissions, and hardware control surfaces Arminta relies on.</div>
+          </div>
+          <div class="sdc-check-grid">${chipHtml}</div>
+          <div class="sdc-list-head" style="margin-top:12px;">
+            <div class="sdc-list-title">PYTHON IMPORTS CHECKED</div>
+            <div class="sdc-list-sub">Modules arminta_v7.py imports at startup, including standard-library modules and installed Python packages.</div>
+          </div>
+          <div class="sdc-check-grid">${pyHtml}</div>
+        </div>
+      </details>
     `;
   })();
 
