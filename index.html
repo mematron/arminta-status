@@ -1,12 +1,39 @@
 <!DOCTYPE html>
-<!-- ARMINTA_WEBUI_BUILD: memacode-exhaustive-audit-2026-06-29 -->
+<!-- ARMINTA_WEBUI_BUILD: memacode-blank-hotfix-2026-06-29 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src http: https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src http: https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ARMINTA — Live Agent Status</title>
+
+<script>
+/* ARMINTA boot-error sentinel: never leave the page blank after a startup JS failure. */
+(function(){
+  function showArmintaBootError(kind, detail) {
+    try {
+      var id = 'arminta-boot-error';
+      var el = document.getElementById(id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = id;
+        el.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:2147483647;padding:12px 14px;border:1px solid #ff3d3d;background:rgba(20,0,0,.94);color:#ffd6d6;font:12px/1.45 monospace;white-space:pre-wrap;box-shadow:0 0 24px rgba(255,61,61,.25)';
+        document.documentElement.appendChild(el);
+      }
+      el.textContent = 'ARMINTA WEBUI STARTUP ERROR\\n' + kind + ': ' + detail;
+    } catch (_) {}
+  }
+  window.addEventListener('error', function(e) {
+    showArmintaBootError('error', (e && e.message ? e.message : String(e)) + (e && e.filename ? '\\n' + e.filename + ':' + e.lineno + ':' + e.colno : ''));
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    var r = e && e.reason;
+    showArmintaBootError('promise', r && r.stack ? r.stack : String(r));
+  });
+})();
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -3472,9 +3499,23 @@ function esc(s) {
 function safeClassToken(s) {
   return String(s ?? 'unknown').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 }
+const ARMINTA_NATIVE_INNER_HTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+
 function sanitizeArmintaHTML(value) {
   const template = document.createElement('template');
-  template.innerHTML = String(value ?? '');
+  const raw = String(value ?? '');
+
+  // IMPORTANT: this sanitizer is also used by the global innerHTML guard below.
+  // Calling template.innerHTML here would re-enter that guard and can blank the
+  // whole dashboard with "Maximum call stack size exceeded". Always use the
+  // browser's original native setter/getter captured before the guard is installed.
+  if (ARMINTA_NATIVE_INNER_HTML && ARMINTA_NATIVE_INNER_HTML.set && ARMINTA_NATIVE_INNER_HTML.get) {
+    ARMINTA_NATIVE_INNER_HTML.set.call(template, raw);
+  } else {
+    template.textContent = raw;
+    return template.textContent || '';
+  }
+
   const allowedTags = new Set(['DIV','SPAN','BR','UL','OL','LI','DETAILS','SUMMARY','BUTTON','SMALL','B','I','EM','STRONG','CODE']);
   const allowedAttrs = new Set(['class','title','style','aria-label','aria-expanded','role']);
   const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
@@ -3497,16 +3538,26 @@ function sanitizeArmintaHTML(value) {
       }
     }
   }
-  return template.innerHTML;
+  return ARMINTA_NATIVE_INNER_HTML && ARMINTA_NATIVE_INNER_HTML.get
+    ? ARMINTA_NATIVE_INNER_HTML.get.call(template)
+    : (template.textContent || '');
 }
 (function installArmintaInnerHTMLGuard() {
-  const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  const desc = ARMINTA_NATIVE_INNER_HTML;
   if (!desc || !desc.set || !desc.get || window.__armintaInnerHTMLGuardInstalled) return;
   Object.defineProperty(Element.prototype, 'innerHTML', {
     configurable: true,
     enumerable: desc.enumerable,
     get: desc.get,
-    set: function(value) { desc.set.call(this, sanitizeArmintaHTML(value)); }
+    set: function(value) {
+      // Empty clears are common and safe; bypassing the sanitizer also avoids
+      // unnecessary template work during frequent dashboard refreshes.
+      if (value === '') {
+        desc.set.call(this, '');
+        return;
+      }
+      desc.set.call(this, sanitizeArmintaHTML(value));
+    }
   });
   window.__armintaInnerHTMLGuardInstalled = true;
 })();
