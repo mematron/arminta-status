@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ARMINTA_WEBUI_BUILD: memacode-blank-hotfix-2026-06-29 -->
+<!-- ARMINTA_WEBUI_BUILD: memacode-toggle-hotfix-2026-06-29 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2670,7 +2670,7 @@ header::after {
     </div>
     <div class="sdc-note">Waiting for Arminta's startup dependency check payload.</div>
     
-<details class="sdc-disclosure" id="sdc-dependency-disclosure-static" ontoggle="setDependencyListsOpen(this.open)">
+<details class="sdc-disclosure" id="sdc-dependency-disclosure-static">
       <summary class="sdc-disclosure-summary">
         <span class="sdc-disclosure-label-closed">Show dependency lists</span>
         <span class="sdc-disclosure-label-open">Hide dependency lists</span>
@@ -3578,6 +3578,11 @@ function setDependencyListsOpen(open) {
   dependencyListsOpen = !!open;
   try { localStorage.setItem(DEPENDENCY_LISTS_OPEN_KEY, dependencyListsOpen ? '1' : '0'); } catch (_) {}
 }
+// Keep these on window for compatibility with older cached/static HTML that may
+// still contain inline ontoggle attributes. The current build no longer emits
+// inline handlers and relies on the delegated toggle listener below.
+window.getDependencyListsOpen = getDependencyListsOpen;
+window.setDependencyListsOpen = setDependencyListsOpen;
 document.addEventListener('toggle', (e) => {
   const el = e.target;
   if (el && el.classList && el.classList.contains('sdc-disclosure')) setDependencyListsOpen(el.open);
@@ -4969,7 +4974,7 @@ function render(d) {
       </div>
       <div class="sdc-note">${note}${checked ? ` <span style="color:var(--dim)">Checked ${esc(checked)}.</span>` : ''}</div>
       
-<details class="sdc-disclosure" ${dependencyListOpen ? 'open' : ''} ontoggle="setDependencyListsOpen(this.open)">
+<details class="sdc-disclosure" ${dependencyListOpen ? 'open' : ''}>
         <summary class="sdc-disclosure-summary">
           <span class="sdc-disclosure-label-closed">Show dependency lists</span>
           <span class="sdc-disclosure-label-open">Hide dependency lists</span>
