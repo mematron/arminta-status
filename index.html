@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<!-- ARMINTA_WEBUI_BUILD: memacode-integrity-diagnostics-2026-06-29 -->
+<!-- ARMINTA_WEBUI_BUILD: memacode-exhaustive-audit-2026-06-29 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src http: https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <title>ARMINTA — Live Agent Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@200;400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" defer referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --bg:        #060a0e;
@@ -2513,8 +2514,8 @@ header::after {
         <div class="last-seen" id="last-seen"></div>
         <div id="status-pill" class="status-pill active">AGENT ACTIVE</div>
         <div style="font-size:0.58rem;color:var(--muted);letter-spacing:0.06em;margin-top:4px;text-align:right;">
-          by <a href="https://github.com/mematron" target="_blank" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">mematron</a>
-          · <a href="https://github.com/mematron/Arminta" target="_blank" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">github</a>
+          by <a href="https://github.com/mematron" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">mematron</a>
+          · <a href="https://github.com/mematron/Arminta" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">github</a>
         </div>
       </div>
     </div>
@@ -3435,14 +3436,25 @@ header::after {
 </div><!-- /dashboard -->
 </div><!-- /wrapper -->
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 const DEFAULT_GIST_URL = 'https://gist.githubusercontent.com/mematron/27ec34034b4aed5d2cdd7563738fe5be/raw/arminta_stats.json';
-const GIST_URL = (
+function normalizeStatsUrl(raw) {
+  const candidate = String(raw || '').trim();
+  if (!candidate) return DEFAULT_GIST_URL;
+  try {
+    const u = new URL(candidate, window.location.href);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return DEFAULT_GIST_URL;
+    return u.href;
+  } catch (_) {
+    return DEFAULT_GIST_URL;
+  }
+}
+const GIST_URL = normalizeStatsUrl(
   new URLSearchParams(window.location.search).get('stats') ||
   localStorage.getItem('ARMINTA_STATS_URL') ||
   DEFAULT_GIST_URL
-).trim();
+);
 const REFRESH_MS = 75000; // 75 seconds — matches Gist push interval (~75s at 30 steps × 2.5s/step)
 const CACHE_KEY = 'arminta:last-good-payload:v1';
 const DEPENDENCY_LISTS_OPEN_KEY = 'arminta_dependency_lists_open';
@@ -3460,6 +3472,44 @@ function esc(s) {
 function safeClassToken(s) {
   return String(s ?? 'unknown').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 }
+function sanitizeArmintaHTML(value) {
+  const template = document.createElement('template');
+  template.innerHTML = String(value ?? '');
+  const allowedTags = new Set(['DIV','SPAN','BR','UL','OL','LI','DETAILS','SUMMARY','BUTTON','SMALL','B','I','EM','STRONG','CODE']);
+  const allowedAttrs = new Set(['class','title','style','aria-label','aria-expanded','role']);
+  const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const el of nodes) {
+    if (!allowedTags.has(el.tagName)) {
+      el.replaceWith(document.createTextNode(el.textContent || ''));
+      continue;
+    }
+    for (const attr of Array.from(el.attributes)) {
+      const name = attr.name.toLowerCase();
+      const val = String(attr.value || '');
+      if (name.startsWith('on') || !allowedAttrs.has(name)) {
+        el.removeAttribute(attr.name);
+        continue;
+      }
+      if (name === 'style' && /(?:url\s*\(|expression\s*\(|@import|javascript:|data:|vbscript:|-moz-binding)/i.test(val)) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  }
+  return template.innerHTML;
+}
+(function installArmintaInnerHTMLGuard() {
+  const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  if (!desc || !desc.set || !desc.get || window.__armintaInnerHTMLGuardInstalled) return;
+  Object.defineProperty(Element.prototype, 'innerHTML', {
+    configurable: true,
+    enumerable: desc.enumerable,
+    get: desc.get,
+    set: function(value) { desc.set.call(this, sanitizeArmintaHTML(value)); }
+  });
+  window.__armintaInnerHTMLGuardInstalled = true;
+})();
 function cachePayload(d) {
   try { if (d && d.step_count) localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (_) {}
 }
