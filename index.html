@@ -2739,6 +2739,31 @@ header::after {
   </div>
 
 
+  <div class="card card-pad mb28" id="diag-prof-panel" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">
+      Diagnostic Probe Profile
+    </div>
+    <div class="net-prof-head">
+      <div>
+        <div class="net-prof-k">Profiles</div>
+        <div class="net-prof-v" id="diag-prof-count">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Samples</div>
+        <div class="net-prof-v" id="diag-prof-samples">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Defer Ready</div>
+        <div class="net-prof-v" id="diag-prof-defer">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">read-only probes that may look probe-like vs reveal existing stress</div>
+    <div class="net-prof-top" id="diag-prof-top"></div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-top:12px;margin-bottom:8px;letter-spacing:0.05em;">latest diagnostic sample</div>
+    <div class="net-prof-signals" id="diag-prof-last"></div>
+  </div>
+
+
   <div class="card card-pad mb28" id="passive-evidence-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Passive Evidence Integrator
@@ -5244,6 +5269,61 @@ function render(d) {
       }
     } else {
       netProfPanel.style.display = 'none';
+    }
+  }
+
+
+  /* ── DIAGNOSTIC PROBE PROFILE ── */
+  const dpp = d.diagnostic_probe_profile || {};
+  const diagPanel = document.getElementById('diag-prof-panel');
+  if (diagPanel) {
+    const topProfiles = Array.isArray(dpp.top_profiles) ? dpp.top_profiles : [];
+    const hasDiagProfile = (dpp.profile_count || dpp.sample_count || topProfiles.length);
+    if (hasDiagProfile) {
+      diagPanel.style.display = '';
+      const profileCtEl = document.getElementById('diag-prof-count');
+      const sampleCtEl  = document.getElementById('diag-prof-samples');
+      const deferEl     = document.getElementById('diag-prof-defer');
+      if (profileCtEl) profileCtEl.textContent = fmt(dpp.profile_count || 0);
+      if (sampleCtEl) sampleCtEl.textContent = fmt(dpp.sample_count || 0);
+      if (deferEl) {
+        const deferCt = Number(dpp.defer_capable || 0);
+        deferEl.textContent = fmt(deferCt);
+        deferEl.style.color = deferCt > 0 ? 'var(--amber)' : 'var(--green)';
+      }
+
+      const topDiagEl = document.getElementById('diag-prof-top');
+      if (topDiagEl) {
+        topDiagEl.innerHTML = topProfiles.slice(0,6).map(r => {
+          const action = String(r.action || 'diagnostic').replace(/_/g,' ');
+          const sit = r.situation && r.situation !== '*' ? ` / ${String(r.situation).replace(/_/g,' ')}` : '';
+          const mode = r.mode && r.mode !== '*' ? ` / ${r.mode}` : '';
+          const probePct = Math.round(Number(r.probe_rate || 0) * 100);
+          const revealPct = Math.round(Number(r.reveal_rate || 0) * 100);
+          return `<div class="insight-row">
+            <span class="insight-chip">${esc(action)}</span>
+            <span class="insight-main">${fmt(r.n || 0)} samples · probe ${probePct}% · reveal ${revealPct}%</span>
+            <span class="insight-sub">${esc(sit + mode)} avg_stress=${Number(r.avg_stress_delta || 0).toFixed(3)}</span>
+          </div>`;
+        }).join('') || '<div style="color:var(--dim);font-size:0.68rem;">waiting for diagnostic profiles</div>';
+      }
+
+      const lastDiagEl = document.getElementById('diag-prof-last');
+      if (lastDiagEl) {
+        const last = dpp.last_summary && typeof dpp.last_summary === 'object' ? dpp.last_summary : {};
+        const rows = [];
+        if (last.action) rows.push(['action', last.action]);
+        if (last.classification) rows.push(['class', String(last.classification).replace(/_/g,' ')]);
+        if (last.stress_delta !== undefined) rows.push(['stress_delta', Number(last.stress_delta || 0).toFixed(3)]);
+        if (last.pressure_before !== undefined) rows.push(['pressure_before', Number(last.pressure_before || 0).toFixed(3)]);
+        if (last.step !== undefined) rows.push(['step', fmt(last.step || 0)]);
+        lastDiagEl.innerHTML = rows.length ? rows.map(([k,v]) => `<div class="insight-row">
+          <span class="insight-chip amber">${esc(String(k).replace(/_/g,' '))}</span>
+          <span class="insight-main">${esc(String(v))}</span>
+        </div>`).join('') : '<div style="color:var(--dim);font-size:0.68rem;">no diagnostic sample yet</div>';
+      }
+    } else {
+      diagPanel.style.display = 'none';
     }
   }
 
