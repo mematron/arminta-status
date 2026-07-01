@@ -2742,6 +2742,7 @@ header::after {
   <div class="card card-pad mb28" id="diag-prof-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Diagnostic Probe Profile
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-diagnostic-probe-profile')" title="What is the Diagnostic Probe Profile?" aria-label="Help: Diagnostic Probe Profile" style="margin-left:6px;">?</button>
     </div>
     <div class="net-prof-head">
       <div>
@@ -2767,6 +2768,7 @@ header::after {
   <div class="card card-pad mb28" id="sit-balance-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Situation Evidence Balance
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-situation-evidence-balance')" title="What is Situation Evidence Balance?" aria-label="Help: Situation Evidence Balance" style="margin-left:6px;">?</button>
     </div>
     <div class="net-prof-head">
       <div>
@@ -2792,6 +2794,7 @@ header::after {
   <div class="card card-pad mb28" id="noop-backoff-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Guarded No-op Backoff
+      <button class="help-btn inline" onclick="event.stopPropagation();openHelp('help-guarded-noop-backoff')" title="What is Guarded No-op Backoff?" aria-label="Help: Guarded No-op Backoff" style="margin-left:6px;">?</button>
     </div>
     <div class="net-prof-head">
       <div>
@@ -6391,6 +6394,33 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         This panel is a read-only classifier for <code>network_saturated</code> windows. It does not add network authority or dispatch new actions; it only explains which existing telemetry currently looks most responsible.
         <br><br>Possible causes include <code>interface_drops</code>, <code>local_wifi_rf</code>, <code>gateway_latency</code>, <code>dns_resolution</code>, <code>wan_latency</code>, <code>disk_coupled_net_io</code>, <code>active_connection_load</code>, and <code>nominal</code>.
         <br><br><code>active_connection_load</code> means many active network connections are creating load or waiting on responses.<br><br>The <strong>current cause</strong> is the latest classified window, <strong>confidence</strong> is the classifier's local certainty, <strong>samples</strong> is the number of remembered network-saturated windows, and <strong>active evidence signals</strong> shows the telemetry that drove the label.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-diagnostic-probe-profile">
+      <div class="help-entry-title"><span>Diagnostic Probe Profile</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel explains whether read-only diagnostic probes appear to create stress-like emotional shifts, or merely reveal stress that was already present. It does not make diagnostics causal interventions and it does not add new actions.
+        <br><br><strong>Profiles</strong> is the number of tracked action/situation/mode combinations. <strong>Samples</strong> is the total evidence accumulated across those profiles. <strong>Defer Ready</strong> counts profiles that have enough samples and a high enough probe-like rate to let Arminta skip that diagnostic briefly.
+        <br><br><strong>Probe</strong> means the diagnostic was followed by a stress increase from a low-pressure baseline. <strong>Reveal</strong> means pressure or stress was already high, so the diagnostic likely exposed an existing condition. The latest sample shows the most recent diagnostic classification.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-situation-evidence-balance">
+      <div class="help-entry-title"><span>Situation Evidence Balance</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel shows when Arminta uses safe, existing diagnostic actions to collect more evidence for under-sampled situations. It only runs during otherwise-monitor steps and under safe load gates, so it does not displace urgent interventions.
+        <br><br><strong>Situations</strong> is how many situation labels have received balancing probes. <strong>Probe Count</strong> is the lifetime total of those balancing probes. <strong>Last Gap</strong> is the most recent situation whose evidence coverage looked thin.
+        <br><br>The top rows show which situation received which safe probe action. The latest gap lists coverage evidence: edge keys, distinct actions, recent history count, and whether an active situation-gap wish contributed urgency.
+      </div>
+    </div>
+
+    <div class="help-entry" id="help-guarded-noop-backoff">
+      <div class="help-entry-title"><span>Guarded No-op Backoff</span><span class="tag tag-live">LIVE</span></div>
+      <div class="help-entry-body">
+        This panel shows actions that repeatedly selected themselves but immediately returned a guarded no-op such as “skipping,” “suppressed,” “nothing to do,” or a hardware safety gate. Arminta temporarily redirects those exact actions to <code>monitor</code> so repeated no-ops do not crowd out useful work.
+        <br><br><strong>Records</strong> is the number of actions being tracked. <strong>Cooldowns</strong> is how many are currently redirected. <strong>Total Skips</strong> counts all remembered guarded no-op events.
+        <br><br>This is narrower than risk assessment: it does not judge whether an action is dangerous. It only notices repeated inert outcomes and lets the action try again later when conditions may have changed.
       </div>
     </div>
 
