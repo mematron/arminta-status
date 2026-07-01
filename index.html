@@ -2764,6 +2764,56 @@ header::after {
   </div>
 
 
+  <div class="card card-pad mb28" id="sit-balance-panel" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">
+      Situation Evidence Balance
+    </div>
+    <div class="net-prof-head">
+      <div>
+        <div class="net-prof-k">Situations</div>
+        <div class="net-prof-v" id="sit-balance-count">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Probe Count</div>
+        <div class="net-prof-v" id="sit-balance-probes">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Last Gap</div>
+        <div class="net-prof-v" id="sit-balance-last-sit">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">safe diagnostic probes used to fill thin situation evidence</div>
+    <div class="net-prof-top" id="sit-balance-top"></div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-top:12px;margin-bottom:8px;letter-spacing:0.05em;">latest evidence gap</div>
+    <div class="net-prof-signals" id="sit-balance-last"></div>
+  </div>
+
+
+  <div class="card card-pad mb28" id="noop-backoff-panel" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">
+      Guarded No-op Backoff
+    </div>
+    <div class="net-prof-head">
+      <div>
+        <div class="net-prof-k">Records</div>
+        <div class="net-prof-v" id="noop-backoff-records">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Cooldowns</div>
+        <div class="net-prof-v" id="noop-backoff-cooldowns">--</div>
+      </div>
+      <div>
+        <div class="net-prof-k">Total Skips</div>
+        <div class="net-prof-v" id="noop-backoff-skips">--</div>
+      </div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-bottom:8px;letter-spacing:0.05em;">actions temporarily redirected after repeated guarded no-ops</div>
+    <div class="net-prof-top" id="noop-backoff-top"></div>
+    <div style="font-size:0.62rem;color:var(--dim);margin-top:12px;margin-bottom:8px;letter-spacing:0.05em;">latest suppression</div>
+    <div class="net-prof-signals" id="noop-backoff-last"></div>
+  </div>
+
+
   <div class="card card-pad mb28" id="passive-evidence-panel" style="display:none;">
     <div class="section-label" style="margin-bottom:12px;">
       Passive Evidence Integrator
@@ -5324,6 +5374,102 @@ function render(d) {
       }
     } else {
       diagPanel.style.display = 'none';
+    }
+  }
+
+
+  /* ── SITUATION EVIDENCE BALANCE ── */
+  const seb = d.situation_evidence_balance || {};
+  const sebPanel = document.getElementById('sit-balance-panel');
+  if (sebPanel) {
+    const topSits = Array.isArray(seb.top_situations) ? seb.top_situations : [];
+    const lastGap = seb.last_gap && typeof seb.last_gap === 'object' ? seb.last_gap : {};
+    const hasSeb = (seb.situation_count || seb.total_probe_count || topSits.length || lastGap.situation);
+    if (hasSeb) {
+      sebPanel.style.display = '';
+      const countEl = document.getElementById('sit-balance-count');
+      const probesEl = document.getElementById('sit-balance-probes');
+      const lastSitEl = document.getElementById('sit-balance-last-sit');
+      if (countEl) countEl.textContent = fmt(seb.situation_count || 0);
+      if (probesEl) probesEl.textContent = fmt(seb.total_probe_count || 0);
+      if (lastSitEl) lastSitEl.textContent = String(lastGap.situation || '--').replace(/_/g,' ').toUpperCase();
+
+      const topSebEl = document.getElementById('sit-balance-top');
+      if (topSebEl) {
+        topSebEl.innerHTML = topSits.slice(0,6).map(r => `<div class="insight-row">
+          <span class="insight-chip">${esc(String(r.situation || 'unknown').replace(/_/g,' '))}</span>
+          <span class="insight-main">${fmt(r.probe_count || 0)} probes -> ${esc(r.probe_action || 'log_top_proc')}</span>
+          <span class="insight-sub">last step ${fmt(r.last_probe_step || 0)}</span>
+        </div>`).join('') || '<div style="color:var(--dim);font-size:0.68rem;">no balancing probes yet</div>';
+      }
+
+      const lastSebEl = document.getElementById('sit-balance-last');
+      if (lastSebEl) {
+        const rows = [];
+        if (lastGap.situation) rows.push(['situation', String(lastGap.situation).replace(/_/g,' ')]);
+        if (lastGap.score !== undefined) rows.push(['score', Number(lastGap.score || 0).toFixed(2)]);
+        if (lastGap.edge_keys !== undefined) rows.push(['edge keys', fmt(lastGap.edge_keys || 0)]);
+        if (lastGap.actions !== undefined) rows.push(['actions', fmt(lastGap.actions || 0)]);
+        if (lastGap.history_n !== undefined) rows.push(['history', fmt(lastGap.history_n || 0)]);
+        if (lastGap.active_wish !== undefined) rows.push(['active wish', lastGap.active_wish ? 'yes' : 'no']);
+        lastSebEl.innerHTML = rows.length ? rows.map(([k,v]) => `<div class="insight-row">
+          <span class="insight-chip amber">${esc(k)}</span>
+          <span class="insight-main">${esc(String(v))}</span>
+        </div>`).join('') : '<div style="color:var(--dim);font-size:0.68rem;">no last gap recorded</div>';
+      }
+    } else {
+      sebPanel.style.display = 'none';
+    }
+  }
+
+
+  /* ── GUARDED NO-OP BACKOFF ── */
+  const gnb = d.guarded_noop_backoff || {};
+  const noopPanel = document.getElementById('noop-backoff-panel');
+  if (noopPanel) {
+    const topNoops = Array.isArray(gnb.top_records) ? gnb.top_records : [];
+    const lastNoop = gnb.last_summary && typeof gnb.last_summary === 'object' ? gnb.last_summary : {};
+    const hasNoop = (gnb.record_count || gnb.total_skips || topNoops.length || lastNoop.action);
+    if (hasNoop) {
+      noopPanel.style.display = '';
+      const recEl = document.getElementById('noop-backoff-records');
+      const coolEl = document.getElementById('noop-backoff-cooldowns');
+      const skipEl = document.getElementById('noop-backoff-skips');
+      if (recEl) recEl.textContent = fmt(gnb.record_count || 0);
+      if (coolEl) {
+        const active = Number(gnb.active_cooldowns || 0);
+        coolEl.textContent = fmt(active);
+        coolEl.style.color = active > 0 ? 'var(--amber)' : 'var(--green)';
+      }
+      if (skipEl) skipEl.textContent = fmt(gnb.total_skips || 0);
+
+      const topNoopEl = document.getElementById('noop-backoff-top');
+      if (topNoopEl) {
+        topNoopEl.innerHTML = topNoops.slice(0,6).map(r => {
+          const active = Number(r.suppress_until || 0) > Number(r.last_step || 0);
+          return `<div class="insight-row">
+            <span class="insight-chip ${active ? 'amber' : ''}">${esc(String(r.action || 'action').replace(/_/g,' '))}</span>
+            <span class="insight-main">${fmt(r.total_skips || 0)} skips · ${fmt(r.suppression_count || 0)} suppressions</span>
+            <span class="insight-sub">${active ? 'cooldown until ' + fmt(r.suppress_until || 0) : 'not cooling down'} · streak ${fmt(r.streak || 0)}</span>
+          </div>`;
+        }).join('') || '<div style="color:var(--dim);font-size:0.68rem;">no guarded no-op records</div>';
+      }
+
+      const lastNoopEl = document.getElementById('noop-backoff-last');
+      if (lastNoopEl) {
+        const rows = [];
+        if (lastNoop.action) rows.push(['action', String(lastNoop.action).replace(/_/g,' ')]);
+        if (lastNoop.streak !== undefined) rows.push(['streak', fmt(lastNoop.streak || 0)]);
+        if (lastNoop.cooldown !== undefined) rows.push(['cooldown', fmt(lastNoop.cooldown || 0) + ' steps']);
+        if (lastNoop.suppress_until !== undefined) rows.push(['until', fmt(lastNoop.suppress_until || 0)]);
+        if (lastNoop.reason) rows.push(['reason', String(lastNoop.reason).slice(0, 120)]);
+        lastNoopEl.innerHTML = rows.length ? rows.map(([k,v]) => `<div class="insight-row">
+          <span class="insight-chip amber">${esc(k)}</span>
+          <span class="insight-main">${esc(String(v))}</span>
+        </div>`).join('') : '<div style="color:var(--dim);font-size:0.68rem;">no suppression summary yet</div>';
+      }
+    } else {
+      noopPanel.style.display = 'none';
     }
   }
 
