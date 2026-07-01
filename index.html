@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ARMINTA_WEBUI_BUILD: memacode-toggle-hotfix-2026-06-29 -->
+<!-- ARMINTA_WEBUI_BUILD: memacode-language-mesh-2026-07-01 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -3194,6 +3194,10 @@ header::after {
         <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">GROUNDED</div>
         <div id="wl-grounded" style="font-size:1.4rem;color:#98c379;font-family:var(--font-mono);" title="words actually tested against her own sensor data and confirmed, not just statistically associated">--</div>
       </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:4px;">CONNECTIONS</div>
+        <div id="wl-connections" style="font-size:1.4rem;color:#00e5ff;font-family:var(--font-mono);" title="explicit association mesh edges distilled from co-occurrence, sequence, semantic similarity, reward valence, and grounding evidence">--</div>
+      </div>
     </div>
     <div id="wl-status-row" style="display:flex;align-items:center;gap:16px;margin:10px 0 8px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);">NEXT FETCH</span>
@@ -3208,6 +3212,10 @@ header::after {
     <div id="wl-grounded-row" style="display:none;align-items:flex-start;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
       <span style="color:var(--dim);white-space:nowrap;padding-top:2px;">GROUNDED WORDS</span>
       <span id="wl-grounded-list" style="color:#98c379;display:flex;gap:10px;flex-wrap:wrap;" title="word — metric it predicts, confidence, confirmed/refuted count. Confirmed against her own real sensor data, not just co-occurrence.">--</span>
+    </div>
+    <div id="wl-connections-row" style="display:none;align-items:flex-start;gap:8px;margin:0 0 10px;flex-wrap:wrap;font-size:0.62rem;font-family:var(--font-mono);">
+      <span style="color:var(--dim);white-space:nowrap;padding-top:2px;">TOP CONNECTIONS</span>
+      <span id="wl-connections-list" style="color:var(--cyan);display:flex;gap:10px;flex-wrap:wrap;" title="highest-confidence symbol links in the association mesh: A ↔ B · reason · score">--</span>
     </div>
     <div class="log-header">
       <div style="font-size:0.62rem;color:var(--dim);letter-spacing:0.05em;flex:1;min-width:0;">learning session log — recent fetch &amp; discovery events</div>
@@ -5610,6 +5618,34 @@ function render(d) {
       }).join('');
     } else if (groundRow) {
       groundRow.style.display = 'none';
+    }
+
+    // [v10-lang] Association mesh tile + row.  This is the explicit list of
+    // word/symbol connections Arminta distilled from the vocabulary she has
+    // collected, not just raw word counts.
+    const connEl = document.getElementById('wl-connections');
+    const connRow = document.getElementById('wl-connections-row');
+    const connList = document.getElementById('wl-connections-list');
+    const topConnections = wl.top_connections || [];
+    const connectionCount = wl.connection_count || topConnections.length || 0;
+    if (connEl) {
+      if (connectionCount > 0) {
+        connEl.textContent = fmt(connectionCount);
+        connEl.title = `${connectionCount} explicit symbol connections distilled from co-occurrence, sequences, semantic vectors, reward valence, and grounding`;
+      } else {
+        connEl.textContent = '—';
+        connEl.title = 'no association mesh edges have been distilled yet';
+      }
+    }
+    if (connRow && connList && topConnections.length) {
+      connRow.style.display = 'flex';
+      connList.innerHTML = topConnections.slice(0, 8).map(e => {
+        const score = typeof e.score === 'number' ? e.score.toFixed(2) : '?';
+        const rel = e.relation || 'connects';
+        return `<span title="${esc(rel)} score=${score}">${esc(e.a)} ↔ ${esc(e.b)} · ${esc(rel)} · ${score}</span>`;
+      }).join('');
+    } else if (connRow) {
+      connRow.style.display = 'none';
     }
 
     const disc    = wl.recent_discoveries || [];
