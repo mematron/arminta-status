@@ -4695,7 +4695,7 @@ function render(d) {
     if (oqRes.length) {
       oqResList.style.display = '';
       oqResList.innerHTML =
-        '<div style="font-size:0.62rem;color:var(--green);margin-bottom:8px;letter-spacing:0.05em;">recently resolved by anomaly evidence</div>' +
+        '<div style="font-size:0.62rem;color:var(--green);margin-bottom:8px;letter-spacing:0.05em;">recently resolved by anomaly/passive evidence</div>' +
         oqRes.slice().reverse().map(r => {
           const evBits = Array.isArray(r.evidence) ? r.evidence.slice(0,2) : [];
           const evidence = evBits.map(e => `<span class="insight-chip green">${esc(e)}</span>`).join('');
@@ -4703,7 +4703,7 @@ function render(d) {
             <span class="insight-chip">${esc(r.action || 'unknown')}</span>
             <span class="insight-main">${esc(r.situation || 'unknown')}</span>
             ${evidence}
-            <span class="insight-sub">step ${fmt(r.step)}</span>
+            <span class="insight-sub">${esc(r.source || 'evidence')} · step ${fmt(r.step)}</span>
           </div>`;
         }).join('');
     } else {
@@ -5387,7 +5387,9 @@ function render(d) {
   if (sebPanel) {
     const topSits = Array.isArray(seb.top_situations) ? seb.top_situations : [];
     const lastGap = seb.last_gap && typeof seb.last_gap === 'object' ? seb.last_gap : {};
-    const hasSeb = (seb.situation_count || seb.total_probe_count || topSits.length || lastGap.situation);
+    const lastSomGap = seb.last_somatic_gap && typeof seb.last_somatic_gap === 'object' ? seb.last_somatic_gap : {};
+    const topSomCells = Array.isArray(seb.top_somatic_cells) ? seb.top_somatic_cells : [];
+    const hasSeb = (seb.situation_count || seb.total_probe_count || topSits.length || lastGap.situation || lastSomGap.cell || topSomCells.length);
     if (hasSeb) {
       sebPanel.style.display = '';
       const countEl = document.getElementById('sit-balance-count');
@@ -5399,11 +5401,17 @@ function render(d) {
 
       const topSebEl = document.getElementById('sit-balance-top');
       if (topSebEl) {
-        topSebEl.innerHTML = topSits.slice(0,6).map(r => `<div class="insight-row">
+        const sitRows = topSits.slice(0,4).map(r => `<div class="insight-row">
           <span class="insight-chip">${esc(String(r.situation || 'unknown').replace(/_/g,' '))}</span>
           <span class="insight-main">${fmt(r.probe_count || 0)} probes -> ${esc(r.probe_action || 'log_top_proc')}</span>
           <span class="insight-sub">last step ${fmt(r.last_probe_step || 0)}</span>
-        </div>`).join('') || '<div style="color:var(--dim);font-size:0.68rem;">no balancing probes yet</div>';
+        </div>`);
+        const somRows = topSomCells.slice(0,3).map(r => `<div class="insight-row">
+          <span class="insight-chip green">SCM ${esc(String(r.cell || '').replace(/_/g,' '))}</span>
+          <span class="insight-main">${fmt(r.probe_count || 0)} somatic probes</span>
+          <span class="insight-sub">last step ${fmt(r.last_probe_step || 0)}</span>
+        </div>`);
+        topSebEl.innerHTML = [...sitRows, ...somRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no balancing probes yet</div>';
       }
 
       const lastSebEl = document.getElementById('sit-balance-last');
@@ -5415,6 +5423,9 @@ function render(d) {
         if (lastGap.actions !== undefined) rows.push(['actions', fmt(lastGap.actions || 0)]);
         if (lastGap.history_n !== undefined) rows.push(['history', fmt(lastGap.history_n || 0)]);
         if (lastGap.active_wish !== undefined) rows.push(['active wish', lastGap.active_wish ? 'yes' : 'no']);
+        if (lastSomGap.cell) rows.push(['somatic cell', String(lastSomGap.cell).replace(/_/g,' ')]);
+        if (lastSomGap.n_obs !== undefined) rows.push(['somatic n', `${fmt(lastSomGap.n_obs || 0)} / ${fmt(lastSomGap.target || 0)}`]);
+        if (lastSomGap.passive_gap_count !== undefined) rows.push(['somatic seen', fmt(lastSomGap.passive_gap_count || 0)]);
         lastSebEl.innerHTML = rows.length ? rows.map(([k,v]) => `<div class="insight-row">
           <span class="insight-chip amber">${esc(k)}</span>
           <span class="insight-main">${esc(String(v))}</span>
@@ -5431,8 +5442,9 @@ function render(d) {
   const noopPanel = document.getElementById('noop-backoff-panel');
   if (noopPanel) {
     const topNoops = Array.isArray(gnb.top_records) ? gnb.top_records : [];
+    const learnedPre = Array.isArray(gnb.learned_preconditions) ? gnb.learned_preconditions : [];
     const lastNoop = gnb.last_summary && typeof gnb.last_summary === 'object' ? gnb.last_summary : {};
-    const hasNoop = (gnb.record_count || gnb.total_skips || topNoops.length || lastNoop.action);
+    const hasNoop = (gnb.record_count || gnb.total_skips || topNoops.length || learnedPre.length || lastNoop.action);
     if (hasNoop) {
       noopPanel.style.display = '';
       const recEl = document.getElementById('noop-backoff-records');
@@ -5448,14 +5460,20 @@ function render(d) {
 
       const topNoopEl = document.getElementById('noop-backoff-top');
       if (topNoopEl) {
-        topNoopEl.innerHTML = topNoops.slice(0,6).map(r => {
+        const noopRows = topNoops.slice(0,4).map(r => {
           const active = Number(r.suppress_until || 0) > Number(r.last_step || 0);
           return `<div class="insight-row">
             <span class="insight-chip ${active ? 'amber' : ''}">${esc(String(r.action || 'action').replace(/_/g,' '))}</span>
             <span class="insight-main">${fmt(r.total_skips || 0)} skips · ${fmt(r.suppression_count || 0)} suppressions</span>
             <span class="insight-sub">${active ? 'cooldown until ' + fmt(r.suppress_until || 0) : 'not cooling down'} · streak ${fmt(r.streak || 0)}</span>
           </div>`;
-        }).join('') || '<div style="color:var(--dim);font-size:0.68rem;">no guarded no-op records</div>';
+        });
+        const preRows = learnedPre.slice(0,3).map(r => `<div class="insight-row">
+          <span class="insight-chip green">learned</span>
+          <span class="insight-main">${esc(String(r.action || 'action').replace(/_/g,' '))}: ${esc(r.metric || '?')} ${esc(r.operator || '')} ${Number(r.threshold || 0).toFixed(0)}</span>
+          <span class="insight-sub">n=${fmt(r.n || 0)} last=${fmt(r.last_step || 0)}</span>
+        </div>`);
+        topNoopEl.innerHTML = [...noopRows, ...preRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no guarded no-op records</div>';
       }
 
       const lastNoopEl = document.getElementById('noop-backoff-last');
@@ -5483,9 +5501,10 @@ function render(d) {
   if (pePanel) {
     const roles = Array.isArray(pe.top_roles) ? pe.top_roles : [];
     const plans = Array.isArray(pe.question_plans) ? pe.question_plans : [];
+    const ready = Array.isArray(pe.evidence_ready) ? pe.evidence_ready : [];
     const seeds = Array.isArray(pe.hypothesis_seed_history) ? pe.hypothesis_seed_history : [];
     const toll  = Array.isArray(pe.diagnostic_toll) ? pe.diagnostic_toll : [];
-    const hasPe = roles.length || plans.length || seeds.length || toll.length;
+    const hasPe = roles.length || plans.length || ready.length || seeds.length || toll.length;
     if (hasPe) {
       pePanel.style.display = '';
       const topRole = roles[0] || {};
@@ -5493,7 +5512,7 @@ function render(d) {
       const openPlansEl = document.getElementById('pe-open-plans');
       const gaSeedsEl = document.getElementById('pe-ga-seeds');
       if (topRoleEl) topRoleEl.textContent = String(topRole.role || 'mixed').replace(/_/g,' ').toUpperCase();
-      if (openPlansEl) openPlansEl.textContent = fmt(plans.length);
+      if (openPlansEl) openPlansEl.textContent = fmt(plans.length) + (ready.length ? ` / ${fmt(ready.length)} ready` : '');
       if (gaSeedsEl) gaSeedsEl.textContent = fmt(seeds.length);
 
       const roleEl = document.getElementById('pe-roles');
@@ -5515,7 +5534,12 @@ function render(d) {
           <span class="insight-main">${esc(p.text || '')}</span>
           <span class="insight-sub">${fmt(p.matches || 0)} matches</span>
         </div>`);
-        detEl.innerHTML = [...tollRows, ...planRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no toll or question evidence yet</div>';
+        const readyRows = ready.slice(0,2).map(p => `<div class="insight-row">
+          <span class="insight-chip green">ready</span>
+          <span class="insight-main">${esc(p.text || '')}</span>
+          <span class="insight-sub">${fmt(p.matches || 0)} matches · avg_r=${Number(p.avg_reward || 0).toFixed(3)}</span>
+        </div>`);
+        detEl.innerHTML = [...tollRows, ...readyRows, ...planRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no toll or question evidence yet</div>';
       }
     } else {
       pePanel.style.display = 'none';
@@ -6411,7 +6435,8 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         This panel shows when Arminta uses safe, existing diagnostic actions to collect more evidence for under-sampled situations. It only runs during otherwise-monitor steps and under safe load gates, so it does not displace urgent interventions.
         <br><br><strong>Situations</strong> is how many situation labels have received balancing probes. <strong>Probe Count</strong> is the lifetime total of those balancing probes. <strong>Last Gap</strong> is the most recent situation whose evidence coverage looked thin.
-        <br><br>The top rows show which situation received which safe probe action. The latest gap lists coverage evidence: edge keys, distinct actions, recent history count, and whether an active situation-gap wish contributed urgency.
+        <br><br>The top rows show which situation received which safe probe action. <strong>SCM</strong> rows are somatic-confidence cells, such as <code>memory_pressure|stressed</code>, where Arminta has seen the situation/emotion combination but has too few reward outcomes to trust the gut signal yet.
+        <br><br>The latest gap lists coverage evidence: edge keys, distinct actions, recent history count, whether an active situation-gap wish contributed urgency, and the most recent somatic cell if the balancer fired for emotion-signal coverage.
       </div>
     </div>
 
@@ -6420,6 +6445,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
       <div class="help-entry-body">
         This panel shows actions that repeatedly selected themselves but immediately returned a guarded no-op such as “skipping,” “suppressed,” “nothing to do,” or a hardware safety gate. Arminta temporarily redirects those exact actions to <code>monitor</code> so repeated no-ops do not crowd out useful work.
         <br><br><strong>Records</strong> is the number of actions being tracked. <strong>Cooldowns</strong> is how many are currently redirected. <strong>Total Skips</strong> counts all remembered guarded no-op events.
+        <br><br><strong>Learned</strong> rows are preconditions inferred from the action's own guard message, such as “NVMe temp below threshold while EC thermal management is active.” These do not add new actions; they only redirect earlier to <code>monitor</code> while the same guard condition remains true.
         <br><br>This is narrower than risk assessment: it does not judge whether an action is dangerous. It only notices repeated inert outcomes and lets the action try again later when conditions may have changed.
       </div>
     </div>
@@ -6430,6 +6456,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         This panel is read-only, like the Network Saturation Cause Profile above it — it integrates evidence ARMINTA collects passively (without dispatching a probe or action) about what's actually running on the host, browser-agnostic.
         <br><br><strong>Dominant Role</strong> — the workload role (e.g. streaming, compiling, browsing, idle) the integrator currently judges most likely from passive signals, independent of the situation classifier.
         <br><br><strong>Open Plans</strong> — diagnostic toll/question evidence chains that are still gathering signal before they can resolve to a confident role or conclusion.
+        <br><br><strong>Ready</strong> question rows have enough exact passive matches to be used by the open-question resolver. They are still read-only evidence: the resolver turns them into lexical statements, not new OS authority.
         <br><br><strong>GA Seeds</strong> — passively-observed evidence that has been handed to the GA hypothesis engine as a seed, giving it a real-world starting point instead of a purely random one.
         <br><br>The two lists below break this down further: <strong>browser-agnostic workload roles</strong> shows the role distribution this integrator has built up, and <strong>diagnostic toll/question evidence</strong> shows the underlying signals it is weighing.
       </div>
@@ -6443,6 +6470,7 @@ refresh(); // first call — subsequent calls chained via setTimeout inside refr
         <br>· <em>emotion_shift</em> — a mode transition during a situation produced an unexpected emotional state
         <br>· <em>stressed_retreat</em> — a mode transition away from a stressed state followed an unexpected path
         <br><br>Each entry shows the question text, the step it formed, how many reflection cycles it has been revisited, and which action it concerns (<em>via</em>).
+        <br><br>Recent resolutions can come from anomaly clusters, diagnostic profiling, network profiling, or exact passive-evidence plans once enough matching observations have accumulated. A resolution adds a lexical statement and marks the original question resolved; it does not authorize any new action.
         <br><br>The lower sub-list appears when <code>OpenQuestionAnomalyResolver</code> closes an emotion-shift question using repeated anomaly/probe evidence. Those rows are explanations only; they do not dispatch actions.
         <br><br><strong>Lifecycle:</strong> questions form in <code>LexicalCore.reflect()</code> and are held (up to 120 at once). Every 50 steps, <code>QuestionResolver</code> evaluates reward_reversal questions against the causal graph. If the action is observational (net_probe, log_*, flush_dns, log_ss_stats, web_fetch — these reflect ambient noise, not real harm), or if the action has confirmed global or situational harm above threshold, the question is marked resolved and purged from the list. Resolved questions graduate into the lexicon as statements with a valence tag that can influence future action selection. Questions that remain unresolved after 50 revisits are force-graduated as neutral conditional statements (<em>"X has context-dependent outcomes"</em>) — accepting irreducible ambiguity rather than holding it forever.
         <br><br>Border colour is display order only: <span style="color:var(--red)">red</span> = questions 1–2, <span style="color:var(--amber)">amber</span> = 3–4, grey = 5–8. It is not a priority score assigned by the agent.
