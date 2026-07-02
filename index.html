@@ -5532,12 +5532,12 @@ function render(d) {
         const planRows = plans.slice(0,2).map(p => `<div class="insight-row">
           <span class="insight-chip green">question</span>
           <span class="insight-main">${esc(p.text || '')}</span>
-          <span class="insight-sub">${fmt(p.matches || 0)} matches</span>
+          <span class="insight-sub">${fmt(p.exact_matches ?? p.matches ?? 0)} exact · ${fmt(p.matches || 0)} raw</span>
         </div>`);
         const readyRows = ready.slice(0,2).map(p => `<div class="insight-row">
           <span class="insight-chip green">ready</span>
           <span class="insight-main">${esc(p.text || '')}</span>
-          <span class="insight-sub">${fmt(p.matches || 0)} matches · avg_r=${Number(p.avg_reward || 0).toFixed(3)}</span>
+          <span class="insight-sub">${fmt(p.exact_matches ?? p.matches ?? 0)} exact · avg_r=${Number(p.avg_reward || 0).toFixed(3)}</span>
         </div>`);
         detEl.innerHTML = [...tollRows, ...readyRows, ...planRows].join('') || '<div style="color:var(--dim);font-size:0.68rem;">no toll or question evidence yet</div>';
       }
