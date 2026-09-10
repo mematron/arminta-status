@@ -3683,8 +3683,36 @@ document.addEventListener('toggle', (e) => {
 
 function staleness(ts) {
   if (!ts) return null;
-  const then = new Date(ts.replace(" ", "T"));
-  return (Date.now() - then) / 60000;
+
+  // Arminta emits updated_ts as Pacific local time without a timezone.
+  // Convert that Pacific wall-clock timestamp to a real UTC instant so
+  // staleness is correct no matter where the dashboard viewer is located.
+  const m = String(ts).trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+
+  const [, y, mo, d, h, mi, s] = m.map(Number);
+  const wallAsUTC = Date.UTC(y, mo - 1, d, h, mi, s);
+  const probe = new Date(wallAsUTC);
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(probe);
+
+  const p = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') p[part.type] = Number(part.value);
+  }
+
+  const pacificRenderedAsUTC = Date.UTC(
+    p.year, p.month - 1, p.day, p.hour, p.minute, p.second
+  );
+  const offsetMs = pacificRenderedAsUTC - wallAsUTC;
+  const thenMs = wallAsUTC - offsetMs;
+
+  return (Date.now() - thenMs) / 60000;
 }
 function setEl(id, val) {
   const el = document.getElementById(id);
