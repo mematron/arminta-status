@@ -3682,11 +3682,22 @@ document.addEventListener('toggle', (e) => {
 }, true);
 
 function staleness(ts) {
+function staleness(ts) {
   if (!ts) return null;
-  const then = new Date(ts.replace(' ','T'));
-  return (Date.now() - then) / 60000;
-}
 
+  // Arminta currently writes updated_ts in Pacific local time
+  // without a timezone. Compare it against Pacific time so
+  // viewers anywhere in the world get the correct staleness.
+  const then = new Date(ts.replace(" ", "T"));
+
+  const pacificNow = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles"
+    })
+  );
+
+  return (pacificNow - then) / 60000;
+}
 function setEl(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
