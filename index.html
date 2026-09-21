@@ -7710,9 +7710,14 @@ function openHelp(targetId) {
     setTimeout(() => {
       const el = document.getElementById(targetId);
       if (!el) return;
-      // help-entry divs are direct children of help-panel-body,
-      // so el.offsetTop is relative to help-panel-body directly
-      body.scrollTop = el.offsetTop;
+
+      const bodyRect = body.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+
+      body.scrollTo({
+        top: body.scrollTop + (elRect.top - bodyRect.top),
+        behavior: 'smooth'
+      });
     }, 350);
   } else if (body) {
     body.scrollTop = 0;
