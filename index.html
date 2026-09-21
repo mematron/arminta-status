@@ -7710,7 +7710,6 @@ function openHelp(targetId) {
     setTimeout(() => {
       const el = document.getElementById(targetId);
       if (!el) return;
-
       const bodyRect = body.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
 
@@ -7728,6 +7727,18 @@ function closeHelp() {
   document.getElementById('help-panel').classList.remove('open');
   document.body.classList.remove('help-open');
 }
+
+// System Dependency Details help button.
+// Delegated so it survives host-capability-row being rebuilt via innerHTML.
+document.addEventListener('click', function (event) {
+  const btn = event.target.closest('#host-capability-row .help-btn');
+  if (!btn) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  openHelp('help-systemdetails');
+});
 document.addEventListener('keydown', e => {
   if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) { toggleHelp(); }
   if (e.key === 'Escape') { closeHelp(); }
